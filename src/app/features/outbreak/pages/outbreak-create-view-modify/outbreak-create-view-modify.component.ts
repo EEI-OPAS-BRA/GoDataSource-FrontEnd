@@ -565,8 +565,23 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.applyGeographicRestrictions,
                 set: (value) => {
                   this.itemData.applyGeographicRestrictions = value;
+                  if (!value) {
+                    this.itemData.allowCrossLocationCreation = false;
+                  }
                 }
               }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowCrossLocationCreation',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CROSS_LOCATION_CREATION',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CROSS_LOCATION_CREATION_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowCrossLocationCreation,
+                set: (value) => {
+                  this.itemData.allowCrossLocationCreation = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
             }, {
               type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
               name: 'reportingGeographicalLevelId',

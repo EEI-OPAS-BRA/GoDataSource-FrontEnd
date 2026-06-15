@@ -483,6 +483,13 @@ export class OutbreakAndOutbreakTemplateHelperService {
       },
       {
         type: V2AdvancedFilterType.SELECT,
+        field: 'allowCrossLocationCreation',
+        label: 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CROSS_LOCATION_CREATION',
+        options: data.options.yesNo,
+        sortable: true
+      },
+      {
+        type: V2AdvancedFilterType.SELECT,
         field: 'isContactsOfContactsActive',
         label: 'LNG_OUTBREAK_FIELD_LABEL_IS_CONTACT_OF_CONTACT_ACTIVE',
         options: data.options.yesNo,

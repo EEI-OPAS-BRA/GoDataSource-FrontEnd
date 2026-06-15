@@ -466,6 +466,10 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
           field: 'addresses.locationId'
         },
         field: 'model.mainAddress.locationId',
+        useOutbreakLocations: !(
+          this.selectedOutbreak?.applyGeographicRestrictions === true &&
+          this.selectedOutbreak?.allowCrossLocationCreation === true
+        ),
         change: (data) => {
           // push it to changes that we need to handle
           this._geoData.handler = data.handler;
