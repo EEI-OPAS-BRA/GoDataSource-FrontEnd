@@ -932,6 +932,20 @@ export class OutbreakListComponent extends ListComponent<OutbreakModel, IV2Colum
         }
       },
       {
+        field: 'allowCaseCrossLocationCreation',
+        label: 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_CROSS_LOCATION_CREATION',
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: V2ColumnFormat.BOOLEAN
+        },
+        filter: {
+          type: V2FilterType.BOOLEAN,
+          value: '',
+          defaultValue: ''
+        }
+      },
+      {
         field: 'allowNotificationLocationAccess',
         label: 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_NOTIFICATION_LOCATION_ACCESS',
         notVisible: true,
@@ -1389,6 +1403,7 @@ export class OutbreakListComponent extends ListComponent<OutbreakModel, IV2Colum
       'contactOfContactIdMask',
       'applyGeographicRestrictions',
       'allowCrossLocationCreation',
+      'allowCaseCrossLocationCreation',
       'allowNotificationLocationAccess',
       'isContactsOfContactsActive',
       'periodOfFollowup',

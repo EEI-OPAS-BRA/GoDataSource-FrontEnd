@@ -393,6 +393,12 @@ export class CaseHelperModel {
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
                   typeOptions: data.options.addressType,
+                  // when the outbreak allows cross-location case creation, list every location
+                  // (not only the user team's) so a case can be registered in another locality
+                  useOutbreakLocations: !(
+                    data.selectedOutbreak?.applyGeographicRestrictions === true &&
+                    data.selectedOutbreak?.allowCaseCrossLocationCreation === true
+                  ),
                   value: {
                     get: (index: number) => {
                       return data.itemData.addresses[index];

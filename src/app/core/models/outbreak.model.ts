@@ -77,6 +77,7 @@ export class OutbreakModel
   isContactsOfContactsActive: boolean;
   applyGeographicRestrictions: boolean;
   allowCrossLocationCreation: boolean;
+  allowCaseCrossLocationCreation: boolean;
   allowNotificationLocationAccess: boolean;
   checkLastContactDateAgainstDateOnSet: boolean;
   disableModifyingLegacyQuestionnaire: boolean;
@@ -177,6 +178,7 @@ export class OutbreakModel
     this.isContactsOfContactsActive = _.get(data, 'isContactsOfContactsActive', false);
     this.applyGeographicRestrictions = _.get(data, 'applyGeographicRestrictions', false);
     this.allowCrossLocationCreation = _.get(data, 'allowCrossLocationCreation', false);
+    this.allowCaseCrossLocationCreation = _.get(data, 'allowCaseCrossLocationCreation', false);
     this.allowNotificationLocationAccess = _.get(data, 'allowNotificationLocationAccess', false);
     this.checkLastContactDateAgainstDateOnSet = _.get(data, 'checkLastContactDateAgainstDateOnSet', false);
     this.disableModifyingLegacyQuestionnaire = _.get(data, 'disableModifyingLegacyQuestionnaire', false);
