@@ -21,8 +21,8 @@ export interface IBulkFlatQuestion {
 
 export abstract class BulkQuestionnaireHelper {
   /**
-   * Tipos de pergunta suportados na Fase 1 e a célula correspondente.
-   * MULTIPLE_OPTIONS (Fase 2), FILE_UPLOAD e MARKUP ficam de fora.
+   * Tipos de pergunta suportados e a célula correspondente.
+   * FILE_UPLOAD e MARKUP ficam de fora (não editáveis em grid).
    */
   private static readonly SUPPORTED_ANSWER_TYPES: {
     [answerType: string]: V2SpreadsheetEditorColumnType
@@ -30,7 +30,8 @@ export abstract class BulkQuestionnaireHelper {
       [Constants.ANSWER_TYPES.FREE_TEXT.value]: V2SpreadsheetEditorColumnType.TEXT,
       [Constants.ANSWER_TYPES.NUMERIC.value]: V2SpreadsheetEditorColumnType.NUMBER,
       [Constants.ANSWER_TYPES.DATE_TIME.value]: V2SpreadsheetEditorColumnType.DATE,
-      [Constants.ANSWER_TYPES.SINGLE_SELECTION.value]: V2SpreadsheetEditorColumnType.SINGLE_SELECT
+      [Constants.ANSWER_TYPES.SINGLE_SELECTION.value]: V2SpreadsheetEditorColumnType.SINGLE_SELECT,
+      [Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value]: V2SpreadsheetEditorColumnType.MULTIPLE_SELECT
     };
 
   /**
@@ -88,18 +89,21 @@ export abstract class BulkQuestionnaireHelper {
       const type: V2SpreadsheetEditorColumnType = BulkQuestionnaireHelper.SUPPORTED_ANSWER_TYPES[question.answerType];
       const field = `model.questionnaireAnswers.${question.variable}[0].value`;
 
-      // resposta única -> dropdown com opções vindas das respostas do template
-      if (type === V2SpreadsheetEditorColumnType.SINGLE_SELECT) {
+      // resposta única / múltipla -> dropdown com opções vindas das respostas do template
+      if (
+        type === V2SpreadsheetEditorColumnType.SINGLE_SELECT ||
+        type === V2SpreadsheetEditorColumnType.MULTIPLE_SELECT
+      ) {
         const options: ILabelValuePairModel[] = (question.answers || []).map((answer) => ({
           label: answer.label,
           value: answer.value
         }));
         return {
-          type: V2SpreadsheetEditorColumnType.SINGLE_SELECT,
+          type,
           label: question.text,
           field,
           options
-        };
+        } as V2SpreadsheetEditorColumn;
       }
 
       // texto / número / data
