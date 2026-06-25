@@ -39,6 +39,7 @@ import { ReferenceDataHelperService } from '../../../../core/services/helper/ref
 import { PersonAndRelatedHelperService } from '../../../../core/services/helper/person-and-related-helper.service';
 import { V2SpreadsheetEditorColumnToVisibleMandatoryConf } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
 import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
+import { BulkQuestionnaireHelper, IBulkFlatQuestion } from '../../../../core/helperClasses/bulk-questionnaire-helper';
 
 @Component({
   selector: 'app-contacts-bulk-create-modify',
@@ -84,6 +85,17 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
   private _manualClearedDateCells: {
     [rowNumber: number]: true
   } = {};
+
+  // perguntas do questionário de contato achatadas (memoizado)
+  private _questionnaireFlat: IBulkFlatQuestion[];
+  private get questionnaireFlat(): IBulkFlatQuestion[] {
+    if (!this._questionnaireFlat) {
+      this._questionnaireFlat = BulkQuestionnaireHelper.flattenTemplate(
+        this.selectedOutbreak?.contactInvestigationTemplate
+      );
+    }
+    return this._questionnaireFlat;
+  }
 
   /**
    * Constructor
@@ -841,6 +853,16 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
         visible: this.isCreate
       }
     ];
+
+    // anexar colunas do questionário de contato (apenas no modo modify; dinâmico por surto)
+    if (this.isModify) {
+      const questionnaireColumns = BulkQuestionnaireHelper.buildColumns(this.questionnaireFlat);
+      if (questionnaireColumns.length) {
+        this.tableColumns = this.tableColumns.concat(
+          questionnaireColumns as V2SpreadsheetEditorColumnToVisibleMandatoryConf[]
+        );
+      }
+    }
   }
 
   /**
@@ -915,6 +937,12 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
 
             // no need for relationship, only contact is relevant on bulk modify
             entity.model = contact;
+
+            // preparar respostas do questionário para edição (mais recente em [0])
+            BulkQuestionnaireHelper.normalizeAnswersForEdit(
+              contact,
+              this.questionnaireFlat
+            );
 
             // finish
             return entity;
@@ -1253,11 +1281,24 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
             return;
           }
 
-          // add data
-          acc.push({
+          // montar payload base com os campos sujos
+          const payload: any = {
             id: row.full.model.id,
             ...row.dirty.model
-          });
+          };
+
+          // se houve alteração em respostas do questionário, enviar o objeto completo
+          // (o backend substitui questionnaireAnswers inteiro; precisamos preservar histórico)
+          if (row.dirty.model.questionnaireAnswers) {
+            payload.questionnaireAnswers = BulkQuestionnaireHelper.mergeEditedAnswers(
+              row.full.model,
+              row.dirty.model,
+              this.questionnaireFlat
+            );
+          }
+
+          // add data
+          acc.push(payload);
 
           // finished
           return acc;
