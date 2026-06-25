@@ -638,6 +638,17 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                   this.itemData.allowCasesFollowUp = value;
                 }
               }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowQuestionnaireInBulkModify',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_QUESTIONNAIRE_IN_BULK_MODIFY',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_QUESTIONNAIRE_IN_BULK_MODIFY_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowQuestionnaireInBulkModify,
+                set: (value) => {
+                  this.itemData.allowQuestionnaireInBulkModify = value;
+                }
+              }
             }
           ]
         },

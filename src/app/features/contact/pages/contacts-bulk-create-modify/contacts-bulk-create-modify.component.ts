@@ -854,8 +854,13 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
       }
     ];
 
-    // anexar colunas do questionário de contato (apenas no modo modify; dinâmico por surto)
-    if (this.isModify) {
+    // anexar colunas do questionário de contato
+    // - apenas no modo modify, e somente se o surto permitir (toggle por surto)
+    // - dinâmico por surto
+    if (
+      this.isModify &&
+      this.selectedOutbreak?.allowQuestionnaireInBulkModify
+    ) {
       const questionnaireColumns = BulkQuestionnaireHelper.buildColumns(this.questionnaireFlat);
       if (questionnaireColumns.length) {
         this.tableColumns = this.tableColumns.concat(
