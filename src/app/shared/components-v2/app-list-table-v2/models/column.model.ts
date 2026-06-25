@@ -442,8 +442,9 @@ export const applyFilterBy = (
       switch (column.filter.textType) {
         case V2FilterTextType.STARTS_WITH:
 
-          // filter
-          query.filter.byText(
+          // filter using 'contains' so partial / mid-word values match (e.g. "aulo" matches "São Paulo")
+          // accent-insensitive matching is preserved by textContains
+          query.filter.byContainingText(
             column.field,
             column.filter.value,
             true,
