@@ -110,6 +110,27 @@ export class ModelHelperService {
           finalUserPermissions = newPermissionIds;
         }
 
+        // system administrator always has every permission (including future ones)
+        const isSystemAdmin: boolean = (user.roles || []).some((role) => role.id === 'ROLE_SYSTEM_ADMINISTRATOR');
+        if (
+          isSystemAdmin &&
+          user.availablePermissions
+        ) {
+          const allPermissions: PERMISSION[] = [];
+          user.availablePermissions.forEach((groupPermission: PermissionModel) => {
+            // group "all" permission
+            if (groupPermission.groupAllId) {
+              allPermissions.push(groupPermission.groupAllId as PERMISSION);
+            }
+
+            // child permissions
+            (groupPermission.permissions || []).forEach((permissionData) => {
+              allPermissions.push(permissionData.id as PERMISSION);
+            });
+          });
+          finalUserPermissions = _.uniq(allPermissions);
+        }
+
         // set permissions
         user.permissionIds = finalUserPermissions;
 
