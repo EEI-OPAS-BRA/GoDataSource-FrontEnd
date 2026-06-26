@@ -690,6 +690,17 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                   this.itemData.allowQuestionnaireInBulkModify = value;
                 }
               }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'optionalCaseContactAddressFields',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_OPTIONAL_CASE_CONTACT_ADDRESS_FIELDS',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_OPTIONAL_CASE_CONTACT_ADDRESS_FIELDS_DESCRIPTION',
+              value: {
+                get: () => this.itemData.optionalCaseContactAddressFields,
+                set: (value) => {
+                  this.itemData.optionalCaseContactAddressFields = value;
+                }
+              }
             }
           ]
         },

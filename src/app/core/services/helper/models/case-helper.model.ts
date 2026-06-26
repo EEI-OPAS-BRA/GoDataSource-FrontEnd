@@ -399,6 +399,10 @@ export class CaseHelperModel {
                     data.selectedOutbreak?.applyGeographicRestrictions === true &&
                     data.selectedOutbreak?.allowCaseCrossLocationCreation === true
                   ),
+                  // when the outbreak allows it, address type & location are not required
+                  optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
+                    ['typeId', 'locationId'] :
+                    undefined,
                   value: {
                     get: (index: number) => {
                       return data.itemData.addresses[index];

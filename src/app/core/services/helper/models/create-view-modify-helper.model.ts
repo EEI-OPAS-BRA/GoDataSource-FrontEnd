@@ -2,6 +2,7 @@ import {
   CreateViewModifyV2TabInput,
   CreateViewModifyV2TabInputType,
   ICreateViewModifyV2Tab,
+  ICreateViewModifyV2TabInputAddress,
   ICreateViewModifyV2TabInputValidatorRequired
 } from '../../../../shared/components-v2/app-create-view-modify-v2/models/tab.model';
 import { IVisibleMandatoryDataGroupTab, IVisibleMandatoryDataGroupTabSectionField, IVisibleMandatoryDataValueField } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
@@ -419,6 +420,11 @@ export class CreateViewModifyHelperModel {
               return !!visibleAndMandatoryConf[`${input.name}.${prop}`]?.visible;
             },
             mandatory: (prop: string) => {
+              // some inputs force specific child fields to be optional regardless of the outbreak config
+              if ((input as ICreateViewModifyV2TabInputAddress).optionalMandatoryChildFields?.includes(prop)) {
+                return false;
+              }
+
               return fieldDefMap[`${input.name}.${prop}`]?.visibleMandatoryConf?.required ||
                 visibleAndMandatoryConf[`${input.name}.${prop}`]?.mandatory;
             }

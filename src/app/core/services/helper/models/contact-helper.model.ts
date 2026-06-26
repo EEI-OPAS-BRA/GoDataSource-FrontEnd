@@ -438,6 +438,10 @@ export class ContactHelperModel {
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
                   typeOptions: data.options.addressType,
+                  // when the outbreak allows it, address type & location are not required
+                  optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
+                    ['typeId', 'locationId'] :
+                    undefined,
                   value: {
                     get: (index: number) => {
                       return data.itemData.addresses[index];
