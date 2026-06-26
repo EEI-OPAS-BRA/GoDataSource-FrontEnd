@@ -217,6 +217,7 @@ export interface IV2SpreadsheetEditorColumnLocation extends Omit<IV2SpreadsheetE
   // optional
   change?: (data: IV2SpreadsheetEditorEventData) => void;
   validators?: IV2SpreadsheetEditorColumnValidatorRequired;
+  useOutbreakLocations?: boolean;
 }
 
 /**

@@ -4,6 +4,7 @@ import { ICellEditorAngularComp } from '@ag-grid-community/angular';
 import { AppFormSelectLocationSingleV2Component } from '../../../../forms-v2/components/app-form-select-location-single-v2/app-form-select-location-single-v2.component';
 import { ILocation } from '../../../../forms-v2/core/app-form-location-base-v2';
 import { IV2SpreadsheetEditorExtendedColDef } from '../../models/extended-column.model';
+import { IV2SpreadsheetEditorColumnLocation } from '../../models/column.model';
 
 @Component({
   selector: 'app-spreadsheet-editor-v2-editor-location',
@@ -20,6 +21,7 @@ export class AppSpreadsheetEditorV2EditorLocationComponent implements ICellEdito
   private _params: ICellEditorParams;
   private _colDef: IV2SpreadsheetEditorExtendedColDef;
   value: string;
+  useOutbreakLocations: boolean = true;
 
   /**
    * Component initialized
@@ -29,6 +31,9 @@ export class AppSpreadsheetEditorV2EditorLocationComponent implements ICellEdito
     this._params = params;
     this._colDef = this._params.column.getUserProvidedColDef() as IV2SpreadsheetEditorExtendedColDef;
     this.value = this._params.value;
+
+    const columnDef = this._colDef.columnDefinition as IV2SpreadsheetEditorColumnLocation | undefined;
+    this.useOutbreakLocations = columnDef?.useOutbreakLocations !== false;
 
     // already writing something, should we replace ?
     if (/^[0-9a-z]$/i.test(params.charPress)) {

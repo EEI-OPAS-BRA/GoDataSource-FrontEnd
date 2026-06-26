@@ -1126,7 +1126,7 @@
                       placeholder="LNG_ADDRESS_FIELD_LABEL_LOCATION"
                       [viewOnly]="isView"
                       [disabled]="parentInput?.readonly || input.readonly"
-                      useOutbreakLocations="true"
+                      [useOutbreakLocations]="input.useOutbreakLocations !== false"
                       clearable="true"
                       [required]="isView ? undefined : ((input.visibleMandatoryChild?.mandatory && input.visibleMandatoryChild?.mandatory('locationId')) || (parentInput && parentInput.visibleMandatoryChild?.mandatory && parentInput.visibleMandatoryChild?.mandatory('locationId')))"
                       (ngModelChange)="parentName ? markArrayItemsAsDirty(form, parentName) : undefined"
