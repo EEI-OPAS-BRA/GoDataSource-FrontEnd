@@ -561,6 +561,7 @@ export interface ICreateViewModifyV2TabInputAddress extends ICreateViewModifyV2T
 
   // optional
   name?: string; // used for single address - event
+  useOutbreakLocations?: boolean; // restrict the location dropdown to the outbreak/team locations (default true)
   validators?: {
     required?: () => boolean
   };

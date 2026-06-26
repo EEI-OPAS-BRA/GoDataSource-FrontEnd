@@ -565,8 +565,49 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.applyGeographicRestrictions,
                 set: (value) => {
                   this.itemData.applyGeographicRestrictions = value;
+                  if (!value) {
+                    this.itemData.allowCrossLocationCreation = false;
+                    this.itemData.allowCaseCrossLocationCreation = false;
+                    this.itemData.allowNotificationLocationAccess = false;
+                  }
                 }
               }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowCrossLocationCreation',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CROSS_LOCATION_CREATION',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CROSS_LOCATION_CREATION_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowCrossLocationCreation,
+                set: (value) => {
+                  this.itemData.allowCrossLocationCreation = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowCaseCrossLocationCreation',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_CROSS_LOCATION_CREATION',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_CROSS_LOCATION_CREATION_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowCaseCrossLocationCreation,
+                set: (value) => {
+                  this.itemData.allowCaseCrossLocationCreation = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowNotificationLocationAccess',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_NOTIFICATION_LOCATION_ACCESS',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_NOTIFICATION_LOCATION_ACCESS_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowNotificationLocationAccess,
+                set: (value) => {
+                  this.itemData.allowNotificationLocationAccess = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
             }, {
               type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
               name: 'reportingGeographicalLevelId',

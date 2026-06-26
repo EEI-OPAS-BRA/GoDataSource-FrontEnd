@@ -313,7 +313,12 @@ export class CaseHelperModel {
                 name: 'responsibleUserId',
                 placeholder: () => 'LNG_CASE_FIELD_LABEL_RESPONSIBLE_USER_ID',
                 description: () => 'LNG_CASE_FIELD_LABEL_RESPONSIBLE_USER_ID_DESCRIPTION',
-                options: data.options.user.concat(data.options.deletedUser),
+                options: data.options.user
+                .filter(u => u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
+                .concat(
+                  data.options.deletedUser
+                    .filter(u => u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
+                ),
                 value: {
                   get: () => data.itemData.responsibleUserId,
                   set: (value) => {
@@ -388,6 +393,12 @@ export class CaseHelperModel {
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
                   typeOptions: data.options.addressType,
+                  // when the outbreak allows cross-location case creation, list every location
+                  // (not only the user team's) so a case can be registered in another locality
+                  useOutbreakLocations: !(
+                    data.selectedOutbreak?.applyGeographicRestrictions === true &&
+                    data.selectedOutbreak?.allowCaseCrossLocationCreation === true
+                  ),
                   value: {
                     get: (index: number) => {
                       return data.itemData.addresses[index];
