@@ -17,14 +17,15 @@ export interface IBulkFlatQuestion {
   answerType: string;
   multiAnswer: boolean;
   answers: AnswerModel[];
+  columnType: V2SpreadsheetEditorColumnType;
+  readonly: boolean;
 }
 
 export abstract class BulkQuestionnaireHelper {
   /**
-   * Tipos de pergunta suportados e a célula correspondente.
-   * FILE_UPLOAD e MARKUP ficam de fora (não editáveis em grid).
+   * Tipos de pergunta editáveis e a célula correspondente.
    */
-  private static readonly SUPPORTED_ANSWER_TYPES: {
+  private static readonly EDITABLE_ANSWER_TYPES: {
     [answerType: string]: V2SpreadsheetEditorColumnType
   } = {
       [Constants.ANSWER_TYPES.FREE_TEXT.value]: V2SpreadsheetEditorColumnType.TEXT,
@@ -35,10 +36,44 @@ export abstract class BulkQuestionnaireHelper {
     };
 
   /**
+   * Tipos de pergunta que não são editáveis num grid, mas devem aparecer como
+   * coluna somente-leitura (markup informativo e upload de arquivo).
+   */
+  private static readonly READONLY_ANSWER_TYPES: {
+    [answerType: string]: V2SpreadsheetEditorColumnType
+  } = {
+      [Constants.ANSWER_TYPES.MARKUP.value]: V2SpreadsheetEditorColumnType.TEXT,
+      [Constants.ANSWER_TYPES.FILE_UPLOAD.value]: V2SpreadsheetEditorColumnType.TEXT
+    };
+
+  /**
+   * Resolve o tipo de coluna e se é somente-leitura para um tipo de resposta.
+   * Retorna undefined para tipos que não devem virar coluna.
+   */
+  private static resolveColumnType(answerType: string): {
+    columnType: V2SpreadsheetEditorColumnType,
+    readonly: boolean
+  } | undefined {
+    if (BulkQuestionnaireHelper.EDITABLE_ANSWER_TYPES[answerType] !== undefined) {
+      return {
+        columnType: BulkQuestionnaireHelper.EDITABLE_ANSWER_TYPES[answerType],
+        readonly: false
+      };
+    }
+    if (BulkQuestionnaireHelper.READONLY_ANSWER_TYPES[answerType] !== undefined) {
+      return {
+        columnType: BulkQuestionnaireHelper.READONLY_ANSWER_TYPES[answerType],
+        readonly: true
+      };
+    }
+    return undefined;
+  }
+
+  /**
    * Achata o template (perguntas + sub-perguntas aninhadas) numa lista plana.
-   * - Ignora perguntas inativas, sem variável e de tipos não suportados.
-   * - Mesmo quando o tipo do "pai" não é suportado (ex.: múltipla escolha),
-   *   continua descendo nas sub-perguntas para não perder colunas aninhadas.
+   * - Ignora perguntas inativas e sem variável.
+   * - Inclui todos os tipos que viram coluna (editáveis + somente-leitura markup/arquivo).
+   * - Sempre desce nas sub-perguntas para não perder colunas aninhadas.
    * - Deduplica por variável (mantém a primeira ocorrência).
    */
   static flattenTemplate(template: QuestionModel[]): IBulkFlatQuestion[] {
@@ -51,13 +86,13 @@ export abstract class BulkQuestionnaireHelper {
           return;
         }
 
-        // pergunta editável ?
-        const supported: boolean = !question.inactive &&
-          !!question.variable &&
-          !!BulkQuestionnaireHelper.SUPPORTED_ANSWER_TYPES[question.answerType];
+        // a pergunta vira coluna ?
+        const resolved = !question.inactive && question.variable ?
+          BulkQuestionnaireHelper.resolveColumnType(question.answerType) :
+          undefined;
 
         if (
-          supported &&
+          resolved &&
           !seen[question.variable]
         ) {
           seen[question.variable] = true;
@@ -66,11 +101,13 @@ export abstract class BulkQuestionnaireHelper {
             text: question.text,
             answerType: question.answerType,
             multiAnswer: !!question.multiAnswer,
-            answers: question.answers || []
+            answers: question.answers || [],
+            columnType: resolved.columnType,
+            readonly: resolved.readonly
           });
         }
 
-        // sempre descer nas sub-perguntas (mesmo se o pai não for suportado)
+        // sempre descer nas sub-perguntas (mesmo se o pai não virar coluna)
         (question.answers || []).forEach((answer: AnswerModel) => {
           walk(answer.additionalQuestions);
         });
@@ -86,7 +123,7 @@ export abstract class BulkQuestionnaireHelper {
    */
   static buildColumns(flat: IBulkFlatQuestion[]): V2SpreadsheetEditorColumn[] {
     return (flat || []).map((question) => {
-      const type: V2SpreadsheetEditorColumnType = BulkQuestionnaireHelper.SUPPORTED_ANSWER_TYPES[question.answerType];
+      const type: V2SpreadsheetEditorColumnType = question.columnType;
       const field = `model.questionnaireAnswers.${question.variable}[0].value`;
 
       // resposta única / múltipla -> dropdown com opções vindas das respostas do template
@@ -106,11 +143,16 @@ export abstract class BulkQuestionnaireHelper {
         } as V2SpreadsheetEditorColumn;
       }
 
-      // texto / número / data
+      // texto / número / data (markup e arquivo entram como texto somente-leitura)
       return {
         type,
         label: question.text,
-        field
+        field,
+        ...(
+          question.readonly ?
+            { readonly: () => true } :
+            {}
+        )
       } as V2SpreadsheetEditorColumn;
     });
   }
