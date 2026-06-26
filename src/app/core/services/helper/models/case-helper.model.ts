@@ -375,6 +375,10 @@ export class CaseHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // when the outbreak allows it, address type & location are not required
+              optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
+                ['typeId', 'locationId'] :
+                undefined,
               itemsChanged: (list) => {
                 // update addresses
                 data.itemData.addresses = list.items;

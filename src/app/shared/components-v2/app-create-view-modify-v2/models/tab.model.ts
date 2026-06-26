@@ -488,6 +488,7 @@ export interface ICreateViewModifyV2TabInputList {
   readonly?: boolean;
   cssClasses?: string;
   actionIconButtons?: ICreateViewModifyV2TabInputActionButton[];
+  optionalMandatoryChildFields?: string[]; // child fields (e.g. typeId, locationId) forced to be NOT mandatory regardless of outbreak visible/mandatory config
 
   // used by ui
   visibleMandatoryChild?: {
