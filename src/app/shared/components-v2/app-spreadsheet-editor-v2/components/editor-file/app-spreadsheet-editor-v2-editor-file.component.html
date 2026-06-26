@@ -1,0 +1,33 @@
+<div
+  class="gd-spreadsheet-editor-v2-editor-file"
+  fxLayout="row"
+  fxLayoutAlign="start center">
+
+  <!-- Choose / replace file -->
+  <label
+    class="gd-spreadsheet-editor-v2-editor-file-choose"
+    fxLayout="row"
+    fxLayoutAlign="start center">
+    <input
+      hidden
+      type="file"
+      ng2FileSelect
+      [uploader]="uploader"/>
+    <span class="material-icons mat-icon">upload_file</span>
+    <span
+      *ngIf="!uploading"
+      class="gd-spreadsheet-editor-v2-editor-file-choose-label">{{ 'LNG_QUESTIONNAIRE_LABEL_FILE_UPLOAD' | translate }}</span>
+    <span
+      *ngIf="uploading"
+      class="gd-spreadsheet-editor-v2-editor-file-choose-label">{{ ('LNG_QUESTIONNAIRE_LABEL_FILE_UPLOAD' | translate) }}…</span>
+  </label>
+
+  <!-- Remove current attachment -->
+  <button
+    *ngIf="value && !uploading"
+    type="button"
+    class="gd-spreadsheet-editor-v2-editor-file-remove"
+    (click)="remove()">
+    <span class="material-icons mat-icon">delete</span>
+  </button>
+</div>

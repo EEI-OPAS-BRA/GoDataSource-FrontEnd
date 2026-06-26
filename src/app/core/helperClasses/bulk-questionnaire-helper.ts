@@ -32,18 +32,18 @@ export abstract class BulkQuestionnaireHelper {
       [Constants.ANSWER_TYPES.NUMERIC.value]: V2SpreadsheetEditorColumnType.NUMBER,
       [Constants.ANSWER_TYPES.DATE_TIME.value]: V2SpreadsheetEditorColumnType.DATE,
       [Constants.ANSWER_TYPES.SINGLE_SELECTION.value]: V2SpreadsheetEditorColumnType.SINGLE_SELECT,
-      [Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value]: V2SpreadsheetEditorColumnType.MULTIPLE_SELECT
+      [Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value]: V2SpreadsheetEditorColumnType.MULTIPLE_SELECT,
+      [Constants.ANSWER_TYPES.FILE_UPLOAD.value]: V2SpreadsheetEditorColumnType.FILE
     };
 
   /**
    * Tipos de pergunta que não são editáveis num grid, mas devem aparecer como
-   * coluna somente-leitura (markup informativo e upload de arquivo).
+   * coluna somente-leitura (markup informativo: texto fixo do template, sem resposta).
    */
   private static readonly READONLY_ANSWER_TYPES: {
     [answerType: string]: V2SpreadsheetEditorColumnType
   } = {
-      [Constants.ANSWER_TYPES.MARKUP.value]: V2SpreadsheetEditorColumnType.TEXT,
-      [Constants.ANSWER_TYPES.FILE_UPLOAD.value]: V2SpreadsheetEditorColumnType.TEXT
+      [Constants.ANSWER_TYPES.MARKUP.value]: V2SpreadsheetEditorColumnType.TEXT
     };
 
   /**
