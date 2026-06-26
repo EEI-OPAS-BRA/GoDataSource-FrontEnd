@@ -11,7 +11,7 @@ import { ControlContainer, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { AppFormBaseV2 } from '../../core/app-form-base-v2';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { ILabelValuePairModel } from '../../core/label-value-pair.model';
-import { MAT_SELECT_CONFIG } from '@angular/material/select';
+import { MAT_SELECT_CONFIG, MatSelect } from '@angular/material/select';
 import * as _ from 'lodash';
 import { IAppFormIconButtonV2 } from '../../core/app-form-icon-button-v2';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
@@ -220,6 +220,10 @@ export class AppFormSelectMultipleV2Component
   // vscroll handler
   @ViewChild('cdkVirtualScrollViewport') cdkVirtualScrollViewport: CdkVirtualScrollViewport;
 
+  // mat select (used to programmatically open the dropdown, e.g. spreadsheet editor cell)
+  @ViewChild(MatSelect) matSelect: MatSelect;
+  private _openTimer: number;
+
   // value changed and dropdown closed
   changedSinceLastChangedAndClosed: boolean = false;
   @Output() changedAndClosed = new EventEmitter<void>();
@@ -256,6 +260,38 @@ export class AppFormSelectMultipleV2Component
 
     // stop refresh language tokens
     this.releaseLanguageChangeListener();
+
+    // stop open timer
+    this.stopOpenTimer();
+  }
+
+  /**
+   * Stop open timer
+   */
+  private stopOpenTimer(): void {
+    if (this._openTimer) {
+      clearTimeout(this._openTimer);
+      this._openTimer = undefined;
+    }
+  }
+
+  /**
+   * Open the dropdown programmatically
+   */
+  open(): void {
+    // stop previous
+    this.stopOpenTimer();
+
+    // wait for binds to take effect
+    this._openTimer = setTimeout(() => {
+      // reset
+      this._openTimer = undefined;
+
+      // open
+      if (this.matSelect) {
+        this.matSelect.open();
+      }
+    });
   }
 
   /**

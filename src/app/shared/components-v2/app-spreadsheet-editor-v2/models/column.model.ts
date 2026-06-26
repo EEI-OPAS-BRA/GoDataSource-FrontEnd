@@ -1,6 +1,8 @@
 import { ITextCellEditorParams } from '@ag-grid-community/core';
 import { ILabelValuePairModel } from '../../../forms-v2/core/label-value-pair.model';
 import { AppSpreadsheetEditorV2EditorSingleSelectComponent } from '../components/editor-single-select/app-spreadsheet-editor-v2-editor-single-select.component';
+import { AppSpreadsheetEditorV2EditorMultiSelectComponent } from '../components/editor-multi-select/app-spreadsheet-editor-v2-editor-multi-select.component';
+import { AppSpreadsheetEditorV2EditorFileComponent } from '../components/editor-file/app-spreadsheet-editor-v2-editor-file.component';
 import { AppSpreadsheetEditorV2EditorDateComponent } from '../components/editor-date/app-spreadsheet-editor-v2-editor-date.component';
 import { AppSpreadsheetEditorV2EditorLocationComponent } from '../components/editor-location/app-spreadsheet-editor-v2-editor-location.component';
 import { AppSpreadsheetEditorV2EditorNumberComponent } from '../components/editor-number/app-spreadsheet-editor-v2-editor-number.component';
@@ -9,6 +11,8 @@ import { Observable } from 'rxjs';
 import { V2SpreadsheetEditorChange } from './change.model';
 import { AppSpreadsheetEditorV2CellBasicRendererModel } from './app-spreadsheet-editor-v2-cell-basic-renderer.model';
 import { AppSpreadsheetEditorV2CellSelectRendererModel } from './app-spreadsheet-editor-v2-cell-select-renderer.model';
+import { AppSpreadsheetEditorV2CellMultiSelectRendererModel } from './app-spreadsheet-editor-v2-cell-multi-select-renderer.model';
+import { AppSpreadsheetEditorV2CellFileRendererModel } from './app-spreadsheet-editor-v2-cell-file-renderer.model';
 import { AppSpreadsheetEditorV2CellDateRendererModel } from './app-spreadsheet-editor-v2-cell-date-renderer.model';
 import { AppSpreadsheetEditorV2CellLocationRendererModel } from './app-spreadsheet-editor-v2-cell-location-renderer.model';
 import { Moment } from '../../../../core/helperClasses/localization-helper';
@@ -113,9 +117,11 @@ export interface IV2SpreadsheetEditorColumnValidatorDate {
 export enum V2SpreadsheetEditorColumnType {
   TEXT,
   SINGLE_SELECT,
+  MULTIPLE_SELECT,
   DATE,
   LOCATION,
-  NUMBER
+  NUMBER,
+  FILE
 }
 
 /**
@@ -172,6 +178,24 @@ export interface IV2SpreadsheetEditorColumnSingleSelect extends Omit<IV2Spreadsh
 }
 
 /**
+ * Column - multi dropdown
+ */
+export interface IV2SpreadsheetEditorColumnMultiSelect extends Omit<IV2SpreadsheetEditorColumnBase, 'optionsMap' | 'change' | 'validators'> {
+  // required
+  type: V2SpreadsheetEditorColumnType.MULTIPLE_SELECT;
+  options: ILabelValuePairModel[];
+
+  // optional
+  change?: (data: IV2SpreadsheetEditorEventData) => void;
+  validators?: IV2SpreadsheetEditorColumnValidatorRequired;
+
+  // used by ui
+  optionsMap?: {
+    [key: string]: ILabelValuePairModel
+  };
+}
+
+/**
  * Column - date
  */
 export interface IV2SpreadsheetEditorColumnDate extends Omit<IV2SpreadsheetEditorColumnBase, 'change' | 'validators'> {
@@ -208,10 +232,22 @@ export interface IV2SpreadsheetEditorColumnNumber extends Omit<IV2SpreadsheetEdi
 }
 
 /**
+ * Column - file
+ */
+export interface IV2SpreadsheetEditorColumnFile extends Omit<IV2SpreadsheetEditorColumnBase, 'change' | 'validators'> {
+  // required
+  type: V2SpreadsheetEditorColumnType.FILE;
+
+  // optional
+  change?: (data: IV2SpreadsheetEditorEventData) => void;
+  validators?: IV2SpreadsheetEditorColumnValidatorRequired;
+}
+
+/**
  * Column types
  */
-export type V2SpreadsheetEditorColumn = IV2SpreadsheetEditorColumnText | IV2SpreadsheetEditorColumnSingleSelect | IV2SpreadsheetEditorColumnDate
-| IV2SpreadsheetEditorColumnLocation | IV2SpreadsheetEditorColumnNumber;
+export type V2SpreadsheetEditorColumn = IV2SpreadsheetEditorColumnText | IV2SpreadsheetEditorColumnSingleSelect | IV2SpreadsheetEditorColumnMultiSelect
+| IV2SpreadsheetEditorColumnDate | IV2SpreadsheetEditorColumnLocation | IV2SpreadsheetEditorColumnNumber | IV2SpreadsheetEditorColumnFile;
 
 /**
  * Renderers
@@ -221,9 +257,11 @@ export const V2SpreadsheetEditorColumnTypeToRenderer: {
 } = {
   [V2SpreadsheetEditorColumnType.TEXT]: AppSpreadsheetEditorV2CellBasicRendererModel,
   [V2SpreadsheetEditorColumnType.SINGLE_SELECT]: AppSpreadsheetEditorV2CellSelectRendererModel,
+  [V2SpreadsheetEditorColumnType.MULTIPLE_SELECT]: AppSpreadsheetEditorV2CellMultiSelectRendererModel,
   [V2SpreadsheetEditorColumnType.DATE]: AppSpreadsheetEditorV2CellDateRendererModel,
   [V2SpreadsheetEditorColumnType.LOCATION]: AppSpreadsheetEditorV2CellLocationRendererModel,
-  [V2SpreadsheetEditorColumnType.NUMBER]: AppSpreadsheetEditorV2CellBasicRendererModel
+  [V2SpreadsheetEditorColumnType.NUMBER]: AppSpreadsheetEditorV2CellBasicRendererModel,
+  [V2SpreadsheetEditorColumnType.FILE]: AppSpreadsheetEditorV2CellFileRendererModel
 };
 
 /**
@@ -234,9 +272,11 @@ export const V2SpreadsheetEditorColumnTypeToEditor: {
     // required
     type: string |
       typeof AppSpreadsheetEditorV2EditorSingleSelectComponent |
+      typeof AppSpreadsheetEditorV2EditorMultiSelectComponent |
       typeof AppSpreadsheetEditorV2EditorDateComponent |
       typeof AppSpreadsheetEditorV2EditorLocationComponent |
-      typeof AppSpreadsheetEditorV2EditorNumberComponent
+      typeof AppSpreadsheetEditorV2EditorNumberComponent |
+      typeof AppSpreadsheetEditorV2EditorFileComponent
   }
 } = {
   [V2SpreadsheetEditorColumnType.TEXT]: {
@@ -244,6 +284,9 @@ export const V2SpreadsheetEditorColumnTypeToEditor: {
   },
   [V2SpreadsheetEditorColumnType.SINGLE_SELECT]: {
     type: AppSpreadsheetEditorV2EditorSingleSelectComponent
+  },
+  [V2SpreadsheetEditorColumnType.MULTIPLE_SELECT]: {
+    type: AppSpreadsheetEditorV2EditorMultiSelectComponent
   },
   [V2SpreadsheetEditorColumnType.DATE]: {
     type: AppSpreadsheetEditorV2EditorDateComponent
@@ -253,5 +296,8 @@ export const V2SpreadsheetEditorColumnTypeToEditor: {
   },
   [V2SpreadsheetEditorColumnType.NUMBER]: {
     type: AppSpreadsheetEditorV2EditorNumberComponent
+  },
+  [V2SpreadsheetEditorColumnType.FILE]: {
+    type: AppSpreadsheetEditorV2EditorFileComponent
   }
 };

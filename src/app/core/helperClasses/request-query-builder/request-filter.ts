@@ -203,9 +203,11 @@ export class RequestFilter {
     operator: RequestFilterOperator = RequestFilterOperator.OR
   ): RequestFilter {
     // construct or condition if necessary
+    // use 'contains' so partial / mid-word values match (e.g. "asilia" matches "Brasilia");
+    // accent-insensitive matching is preserved by textContains
     const condition = {
       [operator]: _.map(properties, (prop) => ({
-        [prop]: RequestFilterGenerator.textStartWith(value)
+        [prop]: RequestFilterGenerator.textContains(value)
       }))
     };
 
