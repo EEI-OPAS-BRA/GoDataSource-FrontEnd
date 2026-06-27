@@ -420,7 +420,20 @@ export class CreateViewModifyHelperModel {
             },
             mandatory: (prop: string) => {
               // some inputs (address / list) force specific child fields to be optional regardless of the outbreak config
-              if ((input as { optionalMandatoryChildFields?: string[] }).optionalMandatoryChildFields?.includes(prop)) {
+              const optionalChildFields = (input as { optionalMandatoryChildFields?: string[] }).optionalMandatoryChildFields;
+
+              // DEBUG TEMPORÁRIO - remover depois
+              if (
+                input.name === 'addresses' && (
+                  prop === 'typeId' ||
+                  prop === 'locationId'
+                )
+              ) {
+                // eslint-disable-next-line no-console
+                console.log('[ADDR-MANDATORY DEBUG]', input.name, prop, 'optionalMandatoryChildFields=', JSON.stringify(optionalChildFields));
+              }
+
+              if (optionalChildFields?.includes(prop)) {
                 return false;
               }
 
