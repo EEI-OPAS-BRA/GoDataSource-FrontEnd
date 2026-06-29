@@ -60,10 +60,6 @@ export class CaseHelperModel {
       }
     }
   ): ICreateViewModifyV2Tab {
-    // DEBUG TEMPORÁRIO - remover depois
-    // eslint-disable-next-line no-console
-    console.log('[CASE-HELPER DEBUG] surto:', data.selectedOutbreak?.name, '| optionalCaseContactAddressFields:', data.selectedOutbreak?.optionalCaseContactAddressFields);
-
     // create tab
     const tab: ICreateViewModifyV2Tab = this.parent.createViewModify.tabFilter(
       {
