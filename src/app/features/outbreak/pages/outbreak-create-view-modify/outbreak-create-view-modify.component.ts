@@ -569,6 +569,7 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                     this.itemData.allowCrossLocationCreation = false;
                     this.itemData.allowCaseCrossLocationCreation = false;
                     this.itemData.allowNotificationLocationAccess = false;
+                    this.itemData.allowResidenceChainAccess = false;
                   }
                 }
               }
@@ -605,6 +606,18 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.allowNotificationLocationAccess,
                 set: (value) => {
                   this.itemData.allowNotificationLocationAccess = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowResidenceChainAccess',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_RESIDENCE_CHAIN_ACCESS',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_RESIDENCE_CHAIN_ACCESS_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowResidenceChainAccess,
+                set: (value) => {
+                  this.itemData.allowResidenceChainAccess = value;
                 }
               },
               visible: () => !!this.itemData.applyGeographicRestrictions
