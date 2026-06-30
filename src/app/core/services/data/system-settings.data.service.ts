@@ -84,8 +84,12 @@ export class SystemSettingsDataService {
                 // cache / update it
                 this.cacheService.set(CacheKey.API_VERSION, versionData);
 
-                // set default timezone
-                LocalizationHelper.initialize(versionData.timezone);
+                // set default timezone and display formats
+                LocalizationHelper.initialize(
+                  versionData.timezone,
+                  versionData.dateDisplayFormat,
+                  versionData.dateTimeDisplayFormat
+                );
               }
             })
           );

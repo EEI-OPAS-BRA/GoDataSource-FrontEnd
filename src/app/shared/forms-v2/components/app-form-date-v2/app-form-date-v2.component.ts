@@ -20,7 +20,8 @@ import { Subscription } from 'rxjs';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 
 // Define format to be used into datepicker
-const DEFAULT_FORMAT = {
+// resolved at DI time ( runtime ) so it reflects the server-configured date format instead of capturing it at module load
+const dateFormatsFactory = () => ({
   parse: {
     dateInput: LocalizationHelper.getDateDisplayFormat()
   },
@@ -30,7 +31,7 @@ const DEFAULT_FORMAT = {
     dateA11yLabel: 'LL',
     monthYearA11yLabel: 'MMMM YYYY'
   }
-};
+});
 
 @Component({
   selector: 'app-form-date-v2',
@@ -45,7 +46,7 @@ const DEFAULT_FORMAT = {
 
     {
       provide: MAT_DATE_FORMATS,
-      useValue: DEFAULT_FORMAT
+      useFactory: dateFormatsFactory
     },
 
     // tried adding a custom adapter for validations, but the system wasn't picking up the issue and there was no way to set a validation error message

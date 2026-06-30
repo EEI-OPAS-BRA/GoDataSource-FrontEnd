@@ -8,6 +8,8 @@ export class SystemSettingsVersionModel {
   readonly build: string;
   readonly arch: string;
   readonly timezone: string;
+  readonly dateDisplayFormat: string;
+  readonly dateTimeDisplayFormat: string;
   readonly tokenTTL: number;
   readonly skipOldPasswordForUserModify: boolean;
   readonly captcha: CaptchaConfigModel;
@@ -38,6 +40,8 @@ export class SystemSettingsVersionModel {
     this.build = _.get(data, 'build');
     this.arch = _.get(data, 'arch');
     this.timezone = _.get(data, 'timezone');
+    this.dateDisplayFormat = _.get(data, 'dateDisplayFormat');
+    this.dateTimeDisplayFormat = _.get(data, 'dateTimeDisplayFormat');
     this.tokenTTL = _.get(data, 'tokenTTL');
     this.skipOldPasswordForUserModify = _.get(data, 'skipOldPasswordForUserModify');
     this.captcha = new CaptchaConfigModel(_.get(data, 'captcha'));
