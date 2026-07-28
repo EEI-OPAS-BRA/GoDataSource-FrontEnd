@@ -158,6 +158,8 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   // selected case classifications used to display only the matching cases (and their contacts);
   // null means no classification filtering
   classificationFilterIdsMap: { [classificationId: string]: true } | null = null;
+  // selected age range used to display only the people whose age falls within it; null means no age filtering
+  ageFilterRange: IV2NumberRange | null = null;
   showEvents: boolean = true;
   showContacts: boolean = false;
   showContactsOfContacts: boolean = false;
@@ -1133,6 +1135,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
           // keep only the selected case classifications (and their contacts), if that filter is active
           this.chainsOfTransmissionFilterByClassification(chainGroup);
+
+          // keep only the people within the selected age range, if that filter is active
+          this.chainsOfTransmissionFilterByAge(chainGroup);
 
           // keep original chains
           this.chainGroupId = this.selectedSnapshot;
@@ -2817,6 +2822,65 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Keep the people whose age falls within the selected range, together with the case(s) directly
+   * associated to them (even if those cases are outside the range). Everyone else is removed.
+   */
+  private chainsOfTransmissionFilterByAge(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no age filter is active
+    if (!this.ageFilterRange) {
+      return;
+    }
+    const from = typeof this.ageFilterRange.from === 'number' ? this.ageFilterRange.from : null;
+    const to = typeof this.ageFilterRange.to === 'number' ? this.ageFilterRange.to : null;
+
+    // does the node's age fall within the selected range ?
+    const nodeMatchesAge = (node: EntityModel): boolean => {
+      // events don't have an age
+      if (node.type === EntityType.EVENT) {
+        return false;
+      }
+      const age = (node.model as CaseModel | ContactModel | ContactOfContactModel).age;
+      if (!age || !age.years) {
+        return false;
+      }
+      if (from !== null && age.years < from) {
+        return false;
+      }
+      if (to !== null && age.years > to) {
+        return false;
+      }
+      return true;
+    };
+
+    // people within the age range
+    const ageMatchedIdsMap: { [id: string]: true } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (nodeMatchesAge(node)) {
+        ageMatchedIdsMap[entityId] = true;
+      }
+    });
+
+    // keep the matched people + the case(s) directly associated to them
+    const keptNodeIdsMap: { [id: string]: true } = { ...ageMatchedIdsMap };
+    (chainGroup.relationships || []).forEach((rel) => {
+      if (!rel.persons || rel.persons.length !== 2) {
+        return;
+      }
+      const first = chainGroup.nodesMap[rel.persons[0].id];
+      const second = chainGroup.nodesMap[rel.persons[1].id];
+      if (ageMatchedIdsMap[rel.persons[0].id] && second && second.type === EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[1].id] = true;
+      }
+      if (ageMatchedIdsMap[rel.persons[1].id] && first && first.type === EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[0].id] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
    * Reduce a chain group to a set of kept node ids: removes the other nodes and any relationship or
    * chain that references a removed node.
    */
@@ -3009,6 +3073,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
         // keep only the selected case classifications (and their contacts), if that filter is active
         this.chainsOfTransmissionFilterByClassification(chainGroup);
+
+        // keep only the people within the selected age range, if that filter is active
+        this.chainsOfTransmissionFilterByAge(chainGroup);
 
         // determine locations that we need to retrieve
         let locationIdsToRetrieve: any = {};
@@ -3482,6 +3549,14 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
                   acc[id] = true;
                   return acc;
                 }, {} as { [id: string]: true }) :
+                null;
+
+              // store age filter used to prune the displayed people
+              this.ageFilterRange = this.filters.age && (
+                typeof this.filters.age.from === 'number' ||
+                typeof this.filters.age.to === 'number'
+              ) ?
+                this.filters.age :
                 null;
 
               // close
