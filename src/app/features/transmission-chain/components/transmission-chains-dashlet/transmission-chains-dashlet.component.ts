@@ -155,6 +155,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   // allowed location ids (selected locations + all their descendants) used to display only the
   // chain nodes that are within the selected location(s); null means no location filtering
   locationFilterAllowedIdsMap: { [locationId: string]: true } | null = null;
+  // selected case classifications used to display only the matching cases (and their contacts);
+  // null means no classification filtering
+  classificationFilterIdsMap: { [classificationId: string]: true } | null = null;
   showEvents: boolean = true;
   showContacts: boolean = false;
   showContactsOfContacts: boolean = false;
@@ -1127,6 +1130,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
           // keep only the nodes within the selected location(s), if a location filter is active
           this.chainsOfTransmissionFilterByLocation(chainGroup);
+
+          // keep only the selected case classifications (and their contacts), if that filter is active
+          this.chainsOfTransmissionFilterByClassification(chainGroup);
 
           // keep original chains
           this.chainGroupId = this.selectedSnapshot;
@@ -2757,11 +2763,72 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
     // keep only nodes within the selected locations
     const keptNodeIdsMap: { [id: string]: true } = {};
-    const remainingNodesMap: { [id: string]: EntityModel } = {};
     _.forEach(chainGroup.nodesMap, (node, entityId) => {
       if (nodeMatchesLocation(node)) {
-        remainingNodesMap[entityId] = node;
         keptNodeIdsMap[entityId] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
+   * Keep only the case nodes whose classification is selected (and the contacts directly related to
+   * them). Cases of other classifications are removed, so filtering e.g. "Probable" shows the probable
+   * cases together with their contacts, but not confirmed / suspect cases.
+   */
+  private chainsOfTransmissionFilterByClassification(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no classification filter is active
+    if (!this.classificationFilterIdsMap) {
+      return;
+    }
+    const allowedClassifications = this.classificationFilterIdsMap;
+
+    // matched cases: cases whose classification is one of the selected ones
+    const matchedCaseIdsMap: { [id: string]: true } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (node.type === EntityType.CASE) {
+        const classification = (node.model as CaseModel).classification;
+        if (classification && allowedClassifications[classification]) {
+          matchedCaseIdsMap[entityId] = true;
+        }
+      }
+    });
+
+    // keep the matched cases + the non-case nodes (contacts) directly related to a matched case
+    const keptNodeIdsMap: { [id: string]: true } = { ...matchedCaseIdsMap };
+    (chainGroup.relationships || []).forEach((rel) => {
+      if (!rel.persons || rel.persons.length !== 2) {
+        return;
+      }
+      const first = chainGroup.nodesMap[rel.persons[0].id];
+      const second = chainGroup.nodesMap[rel.persons[1].id];
+      if (matchedCaseIdsMap[rel.persons[0].id] && second && second.type !== EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[1].id] = true;
+      }
+      if (matchedCaseIdsMap[rel.persons[1].id] && first && first.type !== EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[0].id] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
+   * Reduce a chain group to a set of kept node ids: removes the other nodes and any relationship or
+   * chain that references a removed node.
+   */
+  private pruneChainToKeptNodes(
+    chainGroup: TransmissionChainGroupModel,
+    keptNodeIdsMap: { [id: string]: true }
+  ): void {
+    // keep only the kept nodes
+    const remainingNodesMap: { [id: string]: EntityModel } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (keptNodeIdsMap[entityId]) {
+        remainingNodesMap[entityId] = node;
       }
     });
     chainGroup.nodesMap = remainingNodesMap;
@@ -2939,6 +3006,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
         // keep only the nodes within the selected location(s), if a location filter is active
         this.chainsOfTransmissionFilterByLocation(chainGroup);
+
+        // keep only the selected case classifications (and their contacts), if that filter is active
+        this.chainsOfTransmissionFilterByClassification(chainGroup);
 
         // determine locations that we need to retrieve
         let locationIdsToRetrieve: any = {};
@@ -3405,6 +3475,14 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
             .subscribe((allowedLocationIdsMap) => {
               // store location filter used to prune the displayed chain nodes
               this.locationFilterAllowedIdsMap = allowedLocationIdsMap;
+
+              // store classification filter used to prune the displayed cases
+              this.classificationFilterIdsMap = (this.filters.classificationId || []).length > 0 ?
+                this.filters.classificationId.reduce((acc, id) => {
+                  acc[id] = true;
+                  return acc;
+                }, {} as { [id: string]: true }) :
+                null;
 
               // close
               response.handler.hide();
