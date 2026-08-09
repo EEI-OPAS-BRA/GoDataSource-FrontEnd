@@ -29,6 +29,7 @@ import { PersonAndRelatedHelperService } from '../person-and-related-helper.serv
 import { RelationshipDataService } from '../../data/relationship.data.service';
 import { IV2ColumnToVisibleMandatoryConf, V2AdvancedFilterToVisibleMandatoryConf } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
 import { LocalizationHelper, Moment } from '../../../helperClasses/localization-helper';
+import { LocationModel } from '../../../models/location.model';
 
 /**
  * From ?
@@ -1339,7 +1340,8 @@ export class RelationshipHelperModel {
         exposureFrequency: ILabelValuePairModel[],
         exposureDuration: ILabelValuePairModel[],
         contextOfTransmission: ILabelValuePairModel[],
-        user: ILabelValuePairModel[]
+        user: ILabelValuePairModel[],
+        addressType?: ILabelValuePairModel[]
       }
     }
   ): IV2Column[] {
@@ -1796,6 +1798,33 @@ export class RelationshipHelperModel {
         }
       }
     );
+
+    // address location columns are only added where the address types are provided (relationships list)
+    if (definitions.options.addressType) {
+      // current (residential) address location
+      tableColumns.push({
+        field: 'location',
+        label: 'LNG_CASE_FIELD_LABEL_ADDRESS_LOCATION',
+        visibleMandatoryIf: () => true,
+        format: {
+          type: 'model.mainAddress.location.name'
+        },
+        link: (data) => {
+          return data.model?.mainAddress?.location?.name && LocationModel.canView(this.parent.authUser) ?
+            `/locations/${data.model.mainAddress.location.id}/view` :
+            undefined;
+        }
+      });
+
+      // one location column per address type (except current), e.g. notification / previous address
+      tableColumns.push(
+        ...this.parent.list.retrieveAddressLocationColumnsPerType(
+          definitions.options.addressType,
+          this.parent.authUser,
+          (item) => item?.model?.addresses || (item?.model?.address ? [item.model.address] : [])
+        )
+      );
+    }
 
     // finished
     return this.parent.list.filterVisibleMandatoryTableColumns(tableColumns);
