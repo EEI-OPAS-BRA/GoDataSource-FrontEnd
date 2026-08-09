@@ -794,6 +794,37 @@ export class AppFormVisibleMandatoryV2Component
   }
 
   /**
+   * Toggle "expanded by default" for a LIST section
+   */
+  setExpandedByDefault(
+    item: IFlattenNodeGroupTabSection,
+    checked: boolean
+  ): void {
+    const groupId: string = item.parent.parent.data.id;
+    const inputName: string = item.data.listInputName;
+
+    if (!this.value[groupId]) {
+      this.value[groupId] = {};
+    }
+    if (!this.value[groupId][inputName]) {
+      this.value[groupId][inputName] = {};
+    }
+
+    if (checked) {
+      this.value[groupId][inputName].expandedByDefault = true;
+    } else {
+      delete this.value[groupId][inputName].expandedByDefault;
+      if (Object.keys(this.value[groupId][inputName]).length === 0) {
+        delete this.value[groupId][inputName];
+      }
+    }
+
+    this.onChange(this.value);
+    this.control?.markAsDirty();
+    this.detectChanges();
+  }
+
+  /**
    * Check / Uncheck all visible fields for a section
    */
   checkUncheckAll(
