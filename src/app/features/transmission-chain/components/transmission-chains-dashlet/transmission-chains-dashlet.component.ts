@@ -7,7 +7,7 @@ import { GraphNodeModel } from '../../../../core/models/graph-node.model';
 import { Constants } from '../../../../core/models/constants';
 import { EntityDataService } from '../../../../core/services/data/entity.data.service';
 import { ReferenceDataCategory, ReferenceDataCategoryModel, ReferenceDataEntryModel } from '../../../../core/models/reference-data.model';
-import { forkJoin, Subscription, throwError } from 'rxjs';
+import { forkJoin, of, Observable, Subscription, throwError } from 'rxjs';
 import { ReferenceDataDataService } from '../../../../core/services/data/reference-data.data.service';
 import { GraphEdgeModel } from '../../../../core/models/graph-edge.model';
 import { GenericDataService } from '../../../../core/services/data/generic.data.service';
@@ -152,6 +152,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   graphElements: IConvertChainToGraphElements;
   showGraphConfiguration: boolean = false;
   filters: TransmissionChainFilters = new TransmissionChainFilters();
+  // allowed location ids (selected locations + all their descendants) used to display only the
+  // chain nodes that are within the selected location(s); null means no location filtering
+  locationFilterAllowedIdsMap: { [locationId: string]: true } | null = null;
   showEvents: boolean = true;
   showContacts: boolean = false;
   showContactsOfContacts: boolean = false;
@@ -1121,6 +1124,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
         .subscribe((chainGroup) => {
           // remove the unrelated data if a person id is provided
           this.chainsOfTransmissionGetPersonChain(chainGroup);
+
+          // keep only the nodes within the selected location(s), if a location filter is active
+          this.chainsOfTransmissionFilterByLocation(chainGroup);
 
           // keep original chains
           this.chainGroupId = this.selectedSnapshot;
@@ -2702,6 +2708,84 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Compute the set of allowed location ids used to filter the chain nodes.
+   * Only the exact locations selected in the filter are allowed (no descendants): a node is kept
+   * only if its address location is one of the checked locations. The descendants are already added
+   * to the selection by the cascade behaviour of the location filter (select a parent => its children
+   * get checked), so unchecking a child correctly hides it here.
+   * Returns null when no location is selected (no location filtering should be applied).
+   */
+  private computeLocationFilterAllowedIds(locationIds: string[]): Observable<{ [locationId: string]: true } | null> {
+    // nothing selected => no location filtering
+    if (_.isEmpty(locationIds)) {
+      return of(null);
+    }
+
+    // allow strictly the selected locations (the cascade already added the descendants)
+    const allowed: { [id: string]: true } = {};
+    locationIds.forEach((id) => allowed[id] = true);
+
+    // finished
+    return of(allowed);
+  }
+
+  /**
+   * Keep only the chain nodes whose address is within the selected location(s).
+   * Removes nodes outside the location and any relationship/chain that references removed nodes,
+   * so the graph shows only the people in the filtered location (isolated nodes are kept).
+   */
+  private chainsOfTransmissionFilterByLocation(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no location filter is active
+    if (!this.locationFilterAllowedIdsMap) {
+      return;
+    }
+    const allowed = this.locationFilterAllowedIdsMap;
+
+    // does a node have at least one address within the allowed locations ?
+    const nodeMatchesLocation = (node: EntityModel): boolean => {
+      let addresses: AddressModel[];
+      if (node.type === EntityType.EVENT) {
+        const address = (node.model as EventModel).address;
+        addresses = address ? [address] : [];
+      } else {
+        addresses = (node.model as CaseModel | ContactModel | ContactOfContactModel).addresses || [];
+      }
+
+      // keep node if any address falls within the selected locations
+      return addresses.some((address) => address && address.locationId && allowed[address.locationId]);
+    };
+
+    // keep only nodes within the selected locations
+    const keptNodeIdsMap: { [id: string]: true } = {};
+    const remainingNodesMap: { [id: string]: EntityModel } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (nodeMatchesLocation(node)) {
+        remainingNodesMap[entityId] = node;
+        keptNodeIdsMap[entityId] = true;
+      }
+    });
+    chainGroup.nodesMap = remainingNodesMap;
+
+    // keep only relationships where both persons are kept
+    chainGroup.relationships = (chainGroup.relationships || []).filter((rel) =>
+      rel.persons &&
+      rel.persons.length === 2 &&
+      keptNodeIdsMap[rel.persons[0].id] &&
+      keptNodeIdsMap[rel.persons[1].id]
+    );
+
+    // keep only chains that still have at least one relation with both endpoints kept
+    chainGroup.chains = (chainGroup.chains || []).filter((chain) =>
+      (chain.chainRelations || []).some((rel) =>
+        rel.entityIds &&
+        rel.entityIds.length === 2 &&
+        keptNodeIdsMap[rel.entityIds[0]] &&
+        keptNodeIdsMap[rel.entityIds[1]]
+      )
+    );
+  }
+
+  /**
      * Retrieve snapshot / refresh graph
      */
   loadChainsOfTransmission(
@@ -2852,6 +2936,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
       .subscribe((chainGroup) => {
         // remove the unrelated data if a person id is provided
         this.chainsOfTransmissionGetPersonChain(chainGroup);
+
+        // keep only the nodes within the selected location(s), if a location filter is active
+        this.chainsOfTransmissionFilterByLocation(chainGroup);
 
         // determine locations that we need to retrieve
         let locationIdsToRetrieve: any = {};
@@ -3231,6 +3318,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
                     name: 'locationIds',
                     placeholder: 'LNG_ADDRESS_FIELD_LABEL_LOCATION',
                     useOutbreakLocations: true,
+                    cascadeSelection: true,
                     values: this.filters.locationIds
                   }, {
                     type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
@@ -3311,14 +3399,22 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           this.filters.age = (panelMap.age as IV2SideDialogConfigInputNumberRange).value;
           this.filters.date = (panelMap.date as IV2SideDialogConfigInputDateRange).value;
 
-          // close
-          response.handler.hide();
+          // expand selected locations (selected + descendants) so we can display only the
+          // nodes within the selected location(s); then generate the graph
+          this.computeLocationFilterAllowedIds(this.filters.locationIds)
+            .subscribe((allowedLocationIdsMap) => {
+              // store location filter used to prune the displayed chain nodes
+              this.locationFilterAllowedIdsMap = allowedLocationIdsMap;
 
-          // generate graph
-          this.getChainsOfTransmission(
-            true,
-            (response.data.map.snapshotName as IV2SideDialogConfigInputText).value
-          );
+              // close
+              response.handler.hide();
+
+              // generate graph
+              this.getChainsOfTransmission(
+                true,
+                (response.data.map.snapshotName as IV2SideDialogConfigInputText).value
+              );
+            });
         };
 
         // do we need to delete previous first ?
