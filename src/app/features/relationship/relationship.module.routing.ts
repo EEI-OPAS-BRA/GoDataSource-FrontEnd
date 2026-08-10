@@ -5,6 +5,7 @@ import { PERMISSION } from '../../core/models/permission.model';
 import { PermissionExpression } from '../../core/models/user.model';
 import { AuthGuard } from '../../core/services/guards/auth-guard.service';
 import { PageChangeConfirmationGuard } from '../../core/services/guards/page-change-confirmation-guard.service';
+import { AddressTypeDataResolver } from '../../core/services/resolvers/data/address-type.resolver';
 import { CertaintyLevelDataResolver } from '../../core/services/resolvers/data/certainty-level.resolver';
 import { ClusterDataResolver } from '../../core/services/resolvers/data/cluster.resolver';
 import { ContextOfTransmissionDataResolver } from '../../core/services/resolvers/data/context-of-transmission.resolver';
@@ -71,6 +72,7 @@ const relationshipTypeChildrenRoutes = [
       cluster: ClusterDataResolver,
       personType: PersonTypeDataResolver,
       user: UserDataResolver,
+      addressType: AddressTypeDataResolver,
       entity: RelationshipPersonDataResolver
     }
   },

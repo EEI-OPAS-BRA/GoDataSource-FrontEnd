@@ -25,6 +25,9 @@ export class AddressModel {
   geoLocationAccurate: boolean = false;
   phoneNumber: string;
   emailAddress: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
 
   // used by ui
   filterLocationIds: string[];
@@ -80,6 +83,9 @@ export class AddressModel {
     this.geoLocationAccurate = _.get(data, 'geoLocationAccurate', false);
     this.phoneNumber = _.get(data, 'phoneNumber');
     this.emailAddress = _.get(data, 'emailAddress');
+    this.logradouro = _.get(data, 'logradouro');
+    this.numero = _.get(data, 'numero');
+    this.complemento = _.get(data, 'complemento');
   }
 
   get fullAddress() {

@@ -6,8 +6,11 @@ import { ListComponent } from '../../../../core/helperClasses/list-component';
 import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import * as _ from 'lodash';
-import { catchError, takeUntil, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { throwError } from 'rxjs/internal/observable/throwError';
+import { LocationModel } from '../../../../core/models/location.model';
+import { AddressModel } from '../../../../core/models/address.model';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { ReferenceDataEntryModel } from '../../../../core/models/reference-data.model';
 import { ClusterModel } from '../../../../core/models/cluster.model';
@@ -139,7 +142,8 @@ export class EntityRelationshipsListComponent extends ListComponent<EntityModel,
           (this.activatedRoute.snapshot.data.contextOfTransmission as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
           undefined
         ),
-        user: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options
+        user: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+        addressType: (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options
       }
     });
   }
@@ -456,6 +460,18 @@ export class EntityRelationshipsListComponent extends ListComponent<EntityModel,
   }
 
   /**
+   * Collect the addresses of a related person, handling entities that keep a single address (events)
+   */
+  private static getPersonAddresses(entity: EntityModel): AddressModel[] {
+    const model = entity?.model as { addresses?: AddressModel[], address?: AddressModel };
+    if (model?.addresses) {
+      return model.addresses;
+    }
+
+    return model?.address ? [model.address] : [];
+  }
+
+  /**
    * Re(load) the Relationships list, based on the applied filter, sort criterias
    */
   refreshList(): void {
@@ -468,6 +484,60 @@ export class EntityRelationshipsListComponent extends ListComponent<EntityModel,
         this.queryBuilder
       )
       .pipe(
+        // resolve address locations so the per-address-type location columns can display names
+        switchMap((entities: EntityModel[]) => {
+          // determine locations that we need to retrieve
+          const locationsIdsMap: {
+            [locationId: string]: true
+          } = {};
+          (entities || []).forEach((entity) => {
+            EntityRelationshipsListComponent.getPersonAddresses(entity).forEach((address) => {
+              if (address?.locationId) {
+                locationsIdsMap[address.locationId] = true;
+              }
+            });
+          });
+
+          // nothing to retrieve ?
+          const locationIds: string[] = Object.keys(locationsIdsMap);
+          if (locationIds.length < 1) {
+            return of(entities);
+          }
+
+          // construct location query builder
+          const qb = new RequestQueryBuilder();
+          qb.filter.bySelect(
+            'id',
+            locationIds,
+            false,
+            null
+          );
+
+          // retrieve locations and map them onto the addresses
+          return this.personAndRelatedHelperService.locationDataService
+            .getLocationsList(qb)
+            .pipe(
+              map((locations) => {
+                const locationsMap: {
+                  [locationId: string]: LocationModel
+                } = {};
+                locations.forEach((location) => {
+                  locationsMap[location.id] = location;
+                });
+
+                (entities || []).forEach((entity) => {
+                  EntityRelationshipsListComponent.getPersonAddresses(entity).forEach((address) => {
+                    address.location = address.locationId && locationsMap[address.locationId] ?
+                      locationsMap[address.locationId] :
+                      address.location;
+                  });
+                });
+
+                return entities;
+              })
+            );
+        }),
+
         tap((entities: EntityModel[]) => {
           // map models
           this._relationshipsListRecordsMap = {};

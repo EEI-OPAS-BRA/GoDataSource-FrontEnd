@@ -242,12 +242,13 @@
             <app-form-select-location-multiple-v2
               *ngSwitchCase="V2SideDialogConfigInputType.LOCATION_MULTIPLE"
               class="gd-app-side-dialog-v2-content-middle-item-input {{input.cssClasses}}"
-              [(ngModel)]="input.value"
+              [(ngModel)]="input.values"
               [name]="input.name"
               [placeholder]="input.placeholder"
               [disabled]="input.disabled && input.disabled(dialogHandler.data, dialogHandler, input)"
               [required]="input.validators?.required && input.validators?.required(dialogHandler.data, dialogHandler, input)"
               [useOutbreakLocations]="input.useOutbreakLocations"
+              [cascadeSelection]="input.cascadeSelection"
               (ngModelChange)="input.change ? input.change(dialogHandler.data, dialogHandler, input) : undefined">
             </app-form-select-location-multiple-v2>
 

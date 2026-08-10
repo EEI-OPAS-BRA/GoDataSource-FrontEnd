@@ -1052,6 +1052,11 @@ export class ContactsListComponent
             undefined;
         }
       },
+      // one location column per address type (except current), e.g. notification / previous address
+      ...this.personAndRelatedHelperService.list.retrieveAddressLocationColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        this.authUser
+      ),
       {
         field: 'addresses.emailAddress',
         label: 'LNG_CONTACT_FIELD_LABEL_EMAIL',
