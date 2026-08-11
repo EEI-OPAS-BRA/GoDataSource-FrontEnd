@@ -7,7 +7,7 @@ import { GraphNodeModel } from '../../../../core/models/graph-node.model';
 import { Constants } from '../../../../core/models/constants';
 import { EntityDataService } from '../../../../core/services/data/entity.data.service';
 import { ReferenceDataCategory, ReferenceDataCategoryModel, ReferenceDataEntryModel } from '../../../../core/models/reference-data.model';
-import { forkJoin, Subscription, throwError } from 'rxjs';
+import { forkJoin, of, Observable, Subscription, throwError } from 'rxjs';
 import { ReferenceDataDataService } from '../../../../core/services/data/reference-data.data.service';
 import { GraphEdgeModel } from '../../../../core/models/graph-edge.model';
 import { GenericDataService } from '../../../../core/services/data/generic.data.service';
@@ -152,6 +152,14 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   graphElements: IConvertChainToGraphElements;
   showGraphConfiguration: boolean = false;
   filters: TransmissionChainFilters = new TransmissionChainFilters();
+  // allowed location ids (selected locations + all their descendants) used to display only the
+  // chain nodes that are within the selected location(s); null means no location filtering
+  locationFilterAllowedIdsMap: { [locationId: string]: true } | null = null;
+  // selected case classifications used to display only the matching cases (and their contacts);
+  // null means no classification filtering
+  classificationFilterIdsMap: { [classificationId: string]: true } | null = null;
+  // selected age range used to display only the people whose age falls within it; null means no age filtering
+  ageFilterRange: IV2NumberRange | null = null;
   showEvents: boolean = true;
   showContacts: boolean = false;
   showContactsOfContacts: boolean = false;
@@ -1121,6 +1129,15 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
         .subscribe((chainGroup) => {
           // remove the unrelated data if a person id is provided
           this.chainsOfTransmissionGetPersonChain(chainGroup);
+
+          // keep only the nodes within the selected location(s), if a location filter is active
+          this.chainsOfTransmissionFilterByLocation(chainGroup);
+
+          // keep only the selected case classifications (and their contacts), if that filter is active
+          this.chainsOfTransmissionFilterByClassification(chainGroup);
+
+          // keep only the people within the selected age range, if that filter is active
+          this.chainsOfTransmissionFilterByAge(chainGroup);
 
           // keep original chains
           this.chainGroupId = this.selectedSnapshot;
@@ -2702,6 +2719,204 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Compute the set of allowed location ids used to filter the chain nodes.
+   * Only the exact locations selected in the filter are allowed (no descendants): a node is kept
+   * only if its address location is one of the checked locations. The descendants are already added
+   * to the selection by the cascade behaviour of the location filter (select a parent => its children
+   * get checked), so unchecking a child correctly hides it here.
+   * Returns null when no location is selected (no location filtering should be applied).
+   */
+  private computeLocationFilterAllowedIds(locationIds: string[]): Observable<{ [locationId: string]: true } | null> {
+    // nothing selected => no location filtering
+    if (_.isEmpty(locationIds)) {
+      return of(null);
+    }
+
+    // allow strictly the selected locations (the cascade already added the descendants)
+    const allowed: { [id: string]: true } = {};
+    locationIds.forEach((id) => allowed[id] = true);
+
+    // finished
+    return of(allowed);
+  }
+
+  /**
+   * Keep only the chain nodes whose address is within the selected location(s).
+   * Removes nodes outside the location and any relationship/chain that references removed nodes,
+   * so the graph shows only the people in the filtered location (isolated nodes are kept).
+   */
+  private chainsOfTransmissionFilterByLocation(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no location filter is active
+    if (!this.locationFilterAllowedIdsMap) {
+      return;
+    }
+    const allowed = this.locationFilterAllowedIdsMap;
+
+    // does a node have at least one address within the allowed locations ?
+    const nodeMatchesLocation = (node: EntityModel): boolean => {
+      let addresses: AddressModel[];
+      if (node.type === EntityType.EVENT) {
+        const address = (node.model as EventModel).address;
+        addresses = address ? [address] : [];
+      } else {
+        addresses = (node.model as CaseModel | ContactModel | ContactOfContactModel).addresses || [];
+      }
+
+      // keep node if any address falls within the selected locations
+      return addresses.some((address) => address && address.locationId && allowed[address.locationId]);
+    };
+
+    // keep only nodes within the selected locations
+    const keptNodeIdsMap: { [id: string]: true } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (nodeMatchesLocation(node)) {
+        keptNodeIdsMap[entityId] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
+   * Keep only the case nodes whose classification is selected (and the contacts directly related to
+   * them). Cases of other classifications are removed, so filtering e.g. "Probable" shows the probable
+   * cases together with their contacts, but not confirmed / suspect cases.
+   */
+  private chainsOfTransmissionFilterByClassification(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no classification filter is active
+    if (!this.classificationFilterIdsMap) {
+      return;
+    }
+    const allowedClassifications = this.classificationFilterIdsMap;
+
+    // matched cases: cases whose classification is one of the selected ones
+    const matchedCaseIdsMap: { [id: string]: true } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (node.type === EntityType.CASE) {
+        const classification = (node.model as CaseModel).classification;
+        if (classification && allowedClassifications[classification]) {
+          matchedCaseIdsMap[entityId] = true;
+        }
+      }
+    });
+
+    // keep the matched cases + the non-case nodes (contacts) directly related to a matched case
+    const keptNodeIdsMap: { [id: string]: true } = { ...matchedCaseIdsMap };
+    (chainGroup.relationships || []).forEach((rel) => {
+      if (!rel.persons || rel.persons.length !== 2) {
+        return;
+      }
+      const first = chainGroup.nodesMap[rel.persons[0].id];
+      const second = chainGroup.nodesMap[rel.persons[1].id];
+      if (matchedCaseIdsMap[rel.persons[0].id] && second && second.type !== EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[1].id] = true;
+      }
+      if (matchedCaseIdsMap[rel.persons[1].id] && first && first.type !== EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[0].id] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
+   * Keep the people whose age falls within the selected range, together with the case(s) directly
+   * associated to them (even if those cases are outside the range). Everyone else is removed.
+   */
+  private chainsOfTransmissionFilterByAge(chainGroup: TransmissionChainGroupModel): void {
+    // nothing to do if no age filter is active
+    if (!this.ageFilterRange) {
+      return;
+    }
+    const from = typeof this.ageFilterRange.from === 'number' ? this.ageFilterRange.from : null;
+    const to = typeof this.ageFilterRange.to === 'number' ? this.ageFilterRange.to : null;
+
+    // does the node's age fall within the selected range ?
+    const nodeMatchesAge = (node: EntityModel): boolean => {
+      // events don't have an age
+      if (node.type === EntityType.EVENT) {
+        return false;
+      }
+      const age = (node.model as CaseModel | ContactModel | ContactOfContactModel).age;
+      if (!age || !age.years) {
+        return false;
+      }
+      if (from !== null && age.years < from) {
+        return false;
+      }
+      if (to !== null && age.years > to) {
+        return false;
+      }
+      return true;
+    };
+
+    // people within the age range
+    const ageMatchedIdsMap: { [id: string]: true } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (nodeMatchesAge(node)) {
+        ageMatchedIdsMap[entityId] = true;
+      }
+    });
+
+    // keep the matched people + the case(s) directly associated to them
+    const keptNodeIdsMap: { [id: string]: true } = { ...ageMatchedIdsMap };
+    (chainGroup.relationships || []).forEach((rel) => {
+      if (!rel.persons || rel.persons.length !== 2) {
+        return;
+      }
+      const first = chainGroup.nodesMap[rel.persons[0].id];
+      const second = chainGroup.nodesMap[rel.persons[1].id];
+      if (ageMatchedIdsMap[rel.persons[0].id] && second && second.type === EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[1].id] = true;
+      }
+      if (ageMatchedIdsMap[rel.persons[1].id] && first && first.type === EntityType.CASE) {
+        keptNodeIdsMap[rel.persons[0].id] = true;
+      }
+    });
+
+    // prune nodes / relationships / chains to the kept nodes
+    this.pruneChainToKeptNodes(chainGroup, keptNodeIdsMap);
+  }
+
+  /**
+   * Reduce a chain group to a set of kept node ids: removes the other nodes and any relationship or
+   * chain that references a removed node.
+   */
+  private pruneChainToKeptNodes(
+    chainGroup: TransmissionChainGroupModel,
+    keptNodeIdsMap: { [id: string]: true }
+  ): void {
+    // keep only the kept nodes
+    const remainingNodesMap: { [id: string]: EntityModel } = {};
+    _.forEach(chainGroup.nodesMap, (node, entityId) => {
+      if (keptNodeIdsMap[entityId]) {
+        remainingNodesMap[entityId] = node;
+      }
+    });
+    chainGroup.nodesMap = remainingNodesMap;
+
+    // keep only relationships where both persons are kept
+    chainGroup.relationships = (chainGroup.relationships || []).filter((rel) =>
+      rel.persons &&
+      rel.persons.length === 2 &&
+      keptNodeIdsMap[rel.persons[0].id] &&
+      keptNodeIdsMap[rel.persons[1].id]
+    );
+
+    // keep only chains that still have at least one relation with both endpoints kept
+    chainGroup.chains = (chainGroup.chains || []).filter((chain) =>
+      (chain.chainRelations || []).some((rel) =>
+        rel.entityIds &&
+        rel.entityIds.length === 2 &&
+        keptNodeIdsMap[rel.entityIds[0]] &&
+        keptNodeIdsMap[rel.entityIds[1]]
+      )
+    );
+  }
+
+  /**
      * Retrieve snapshot / refresh graph
      */
   loadChainsOfTransmission(
@@ -2852,6 +3067,15 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
       .subscribe((chainGroup) => {
         // remove the unrelated data if a person id is provided
         this.chainsOfTransmissionGetPersonChain(chainGroup);
+
+        // keep only the nodes within the selected location(s), if a location filter is active
+        this.chainsOfTransmissionFilterByLocation(chainGroup);
+
+        // keep only the selected case classifications (and their contacts), if that filter is active
+        this.chainsOfTransmissionFilterByClassification(chainGroup);
+
+        // keep only the people within the selected age range, if that filter is active
+        this.chainsOfTransmissionFilterByAge(chainGroup);
 
         // determine locations that we need to retrieve
         let locationIdsToRetrieve: any = {};
@@ -3231,6 +3455,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
                     name: 'locationIds',
                     placeholder: 'LNG_ADDRESS_FIELD_LABEL_LOCATION',
                     useOutbreakLocations: true,
+                    cascadeSelection: true,
                     values: this.filters.locationIds
                   }, {
                     type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
@@ -3311,14 +3536,38 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           this.filters.age = (panelMap.age as IV2SideDialogConfigInputNumberRange).value;
           this.filters.date = (panelMap.date as IV2SideDialogConfigInputDateRange).value;
 
-          // close
-          response.handler.hide();
+          // expand selected locations (selected + descendants) so we can display only the
+          // nodes within the selected location(s); then generate the graph
+          this.computeLocationFilterAllowedIds(this.filters.locationIds)
+            .subscribe((allowedLocationIdsMap) => {
+              // store location filter used to prune the displayed chain nodes
+              this.locationFilterAllowedIdsMap = allowedLocationIdsMap;
 
-          // generate graph
-          this.getChainsOfTransmission(
-            true,
-            (response.data.map.snapshotName as IV2SideDialogConfigInputText).value
-          );
+              // store classification filter used to prune the displayed cases
+              this.classificationFilterIdsMap = (this.filters.classificationId || []).length > 0 ?
+                this.filters.classificationId.reduce((acc, id) => {
+                  acc[id] = true;
+                  return acc;
+                }, {} as { [id: string]: true }) :
+                null;
+
+              // store age filter used to prune the displayed people
+              this.ageFilterRange = this.filters.age && (
+                typeof this.filters.age.from === 'number' ||
+                typeof this.filters.age.to === 'number'
+              ) ?
+                this.filters.age :
+                null;
+
+              // close
+              response.handler.hide();
+
+              // generate graph
+              this.getChainsOfTransmission(
+                true,
+                (response.data.map.snapshotName as IV2SideDialogConfigInputText).value
+              );
+            });
         };
 
         // do we need to delete previous first ?
