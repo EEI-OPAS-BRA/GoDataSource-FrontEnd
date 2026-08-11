@@ -17,7 +17,7 @@ import { EntityType } from '../../../../core/models/entity-type';
 import { ClusterDataService } from '../../../../core/services/data/cluster.data.service';
 import { ActivatedRoute } from '@angular/router';
 import { ITransmissionChainGroupPageModel, TransmissionChainGroupModel, TransmissionChainModel } from '../../../../core/models/transmission-chain.model';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { WorldMapComponent, WorldMapMarker, WorldMapMarkerLayer, WorldMapMarkerType, WorldMapPath, WorldMapPathType, WorldMapPoint } from '../../../../common-modules/world-map/components/world-map/world-map.component';
 import { UserModel } from '../../../../core/models/user.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
@@ -42,7 +42,7 @@ import {
   IV2SideDialogConfigInputDate,
   IV2SideDialogConfigInputDateRange,
   IV2SideDialogConfigInputMultiDropdown,
-  IV2SideDialogConfigInputMultipleLocation,
+  IV2SideDialogConfigInputLocationTree,
   IV2SideDialogConfigInputNumber,
   IV2SideDialogConfigInputNumberRange,
   IV2SideDialogConfigInputSingleDropdown,
@@ -2719,25 +2719,90 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Compute the set of allowed location ids used to filter the chain nodes.
-   * Only the exact locations selected in the filter are allowed (no descendants): a node is kept
-   * only if its address location is one of the checked locations. The descendants are already added
-   * to the selection by the cascade behaviour of the location filter (select a parent => its children
-   * get checked), so unchecking a child correctly hides it here.
+   * Compute the set of allowed location ids: the selected locations and all their descendants
+   * (e.g. selecting Ceará includes Fortaleza, Mucuripe...), minus the excluded locations and their
+   * descendants (e.g. excluding Mucuripe removes it from the result).
    * Returns null when no location is selected (no location filtering should be applied).
+   *
+   * Uses the flat parentLocationId of every location and walks up the ancestor chain of each one,
+   * which mirrors how the backend matches locations (parentLocationIdFilter) and does not depend on
+   * the hierarchical tree being fully nested.
    */
-  private computeLocationFilterAllowedIds(locationIds: string[]): Observable<{ [locationId: string]: true } | null> {
-    // nothing selected => no location filtering
+  private computeLocationFilterAllowedIds(
+    locationIds: string[],
+    excludeLocationIds: string[]
+  ): Observable<{ [locationId: string]: true } | null> {
+    // nothing selected => no location filtering (exclusions alone have no base to apply to)
     if (_.isEmpty(locationIds)) {
       return of(null);
     }
 
-    // allow strictly the selected locations (the cascade already added the descendants)
-    const allowed: { [id: string]: true } = {};
-    locationIds.forEach((id) => allowed[id] = true);
+    // retrieve all locations (id + parent) so we can resolve the ancestor chain of each location
+    const qb = new RequestQueryBuilder();
+    qb.fields('id', 'parentLocationId');
+    return this.personAndRelatedHelperService.locationDataService
+      .getLocationsList(qb)
+      .pipe(
+        map((locations) => {
+          // selected / excluded ids for quick lookup
+          const selectedMap: { [id: string]: true } = {};
+          locationIds.forEach((id) => selectedMap[id] = true);
+          const excludedMap: { [id: string]: true } = {};
+          (excludeLocationIds || []).forEach((id) => excludedMap[id] = true);
 
-    // finished
-    return of(allowed);
+          // map each location to its direct parent
+          const parentOf: { [id: string]: string } = {};
+          (locations || []).forEach((location) => {
+            parentOf[location.id] = location.parentLocationId;
+          });
+
+          // a location is "within" a given set if itself or any ancestor belongs to it
+          const isWithin = (locationId: string, targetMap: { [id: string]: true }, cache: { [id: string]: boolean }): boolean => {
+            const visited: string[] = [];
+            let current = locationId;
+            let result = false;
+            while (current) {
+              if (cache[current] !== undefined) {
+                result = cache[current];
+                break;
+              }
+              if (targetMap[current]) {
+                result = true;
+                break;
+              }
+              visited.push(current);
+              current = parentOf[current];
+            }
+
+            // cache the whole visited chain to avoid re-walking
+            visited.forEach((id) => cache[id] = result);
+            return result;
+          };
+
+          // collect every location within the selection but not within the exclusions
+          const withinSelectedCache: { [id: string]: boolean } = {};
+          const withinExcludedCache: { [id: string]: boolean } = {};
+          const allowed: { [id: string]: true } = {};
+          (locations || []).forEach((location) => {
+            if (
+              isWithin(location.id, selectedMap, withinSelectedCache) &&
+              !isWithin(location.id, excludedMap, withinExcludedCache)
+            ) {
+              allowed[location.id] = true;
+            }
+          });
+
+          // ensure the selected ids are present even if not found in the list (unless excluded)
+          locationIds.forEach((id) => {
+            if (!isWithin(id, excludedMap, withinExcludedCache)) {
+              allowed[id] = true;
+            }
+          });
+
+          // finished
+          return allowed;
+        })
+      );
   }
 
   /**
@@ -3451,12 +3516,14 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
                     options: (this.activatedRoute.snapshot.data.gender as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
                     values: this.filters.gender
                   }, {
-                    type: V2SideDialogConfigInputType.LOCATION_MULTIPLE,
-                    name: 'locationIds',
+                    type: V2SideDialogConfigInputType.LOCATION_TREE,
+                    name: 'locationTree',
                     placeholder: 'LNG_ADDRESS_FIELD_LABEL_LOCATION',
                     useOutbreakLocations: true,
-                    cascadeSelection: true,
-                    values: this.filters.locationIds
+                    value: {
+                      include: this.filters.locationIds || [],
+                      exclude: this.filters.excludeLocationIds || []
+                    }
                   }, {
                     type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
                     name: 'clusterIds',
@@ -3531,14 +3598,16 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           this.filters.firstName = (panelMap.firstName as IV2SideDialogConfigInputText).value;
           this.filters.lastName = (panelMap.lastName as IV2SideDialogConfigInputText).value;
           this.filters.gender = (panelMap.gender as IV2SideDialogConfigInputMultiDropdown).values;
-          this.filters.locationIds = (panelMap.locationIds as IV2SideDialogConfigInputMultipleLocation).values;
+          const locationTreeValue = (panelMap.locationTree as IV2SideDialogConfigInputLocationTree).value;
+          this.filters.locationIds = locationTreeValue.include;
+          this.filters.excludeLocationIds = locationTreeValue.exclude;
           this.filters.clusterIds = (panelMap.clusterIds as IV2SideDialogConfigInputMultiDropdown).values;
           this.filters.age = (panelMap.age as IV2SideDialogConfigInputNumberRange).value;
           this.filters.date = (panelMap.date as IV2SideDialogConfigInputDateRange).value;
 
           // expand selected locations (selected + descendants) so we can display only the
           // nodes within the selected location(s); then generate the graph
-          this.computeLocationFilterAllowedIds(this.filters.locationIds)
+          this.computeLocationFilterAllowedIds(this.filters.locationIds, this.filters.excludeLocationIds)
             .subscribe((allowedLocationIdsMap) => {
               // store location filter used to prune the displayed chain nodes
               this.locationFilterAllowedIdsMap = allowedLocationIdsMap;

@@ -1,0 +1,66 @@
+<div class="gd-form-select-location-tree-v2">
+
+  <!-- Label -->
+  <div
+    *ngIf="placeholder"
+    class="gd-form-select-location-tree-v2-label">
+    {{ placeholder | translate }}
+  </div>
+
+  <!-- Search -->
+  <div class="gd-form-select-location-tree-v2-search">
+    <input
+      type="text"
+      [(ngModel)]="searchValue"
+      [disabled]="disabled"
+      (ngModelChange)="onSearchChanged()"
+      [placeholder]="'LNG_SEARCH_LOCATIONS_AUTO_COMPLETE_TYPE_TO_SEARCH_TEXT' | translate" />
+  </div>
+
+  <!-- Loading -->
+  <div
+    *ngIf="loading"
+    class="gd-form-select-location-tree-v2-loading">
+    {{ 'LNG_COMMON_LABEL_LOADING' | translate }}
+  </div>
+
+  <!-- Tree -->
+  <cdk-virtual-scroll-viewport
+    *ngIf="!loading"
+    [itemSize]="36"
+    class="gd-form-select-location-tree-v2-viewport">
+
+    <div
+      *cdkVirtualFor="let row of displayedRows; trackBy: trackByRow"
+      class="gd-form-select-location-tree-v2-row"
+      [style.padding-left.px]="8 + (row.level * 22)">
+
+      <!-- Expand / collapse -->
+      <span
+        class="gd-form-select-location-tree-v2-row-toggle"
+        (click)="row.hasChildren ? toggleExpand(row, $event) : undefined">
+        <ng-container *ngIf="row.hasChildren">
+          {{ row.expanded ? '▾' : '▸' }}
+        </ng-container>
+      </span>
+
+      <!-- Checkbox -->
+      <mat-checkbox
+        color="primary"
+        [checked]="isChecked(row.id)"
+        [disabled]="disabled"
+        (change)="toggle(row)">
+        {{ row.label }}
+      </mat-checkbox>
+    </div>
+
+    <!-- No results -->
+    <div
+      *ngIf="displayedRows.length < 1"
+      class="gd-form-select-location-tree-v2-empty">
+      {{ 'LNG_LAYOUT_LIST_NO_ITEMS_LABEL' | translate }}
+    </div>
+
+  </cdk-virtual-scroll-viewport>
+
+</div>

@@ -23,6 +23,9 @@ export class TransmissionChainFilters {
   labSequenceResult?: string[];
   gender: string[];
   locationIds: string[];
+  // locations to exclude from the result (client-side only): the chain shows the descendants of the
+  // selected locations minus the descendants of these excluded ones
+  excludeLocationIds?: string[];
   clusterIds: string[];
   age: IV2NumberRange;
   date: IV2DateRange;
@@ -44,6 +47,7 @@ export class TransmissionChainFilters {
     labSequenceResult?: string[],
     gender?: string[],
     locationIds?: string[],
+    excludeLocationIds?: string[],
     clusterIds?: string[],
     age?: IV2NumberRange,
     date?: IV2DateRange,

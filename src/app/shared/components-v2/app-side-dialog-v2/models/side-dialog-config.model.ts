@@ -7,6 +7,7 @@ import { RequestFilterOperator, RequestQueryBuilder } from '../../../../core/hel
 import { SavedFilterData } from '../../../../core/models/saved-filters.model';
 import { ILocation } from '../../../forms-v2/core/app-form-location-base-v2';
 import { IV2NumberRange } from '../../../forms-v2/components/app-form-number-range-v2/models/number.model';
+import { ILocationTreeValue } from '../../../forms-v2/components/app-form-select-location-tree-v2/app-form-select-location-tree-v2.component';
 import { IV2DateRange } from '../../../forms-v2/components/app-form-date-range-v2/models/date.model';
 import { IAppFormIconButtonV2 } from '../../../forms-v2/core/app-form-icon-button-v2';
 import { Moment } from '../../../../core/helperClasses/localization-helper';
@@ -37,6 +38,7 @@ export enum V2SideDialogConfigInputType {
   DROPDOWN_MULTI,
   LOCATION_SINGLE,
   LOCATION_MULTIPLE,
+  LOCATION_TREE,
   TOGGLE,
   TOGGLE_CHECKBOX,
   COLOR,
@@ -285,8 +287,20 @@ export interface IV2SideDialogConfigInputMultipleLocation extends IV2SideDialogC
 
   // optional
   validators?: IV2SideDialogConfigInputValidator;
-  // selecting a parent location also selects its descendants (and unselecting removes them)
-  cascadeSelection?: boolean;
+}
+
+/**
+ * Side dialog input - location tree (include + exclude with inherited checkboxes)
+ */
+export interface IV2SideDialogConfigInputLocationTree extends IV2SideDialogConfigInput {
+  // required
+  type: V2SideDialogConfigInputType.LOCATION_TREE;
+  placeholder: string;
+  value: ILocationTreeValue;
+  useOutbreakLocations: boolean;
+
+  // optional
+  validators?: IV2SideDialogConfigInputValidator;
 }
 
 /**
@@ -541,7 +555,7 @@ export interface IV2SideDialogConfigInputSortList extends IV2SideDialogConfigInp
  */
 export type V2SideDialogConfigInputFromInput = IV2SideDialogConfigInputCheckbox | IV2SideDialogConfigInputText | IV2SideDialogConfigInputTextarea
 | IV2SideDialogConfigInputTimepicker | IV2SideDialogConfigInputDate | IV2SideDialogConfigInputSingleDropdown | IV2SideDialogConfigInputMultiDropdown
-| IV2SideDialogConfigInputSingleLocation | IV2SideDialogConfigInputMultipleLocation | IV2SideDialogConfigInputToggle | IV2SideDialogConfigInputToggleCheckbox
+| IV2SideDialogConfigInputSingleLocation | IV2SideDialogConfigInputMultipleLocation | IV2SideDialogConfigInputLocationTree | IV2SideDialogConfigInputToggle | IV2SideDialogConfigInputToggleCheckbox
 | IV2SideDialogConfigInputNumber | IV2SideDialogConfigInputColor;
 export type V2SideDialogConfigInput = IV2SideDialogConfigInputDivider | IV2SideDialogConfigInputDateRange | IV2SideDialogConfigInputNumberRange
 | IV2SideDialogConfigInputKeyValue | IV2SideDialogConfigInputKeyLinkValue | IV2SideDialogConfigInputHTML | V2SideDialogConfigInputFromInput | IV2SideDialogConfigInputLink
