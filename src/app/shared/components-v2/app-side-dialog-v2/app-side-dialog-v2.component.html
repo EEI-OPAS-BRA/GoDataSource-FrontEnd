@@ -248,7 +248,6 @@
               [disabled]="input.disabled && input.disabled(dialogHandler.data, dialogHandler, input)"
               [required]="input.validators?.required && input.validators?.required(dialogHandler.data, dialogHandler, input)"
               [useOutbreakLocations]="input.useOutbreakLocations"
-              [cascadeSelection]="input.cascadeSelection"
               (ngModelChange)="input.change ? input.change(dialogHandler.data, dialogHandler, input) : undefined">
             </app-form-select-location-multiple-v2>
 

@@ -285,8 +285,6 @@ export interface IV2SideDialogConfigInputMultipleLocation extends IV2SideDialogC
 
   // optional
   validators?: IV2SideDialogConfigInputValidator;
-  // selecting a parent location also selects its descendants (and unselecting removes them)
-  cascadeSelection?: boolean;
 }
 
 /**
