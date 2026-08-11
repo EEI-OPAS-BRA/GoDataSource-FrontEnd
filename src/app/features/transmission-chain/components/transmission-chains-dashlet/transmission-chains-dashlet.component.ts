@@ -17,7 +17,7 @@ import { EntityType } from '../../../../core/models/entity-type';
 import { ClusterDataService } from '../../../../core/services/data/cluster.data.service';
 import { ActivatedRoute } from '@angular/router';
 import { ITransmissionChainGroupPageModel, TransmissionChainGroupModel, TransmissionChainModel } from '../../../../core/models/transmission-chain.model';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { WorldMapComponent, WorldMapMarker, WorldMapMarkerLayer, WorldMapMarkerType, WorldMapPath, WorldMapPathType, WorldMapPoint } from '../../../../common-modules/world-map/components/world-map/world-map.component';
 import { UserModel } from '../../../../core/models/user.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
@@ -2719,12 +2719,13 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Compute the set of allowed location ids used to filter the chain nodes.
-   * Only the exact locations selected in the filter are allowed (no descendants): a node is kept
-   * only if its address location is one of the checked locations. The descendants are already added
-   * to the selection by the cascade behaviour of the location filter (select a parent => its children
-   * get checked), so unchecking a child correctly hides it here.
+   * Compute the set of allowed location ids (the selected locations + all their descendants),
+   * so selecting a location (e.g. Ceará) also includes the locations below it (e.g. Fortaleza, Mucuripe).
    * Returns null when no location is selected (no location filtering should be applied).
+   *
+   * Uses the flat parentLocationId of every location and walks up the ancestor chain of each one,
+   * which mirrors how the backend matches locations (parentLocationIdFilter) and does not depend on
+   * the hierarchical tree being fully nested.
    */
   private computeLocationFilterAllowedIds(locationIds: string[]): Observable<{ [locationId: string]: true } | null> {
     // nothing selected => no location filtering
@@ -2732,12 +2733,62 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
       return of(null);
     }
 
-    // allow strictly the selected locations (the cascade already added the descendants)
-    const allowed: { [id: string]: true } = {};
-    locationIds.forEach((id) => allowed[id] = true);
+    // retrieve all locations (id + parent) so we can resolve the ancestor chain of each location
+    const qb = new RequestQueryBuilder();
+    qb.fields('id', 'parentLocationId');
+    return this.personAndRelatedHelperService.locationDataService
+      .getLocationsList(qb)
+      .pipe(
+        map((locations) => {
+          // selected ids for quick lookup
+          const selectedMap: { [id: string]: true } = {};
+          locationIds.forEach((id) => selectedMap[id] = true);
 
-    // finished
-    return of(allowed);
+          // map each location to its direct parent
+          const parentOf: { [id: string]: string } = {};
+          (locations || []).forEach((location) => {
+            parentOf[location.id] = location.parentLocationId;
+          });
+
+          // a location is "within" the selection if itself or any ancestor is selected
+          const withinCache: { [id: string]: boolean } = {};
+          const isWithinSelection = (locationId: string): boolean => {
+            const visited: string[] = [];
+            let current = locationId;
+            let result = false;
+            while (current) {
+              if (withinCache[current] !== undefined) {
+                result = withinCache[current];
+                break;
+              }
+              if (selectedMap[current]) {
+                result = true;
+                break;
+              }
+              visited.push(current);
+              current = parentOf[current];
+            }
+
+            // cache the whole visited chain to avoid re-walking
+            visited.forEach((id) => withinCache[id] = result);
+            return result;
+          };
+
+          // collect every location that falls within the selected location(s)
+          const allowed: { [id: string]: true } = {};
+          (locations || []).forEach((location) => {
+            if (isWithinSelection(location.id)) {
+              allowed[location.id] = true;
+            }
+          });
+
+          // ensure the selected ids are present even if not found in the list
+          locationIds.forEach((id) => allowed[id] = true);
+
+          // finished
+          return allowed;
+        })
+      );
   }
 
   /**
@@ -3455,7 +3506,6 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
                     name: 'locationIds',
                     placeholder: 'LNG_ADDRESS_FIELD_LABEL_LOCATION',
                     useOutbreakLocations: true,
-                    cascadeSelection: true,
                     values: this.filters.locationIds
                   }, {
                     type: V2SideDialogConfigInputType.DROPDOWN_MULTI,

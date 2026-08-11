@@ -11,7 +11,6 @@ import { ControlContainer, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MAT_SELECT_CONFIG } from '@angular/material/select';
 import { AppFormLocationBaseV2, ILocation } from '../../core/app-form-location-base-v2';
 import { LocationDataService } from '../../../../core/services/data/location.data.service';
-import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { OutbreakDataService } from '../../../../core/services/data/outbreak.data.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
@@ -51,19 +50,6 @@ export class AppFormSelectLocationMultipleV2Component
   // selected locations changed
   @Output() selectedLocationsChanged = new EventEmitter<ILocation[]>();
 
-  // cascade selection: selecting a parent location also selects all of its descendants,
-  // and unselecting a location also unselects its descendants (used e.g. by the transmission chain filter)
-  @Input() cascadeSelection: boolean = false;
-
-  // map of parent location id -> direct children ids (loaded only when cascadeSelection is enabled)
-  private cascadeChildrenOf: { [parentId: string]: string[] } = null;
-
-  // last value seen by the cascade logic, used to detect what was added / removed
-  private cascadePreviousValue: string[] = [];
-
-  // guard to avoid re-entrancy while the cascade updates the value
-  private cascadeApplying: boolean = false;
-
   /**
    * Constructor
    */
@@ -92,104 +78,6 @@ export class AppFormSelectLocationMultipleV2Component
   ngOnInit(): void {
     // initialize
     super.onInit();
-
-    // load the parent -> children map only when cascade selection is enabled
-    if (this.cascadeSelection) {
-      this.loadCascadeChildrenMap();
-    }
-  }
-
-  /**
-   * Load the parent -> children location map used by the cascade selection
-   */
-  private loadCascadeChildrenMap(): void {
-    const qb = new RequestQueryBuilder();
-    qb.fields('id', 'parentLocationId');
-    this.locationDataService
-      .getLocationsList(qb)
-      .subscribe((locations) => {
-        const childrenOf: { [parentId: string]: string[] } = {};
-        (locations || []).forEach((location) => {
-          if (location.parentLocationId) {
-            if (!childrenOf[location.parentLocationId]) {
-              childrenOf[location.parentLocationId] = [];
-            }
-            childrenOf[location.parentLocationId].push(location.id);
-          }
-        });
-        this.cascadeChildrenOf = childrenOf;
-
-        // treat the current selection as newly added so pre-selected parents cascade to their descendants
-        this.cascadePreviousValue = [];
-        this.updateSelected(false);
-      });
-  }
-
-  /**
-   * Collect all descendants of a location id into the provided accumulator
-   */
-  private collectCascadeDescendants(locationId: string, acc: { [id: string]: true }): void {
-    const children = this.cascadeChildrenOf[locationId];
-    if (!children) {
-      return;
-    }
-    children.forEach((childId) => {
-      if (!acc[childId]) {
-        acc[childId] = true;
-        this.collectCascadeDescendants(childId, acc);
-      }
-    });
-  }
-
-  /**
-   * Apply the cascade to the current value: add descendants of newly selected locations and
-   * remove descendants of newly unselected locations. Returns true when the value changed.
-   */
-  private applyCascadeSelection(): boolean {
-    // nothing to do until the children map is loaded
-    if (!this.cascadeChildrenOf) {
-      return false;
-    }
-
-    // current & previous values as sets
-    const currentValue: string[] = Array.isArray(this.value) ? this.value : [];
-    const currentSet: { [id: string]: true } = {};
-    currentValue.forEach((id) => currentSet[id] = true);
-    const previousSet: { [id: string]: true } = {};
-    (this.cascadePreviousValue || []).forEach((id) => previousSet[id] = true);
-
-    // build the resulting selection starting from the current one
-    const resultSet: { [id: string]: true } = { ...currentSet };
-
-    // newly selected => add their descendants
-    currentValue
-      .filter((id) => !previousSet[id])
-      .forEach((id) => this.collectCascadeDescendants(id, resultSet));
-
-    // newly unselected => remove their descendants
-    (this.cascadePreviousValue || [])
-      .filter((id) => !currentSet[id])
-      .forEach((id) => {
-        const descendants: { [id: string]: true } = {};
-        this.collectCascadeDescendants(id, descendants);
-        Object.keys(descendants).forEach((descendantId) => delete resultSet[descendantId]);
-      });
-
-    // remember baseline for the next change
-    const result = Object.keys(resultSet);
-    this.cascadePreviousValue = result;
-
-    // apply only if it actually changed
-    if (
-      result.length !== currentValue.length ||
-      result.some((id) => !currentSet[id])
-    ) {
-      this.value = result;
-      return true;
-    }
-
-    // finished
-    return false;
   }
 
   /**
@@ -228,16 +116,6 @@ export class AppFormSelectLocationMultipleV2Component
    * Update selected items
    */
   updateSelected(emitEvent: boolean): void {
-    // cascade selection (parent <-> descendants) before computing the display list
-    if (
-      this.cascadeSelection &&
-      !this.cascadeApplying
-    ) {
-      this.cascadeApplying = true;
-      this.applyCascadeSelection();
-      this.cascadeApplying = false;
-    }
-
     // map selected item
     const selectedMap: {
       [id: string]: true
