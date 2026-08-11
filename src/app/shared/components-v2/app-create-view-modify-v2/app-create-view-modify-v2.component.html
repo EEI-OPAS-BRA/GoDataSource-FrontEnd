@@ -1168,6 +1168,39 @@
                       [required]="isView ? undefined : ((input.visibleMandatoryChild?.mandatory && input.visibleMandatoryChild?.mandatory('addressLine1')) || (parentInput && parentInput.visibleMandatoryChild?.mandatory && parentInput.visibleMandatoryChild?.mandatory('addressLine1')))"
                       (ngModelChange)="parentName ? markArrayItemsAsDirty(form, parentName) : undefined"></app-form-input-v2>
 
+                    <!-- Logradouro -->
+                    <app-form-input-v2
+                      *ngIf="(input.visibleMandatoryChild?.visible && input.visibleMandatoryChild.visible('logradouro')) || (parentInput && parentInput.visibleMandatoryChild?.visible && parentInput.visibleMandatoryChild.visible('logradouro'))"
+                      [(ngModel)]="input.value.get(parentItemIndex).logradouro"
+                      name="logradouro"
+                      placeholder="LNG_ADDRESS_FIELD_LABEL_LOGRADOURO"
+                      [viewOnly]="isView"
+                      [disabled]="parentInput?.readonly || input.readonly"
+                      [required]="isView ? undefined : ((input.visibleMandatoryChild?.mandatory && input.visibleMandatoryChild?.mandatory('logradouro')) || (parentInput && parentInput.visibleMandatoryChild?.mandatory && parentInput.visibleMandatoryChild?.mandatory('logradouro')))"
+                      (ngModelChange)="parentName ? markArrayItemsAsDirty(form, parentName) : undefined"></app-form-input-v2>
+
+                    <!-- Número -->
+                    <app-form-input-v2
+                      *ngIf="(input.visibleMandatoryChild?.visible && input.visibleMandatoryChild.visible('numero')) || (parentInput && parentInput.visibleMandatoryChild?.visible && parentInput.visibleMandatoryChild.visible('numero'))"
+                      [(ngModel)]="input.value.get(parentItemIndex).numero"
+                      name="numero"
+                      placeholder="LNG_ADDRESS_FIELD_LABEL_NUMERO"
+                      [viewOnly]="isView"
+                      [disabled]="parentInput?.readonly || input.readonly"
+                      [required]="isView ? undefined : ((input.visibleMandatoryChild?.mandatory && input.visibleMandatoryChild?.mandatory('numero')) || (parentInput && parentInput.visibleMandatoryChild?.mandatory && parentInput.visibleMandatoryChild?.mandatory('numero')))"
+                      (ngModelChange)="parentName ? markArrayItemsAsDirty(form, parentName) : undefined"></app-form-input-v2>
+
+                    <!-- Complemento -->
+                    <app-form-input-v2
+                      *ngIf="(input.visibleMandatoryChild?.visible && input.visibleMandatoryChild.visible('complemento')) || (parentInput && parentInput.visibleMandatoryChild?.visible && parentInput.visibleMandatoryChild.visible('complemento'))"
+                      [(ngModel)]="input.value.get(parentItemIndex).complemento"
+                      name="complemento"
+                      placeholder="LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO"
+                      [viewOnly]="isView"
+                      [disabled]="parentInput?.readonly || input.readonly"
+                      [required]="isView ? undefined : ((input.visibleMandatoryChild?.mandatory && input.visibleMandatoryChild?.mandatory('complemento')) || (parentInput && parentInput.visibleMandatoryChild?.mandatory && parentInput.visibleMandatoryChild?.mandatory('complemento')))"
+                      (ngModelChange)="parentName ? markArrayItemsAsDirty(form, parentName) : undefined"></app-form-input-v2>
+
                     <!-- Lat & Lng -->
                     <div
                       *ngIf="(input.visibleMandatoryChild?.visible && input.visibleMandatoryChild.visible('geoLocation')) || (parentInput && parentInput.visibleMandatoryChild?.visible && parentInput.visibleMandatoryChild.visible('geoLocation'))"
