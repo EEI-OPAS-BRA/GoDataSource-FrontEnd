@@ -680,7 +680,14 @@ export const applyResetOnAllFilters = (
         break;
 
       case V2FilterType.ADDRESS_MULTIPLE_LOCATION:
-        column.filter.address.filterLocationIds = column.filter.defaultValue;
+        if (column.filter.addressType) {
+          if (!column.filter.address.filterLocationIdsByType) {
+            column.filter.address.filterLocationIdsByType = {};
+          }
+          column.filter.address.filterLocationIdsByType[column.filter.addressType] = column.filter.defaultValue;
+        } else {
+          column.filter.address.filterLocationIds = column.filter.defaultValue;
+        }
 
         // finished
         break;

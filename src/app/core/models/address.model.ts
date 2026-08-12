@@ -28,9 +28,12 @@ export class AddressModel {
   logradouro: string;
   numero: string;
   complemento: string;
+  bairro: string;
 
   // used by ui
   filterLocationIds: string[];
+  // used by ui - location filter values per address type (typeId => location ids)
+  filterLocationIdsByType: { [typeId: string]: string[] } = {};
 
   /**
    * Search for current address
@@ -86,6 +89,7 @@ export class AddressModel {
     this.logradouro = _.get(data, 'logradouro');
     this.numero = _.get(data, 'numero');
     this.complemento = _.get(data, 'complemento');
+    this.bairro = _.get(data, 'bairro');
   }
 
   get fullAddress() {
@@ -368,35 +372,58 @@ export class AddressModel {
 
     // check if there are conditions to add
     const qb = new RequestQueryBuilder();
-    if (Object.keys(query).length > 0) {
-      // add the conditions for the current address only
-      if (isArray) {
-        // add the conditions for the current address only
-        query.typeId = AddressType.CURRENT_ADDRESS;
+    if (isArray) {
+      // collect every address condition (current address + one per address type location filter)
+      const innerConditions: any[] = [];
 
-        // add the conditions
-        // IMPORTANT: and => and => and => is required to make it unique, so it doesn't interfere with advanced by address filters
-        qb.filter.where({
-          and: [{
-            and: [{
-              and: [{
-                [property]: {
-                  elemMatch: query
-                }
-              }]
-            }]
-          }]
+      // add the conditions for the current address
+      if (Object.keys(query).length > 0) {
+        query.typeId = AddressType.CURRENT_ADDRESS;
+        innerConditions.push({
+          [property]: {
+            elemMatch: query
+          }
         });
-      } else {
-        // IMPORTANT: and => and => and => is required to make it unique, so it doesn't interfere with advanced by address filters
+      }
+
+      // add a location condition for each address type that has a location filter set
+      const locationIdsByType = addressModel.filterLocationIdsByType || {};
+      Object.keys(locationIdsByType).forEach((typeId) => {
+        const typeLocationIds = locationIdsByType[typeId];
+        if (typeLocationIds && typeLocationIds.length > 0) {
+          innerConditions.push({
+            [property]: {
+              elemMatch: {
+                typeId: typeId,
+                parentLocationIdFilter: {
+                  $in: typeLocationIds
+                }
+              }
+            }
+          });
+        }
+      });
+
+      // add the conditions
+      // IMPORTANT: and => and => and => is required to make it unique, so it doesn't interfere with advanced by address filters
+      if (innerConditions.length > 0) {
         qb.filter.where({
           and: [{
             and: [{
-              and: [query]
+              and: innerConditions
             }]
           }]
         });
       }
+    } else if (Object.keys(query).length > 0) {
+      // IMPORTANT: and => and => and => is required to make it unique, so it doesn't interfere with advanced by address filters
+      qb.filter.where({
+        and: [{
+          and: [{
+            and: [query]
+          }]
+        }]
+      });
     }
 
     // finished

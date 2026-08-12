@@ -1054,7 +1054,9 @@ export class ContactsListComponent
       // one location column per address type (except current), e.g. notification / previous address
       ...this.personAndRelatedHelperService.list.retrieveAddressLocationColumnsPerType(
         (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
-        this.authUser
+        this.authUser,
+        undefined,
+        filterAddressModel
       ),
       {
         field: 'addresses.emailAddress',

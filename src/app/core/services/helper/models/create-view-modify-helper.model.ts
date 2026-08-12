@@ -133,6 +133,16 @@ export class CreateViewModifyHelperModel {
         },
         inputHasRequiredValidator: false
       }, {
+        id: `${name}.bairro`,
+        label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_BAIRRO')}`,
+        supportsRequired: true,
+        visibleMandatoryConf: {
+          needs: [{
+            field: `${name}.typeId`
+          }]
+        },
+        inputHasRequiredValidator: false
+      }, {
         id: `${name}.geoLocation`,
         label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_GEOLOCATION_LAT')} / ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_GEOLOCATION_LNG')}`,
         supportsRequired: false,

@@ -6,6 +6,7 @@ import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-val
 import { AddressModel, AddressType } from '../../../models/address.model';
 import { LocationModel } from '../../../models/location.model';
 import { UserModel } from '../../../models/user.model';
+import { V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
 
 export class ListHelperModel {
   /**
@@ -58,7 +59,8 @@ export class ListHelperModel {
   retrieveAddressLocationColumnsPerType(
     addressTypeOptions: ILabelValuePairModel[],
     authUser: UserModel,
-    addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses
+    addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses,
+    filterAddressModel?: AddressModel
   ): IV2ColumnToVisibleMandatoryConf[] {
     return (addressTypeOptions || [])
       // the current address already has a dedicated (filterable) location column
@@ -77,7 +79,16 @@ export class ListHelperModel {
             href: LocationModel.canView(authUser) ?
               `/locations/${address.location.id}/view` :
               undefined
-          }))
+          })),
+        // filter by the location of this specific address type (uses the shared address filter model,
+        // so it combines with the current-address filter instead of overwriting it)
+        filter: filterAddressModel ? {
+          type: V2FilterType.ADDRESS_MULTIPLE_LOCATION,
+          address: filterAddressModel,
+          field: 'addresses',
+          fieldIsArray: true,
+          addressType: option.value
+        } : undefined
       }));
   }
 }
