@@ -12,6 +12,7 @@ import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { EntityModel, RelationshipModel } from '../../../../core/models/entity-and-relationship.model';
 import { EntityType } from '../../../../core/models/entity-type';
 import { ExportFieldsGroupModelNameEnum } from '../../../../core/models/export-fields-group.model';
+import { environment } from '../../../../../environments/environment';
 import { FollowUpModel } from '../../../../core/models/follow-up.model';
 import { LabResultModel } from '../../../../core/models/lab-result.model';
 import { LocationModel } from '../../../../core/models/location.model';
@@ -2258,9 +2259,108 @@ export class ContactsListComponent
           visible: (): boolean => {
             return ContactModel.canExportDailyFollowUpsForm(this.authUser);
           }
+        },
+
+        // Divider
+        {
+          visible: (): boolean => {
+            return true;
+          }
+        },
+
+        // Consulta via API (abre o endpoint contacts-with-relationships/filter direto no /explorer)
+        {
+          label: {
+            get: () => 'Consulta via API'
+          },
+          action: {
+            click: () => {
+              this.openContactsWithRelationshipsApiExplorer();
+            }
+          },
+          visible: (): boolean => {
+            return true;
+          }
         }
       ]
     };
+  }
+
+  /**
+   * Open the contacts-with-relationships/filter endpoint directly in the /explorer (Swagger UI),
+   * already scrolled/expanded to that operation. Also copies the selected outbreak id to the
+   * clipboard, since Swagger's deep-link can't pre-fill the "id" path param form field.
+   */
+  private openContactsWithRelationshipsApiExplorer(): void {
+    // remove the /api suffix from apiUrl to get to the server root, where /explorer is mounted
+    const apiRoot: string = environment.apiUrl.replace(/\/api\/?$/, '');
+    const explorerUrl: string = `${apiRoot}/explorer/#!/outbreak/outbreak_prototype_findContactsWithRelationships`;
+    const outbreakId: string = this.selectedOutbreak?.id || '';
+
+    // copy icon (outline) / check icon (filled) - swapped on click, purely with inline JS so it
+    // works regardless of Angular's sanitizer, since this whole block is injected as raw HTML.
+    // NOTE: these use single-quoted SVG attributes on purpose - they get embedded below inside an
+    // onclick="..." (double-quoted) HTML attribute, via &quot;-escaped JS string literals, so no
+    // quote character here can collide with either of those two outer delimiters.
+    const copyIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'9\' y=\'9\' width=\'13\' height=\'13\' rx=\'2\'></rect><path d=\'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\'></path></svg>';
+    const checkIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'#2e7d32\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'20 6 9 17 4 12\'></polyline></svg>';
+
+    this.personAndRelatedHelperService.dialogV2Service
+      .showBottomDialog({
+        config: {
+          title: {
+            get: () => 'Consulta via API'
+          },
+          message: {
+            get: () => `
+              <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <p style="margin: 0;">
+                  Esse endpoint devolve os contatos do outbreak já com seus relacionamentos e os
+                  dados da pessoa relacionada (caso, contato ou evento) resolvidos, em uma única
+                  chamada.
+                </p>
+                <p style="margin: 0;">
+                  Clique em <b>Ir para documentação</b> para abrir a documentação (Swagger) já
+                  focada nesse endpoint, em uma nova aba.
+                </p>
+                <div>
+                  <p style="margin: 0 0 0.4rem;">
+                    Lá, você vai precisar informar o <b>id do outbreak</b> selecionado no campo
+                    <code>id</code> do formulário. Copie o valor abaixo antes de continuar:
+                  </p>
+                  <div style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1rem; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 6px;">
+                    <code style="flex: 1; font-size: 1.3rem; word-break: break-all;">${outbreakId}</code>
+                    <button
+                      type="button"
+                      title="Copiar id do outbreak"
+                      onclick="navigator.clipboard.writeText(&quot;${outbreakId}&quot;).then(() => { this.innerHTML = &quot;${checkIconSvg}&quot;; setTimeout(() => { this.innerHTML = &quot;${copyIconSvg}&quot;; }, 1500); });"
+                      style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 4px; background: transparent; color: inherit; cursor: pointer;"
+                    >${copyIconSvg}</button>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        },
+        bottomButtons: [
+          {
+            type: IV2BottomDialogConfigButtonType.OTHER,
+            label: 'Ir para documentação',
+            key: 'goToDocs',
+            color: 'primary'
+          },
+          {
+            type: IV2BottomDialogConfigButtonType.CANCEL,
+            label: 'Fechar',
+            color: 'text'
+          }
+        ]
+      })
+      .subscribe((response) => {
+        if (response.button.key === 'goToDocs') {
+          window.open(explorerUrl, '_blank');
+        }
+      });
   }
 
   /**
