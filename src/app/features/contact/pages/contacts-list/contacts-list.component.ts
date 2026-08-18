@@ -2156,28 +2156,6 @@ export class ContactsListComponent
         // Divider
         {
           visible: (): boolean => {
-            return true;
-          }
-        },
-
-        // Consulta via API (abre o endpoint contacts-with-relationships/filter direto no /explorer)
-        {
-          label: {
-            get: () => 'Consulta via API'
-          },
-          action: {
-            click: () => {
-              this.openContactsWithRelationshipsApiExplorer();
-            }
-          },
-          visible: (): boolean => {
-            return true;
-          }
-        },
-
-        // Divider
-        {
-          visible: (): boolean => {
             return (
               ContactModel.canExportDailyFollowUpList(this.authUser) ||
               ContactModel.canExportDailyFollowUpsForm(this.authUser)
@@ -2278,6 +2256,28 @@ export class ContactsListComponent
           },
           visible: (): boolean => {
             return ContactModel.canExportDailyFollowUpsForm(this.authUser);
+          }
+        },
+
+        // Divider
+        {
+          visible: (): boolean => {
+            return true;
+          }
+        },
+
+        // Consulta via API (abre o endpoint contacts-with-relationships/filter direto no /explorer)
+        {
+          label: {
+            get: () => 'Consulta via API'
+          },
+          action: {
+            click: () => {
+              this.openContactsWithRelationshipsApiExplorer();
+            }
+          },
+          visible: (): boolean => {
+            return true;
           }
         }
       ]
