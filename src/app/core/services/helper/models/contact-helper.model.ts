@@ -442,6 +442,12 @@ export class ContactHelperModel {
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
                   typeOptions: data.options.addressType,
+                  // when the outbreak allows cross-location contact creation, list every location
+                  // (not only the user team's) so a contact can be registered in another locality
+                  useOutbreakLocations: !(
+                    data.selectedOutbreak?.applyGeographicRestrictions === true &&
+                    data.selectedOutbreak?.allowCrossLocationCreation === true
+                  ),
                   // when the outbreak allows it, address type & location are not required
                   optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
                     ['typeId', 'locationId'] :
