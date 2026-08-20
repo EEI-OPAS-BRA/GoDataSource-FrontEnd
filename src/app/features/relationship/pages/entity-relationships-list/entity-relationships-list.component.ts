@@ -119,8 +119,10 @@ export class EntityRelationshipsListComponent extends ListComponent<EntityModel,
     this.tableColumns = this.personAndRelatedHelperService.relationship.retrieveTableColumns(this.selectedOutbreak, {
       personType: this.activatedRoute.snapshot.data.personType,
       cluster: this.activatedRoute.snapshot.data.cluster,
+      team: this.activatedRoute.snapshot.data.team,
       options: {
         createdOn: (this.activatedRoute.snapshot.data.createdOn as IResolverV2ResponseModel<ILabelValuePairModel>).options,
+        classification: (this.activatedRoute.snapshot.data.classification as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
         certaintyLevel: (this.activatedRoute.snapshot.data.certaintyLevel as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
         exposureType: this.referenceDataHelperService.filterPerOutbreakOptions(
           this.selectedOutbreak,

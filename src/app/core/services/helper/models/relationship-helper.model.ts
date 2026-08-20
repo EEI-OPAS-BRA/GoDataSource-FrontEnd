@@ -21,6 +21,7 @@ import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v
 import { IResolverV2ResponseModel } from '../../resolvers/data/models/resolver-response.model';
 import { ReferenceDataEntryModel } from '../../../models/reference-data.model';
 import { ClusterModel } from '../../../models/cluster.model';
+import { TeamModel } from '../../../models/team.model';
 import { V2FilterTextType, V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
 import { RequestQueryBuilder } from '../../../helperClasses/request-query-builder';
 import { IBasicCount } from '../../../models/basic-count.interface';
@@ -1333,8 +1334,10 @@ export class RelationshipHelperModel {
     definitions: {
       personType: IResolverV2ResponseModel<ReferenceDataEntryModel>,
       cluster: IResolverV2ResponseModel<ClusterModel>,
+      team?: IResolverV2ResponseModel<TeamModel>,
       options: {
         createdOn: ILabelValuePairModel[],
+        classification?: ILabelValuePairModel[],
         certaintyLevel: ILabelValuePairModel[],
         exposureType: ILabelValuePairModel[],
         exposureFrequency: ILabelValuePairModel[],
@@ -1491,6 +1494,102 @@ export class RelationshipHelperModel {
 
           // finished
           return forms;
+        }
+      },
+      {
+        field: 'classification',
+        label: 'LNG_CASE_FIELD_LABEL_CLASSIFICATION',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'classification'
+        ),
+        format: {
+          type: (item) => item.model?.classification ?
+            this.parent.i18nService.instant(item.model.classification) :
+            item.model?.classification
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: definitions.options.classification || [],
+          includeNoValue: true
+        }
+      },
+      {
+        field: 'dateOfReporting',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_REPORTING',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contactOfContact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.event.visibleMandatoryKey,
+          'dateOfReporting'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfReporting
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
+        }
+      },
+      {
+        field: 'dateOfOnset',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_ONSET',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfOnset'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfOnset
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
+        }
+      },
+      {
+        field: 'followUpTeamId',
+        label: 'LNG_CASE_FIELD_LABEL_FOLLOW_UP_TEAM_ID',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'followUpTeamId'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contact.visibleMandatoryKey,
+          'followUpTeamId'
+        ),
+        format: {
+          type: (item) => item.model?.followUpTeamId && definitions.team?.map[item.model.followUpTeamId] ?
+            definitions.team.map[item.model.followUpTeamId].name :
+            ''
+        },
+        link: (data) => {
+          return data.model?.followUpTeamId &&
+            TeamModel.canView(this.parent.authUser) &&
+            definitions.team?.map[data.model.followUpTeamId] ?
+            `/teams/${ data.model.followUpTeamId }/view` :
+            undefined;
+        },
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: definitions.team?.options || [],
+          includeNoValue: true
         }
       },
       {
