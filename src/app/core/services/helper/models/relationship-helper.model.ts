@@ -1335,6 +1335,7 @@ export class RelationshipHelperModel {
       cluster: IResolverV2ResponseModel<ClusterModel>,
       options: {
         createdOn: ILabelValuePairModel[],
+        classification?: ILabelValuePairModel[],
         certaintyLevel: ILabelValuePairModel[],
         exposureType: ILabelValuePairModel[],
         exposureFrequency: ILabelValuePairModel[],
@@ -1491,6 +1492,72 @@ export class RelationshipHelperModel {
 
           // finished
           return forms;
+        }
+      },
+      {
+        field: 'classification',
+        label: 'LNG_CASE_FIELD_LABEL_CLASSIFICATION',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'classification'
+        ),
+        format: {
+          type: (item) => item.model?.classification ?
+            this.parent.i18nService.instant(item.model.classification) :
+            item.model?.classification
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: definitions.options.classification || [],
+          includeNoValue: true
+        }
+      },
+      {
+        field: 'dateOfReporting',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_REPORTING',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contactOfContact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.event.visibleMandatoryKey,
+          'dateOfReporting'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfReporting
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
+        }
+      },
+      {
+        field: 'dateOfOnset',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_ONSET',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfOnset'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfOnset
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
         }
       },
       {

@@ -65,6 +65,7 @@ const relationshipTypeChildrenRoutes = [
       yesNoAll: YesNoAllDataResolver,
       yesNo: YesNoDataResolver,
       certaintyLevel: CertaintyLevelDataResolver,
+      classification: ClassificationDataResolver,
       exposureType: ExposureTypeDataResolver,
       exposureFrequency: ExposureFrequencyDataResolver,
       exposureDuration: ExposureDurationDataResolver,
