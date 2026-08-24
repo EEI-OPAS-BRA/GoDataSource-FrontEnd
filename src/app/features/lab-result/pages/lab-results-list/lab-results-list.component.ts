@@ -1733,7 +1733,8 @@ export class LabResultsListComponent extends ListComponent<LabResultModel, IV2Co
                   dbColumns: true,
                   dbValues: true,
                   questionnaireVariables: true,
-                  jsonReplaceUndefinedWithNull: true
+                  jsonReplaceUndefinedWithNull: true,
+                  dontIncludeTimestamp: true
                 }
               }
             });

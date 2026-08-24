@@ -3090,7 +3090,8 @@ export class ContactsListComponent
                   dbColumns: true,
                   dbValues: true,
                   jsonReplaceUndefinedWithNull: true,
-                  questionnaireVariables: true
+                  questionnaireVariables: true,
+                  dontIncludeTimestamp: true
                 },
                 inputs: {
                   append: [
@@ -3238,7 +3239,8 @@ export class ContactsListComponent
                   },
                   dbColumns: true,
                   dbValues: true,
-                  jsonReplaceUndefinedWithNull: true
+                  jsonReplaceUndefinedWithNull: true,
+                  dontIncludeTimestamp: true
                 }
               }
             });

@@ -231,7 +231,8 @@ export class ReferenceDataCategoriesListComponent
                     ],
                     dbColumns: true,
                     dbValues: true,
-                    jsonReplaceUndefinedWithNull: true
+                    jsonReplaceUndefinedWithNull: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

@@ -502,7 +502,8 @@ export class DialogV2Service {
       config.export.allow.dbColumns ||
       config.export.allow.dbValues ||
       config.export.allow.jsonReplaceUndefinedWithNull ||
-      config.export.allow.questionnaireVariables
+      config.export.allow.questionnaireVariables ||
+      config.export.allow.dontIncludeTimestamp
     ) {
       inputs.push(
         {
@@ -572,6 +573,20 @@ export class DialogV2Service {
         checked: false,
         disabled: (data): boolean => {
           return (data.map.useDbColumns as IV2SideDialogConfigInputCheckbox).checked;
+        }
+      });
+    }
+
+    // export dates without time, just the date
+    if (config.export.allow.dontIncludeTimestamp) {
+      inputs.push({
+        type: V2SideDialogConfigInputType.CHECKBOX,
+        placeholder: 'LNG_COMMON_LABEL_EXPORT_DONT_INCLUDE_TIMESTAMP',
+        tooltip: 'LNG_COMMON_LABEL_EXPORT_DONT_INCLUDE_TIMESTAMP_DESCRIPTION',
+        name: 'dontIncludeTimestamp',
+        checked: false,
+        disabled: (data): boolean => {
+          return !!(data.map.dontTranslateValues as IV2SideDialogConfigInputCheckbox)?.checked;
         }
       });
     }
