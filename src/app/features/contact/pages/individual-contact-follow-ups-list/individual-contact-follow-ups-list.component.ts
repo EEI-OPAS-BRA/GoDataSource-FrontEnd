@@ -867,7 +867,8 @@ export class IndividualContactFollowUpsListComponent extends ListComponent<Follo
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

@@ -2207,7 +2207,8 @@ export class ContactsOfContactsListComponent extends ListComponent<ContactOfCont
                   },
                   dbColumns: true,
                   dbValues: true,
-                  jsonReplaceUndefinedWithNull: true
+                  jsonReplaceUndefinedWithNull: true,
+                  dontIncludeTimestamp: true
                 },
                 inputs: {
                   append: [
@@ -2354,7 +2355,8 @@ export class ContactsOfContactsListComponent extends ListComponent<ContactOfCont
                     },
                     dbColumns: true,
                     dbValues: true,
-                    jsonReplaceUndefinedWithNull: true
+                    jsonReplaceUndefinedWithNull: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

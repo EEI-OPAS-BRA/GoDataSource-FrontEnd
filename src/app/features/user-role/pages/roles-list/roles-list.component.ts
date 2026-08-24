@@ -660,7 +660,8 @@ export class RolesListComponent extends ListComponent<UserRoleModel, IV2Column> 
             },
             dbColumns: true,
             dbValues: true,
-            jsonReplaceUndefinedWithNull: true
+            jsonReplaceUndefinedWithNull: true,
+            dontIncludeTimestamp: true
           }
         }
       });
