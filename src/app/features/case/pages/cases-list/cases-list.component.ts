@@ -3106,7 +3106,8 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   },
                   inputs: {
                     append: [
@@ -3202,7 +3203,8 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
                     },
                     dbColumns: true,
                     dbValues: true,
-                    jsonReplaceUndefinedWithNull: true
+                    jsonReplaceUndefinedWithNull: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

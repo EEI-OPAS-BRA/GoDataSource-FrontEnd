@@ -2731,7 +2731,8 @@ export class ContactDailyFollowUpsListComponent extends ListComponent<FollowUpMo
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   },
                   inputs: {
                     append: [

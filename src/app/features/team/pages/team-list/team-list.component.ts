@@ -745,7 +745,8 @@ export class TeamListComponent extends ListComponent<TeamModel, IV2Column> imple
             },
             dbColumns: true,
             dbValues: true,
-            jsonReplaceUndefinedWithNull: true
+            jsonReplaceUndefinedWithNull: true,
+            dontIncludeTimestamp: true
           }
         }
       });
