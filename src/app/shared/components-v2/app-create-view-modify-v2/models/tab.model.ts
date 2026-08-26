@@ -478,7 +478,11 @@ export interface ICreateViewModifyV2TabInputList {
     },
     remove: {
       label: string,
-      confirmLabel: string
+      confirmLabel: string,
+      visible?: (
+        input: ICreateViewModifyV2TabInputList,
+        index?: number
+      ) => boolean
     }
   };
   itemsChanged: (list: ICreateViewModifyV2TabInputList) => void;

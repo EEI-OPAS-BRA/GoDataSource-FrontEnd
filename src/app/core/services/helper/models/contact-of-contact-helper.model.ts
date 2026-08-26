@@ -426,7 +426,9 @@ export class ContactOfContactHelperModel {
                 },
                 remove: {
                   label: 'LNG_COMMON_BUTTON_DELETE',
-                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS'
+                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS',
+                  // the outbreak can forbid removing addresses
+                  visible: () => !data.selectedOutbreak?.preventAddressDeletion
                 },
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
