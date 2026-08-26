@@ -373,6 +373,8 @@ export class ContactOfContactHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // at least one address is needed unless the outbreak allows saving without one
+              required: !data.selectedOutbreak?.optionalCaseContactAddressFields,
               itemsChanged: (list) => {
                 // update addresses
                 data.itemData.addresses = list.items;

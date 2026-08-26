@@ -375,6 +375,8 @@ export class CaseHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // at least one address is needed unless the outbreak allows saving without one
+              required: !data.selectedOutbreak?.optionalCaseContactAddressFields,
               // when the outbreak allows it, address type & location are not required
               optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
                 ['typeId', 'locationId'] :
