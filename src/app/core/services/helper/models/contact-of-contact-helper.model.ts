@@ -373,6 +373,8 @@ export class ContactOfContactHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // at least one address is needed unless the outbreak allows saving without one
+              required: !data.selectedOutbreak?.optionalCaseContactAddressFields,
               itemsChanged: (list) => {
                 // update addresses
                 data.itemData.addresses = list.items;
@@ -424,7 +426,9 @@ export class ContactOfContactHelperModel {
                 },
                 remove: {
                   label: 'LNG_COMMON_BUTTON_DELETE',
-                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS'
+                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS',
+                  // the outbreak can forbid removing addresses
+                  visible: () => !data.selectedOutbreak?.preventAddressDeletion
                 },
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
