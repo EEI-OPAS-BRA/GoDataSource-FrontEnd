@@ -79,7 +79,7 @@ jobs:
 
   deploy:
     needs: [build]
-    runs-on: [self-hosted, godata-server]
+    runs-on: [self-hosted]
     steps:
       - uses: actions/checkout@v4
 

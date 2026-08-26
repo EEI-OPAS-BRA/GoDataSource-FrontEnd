@@ -21,16 +21,28 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$INSTANCE" in
-  teste) PM2_SERVICE="godata-teste"; EXPECTED_BRANCH="dev" ;;
-  opas)  PM2_SERVICE="godata";       EXPECTED_BRANCH="homologacao" ;;
+  teste) EXPECTED_BRANCH="dev" ;;
+  opas)  EXPECTED_BRANCH="homologacao" ;;
   *) die "--instance must be 'teste' or 'opas' (got: '${INSTANCE:-empty}')" ;;
 esac
 
 [[ -n "$DIST_SRC" ]] || die "--dist is required"
 [[ -f "$DIST_SRC/index.html" ]] || die "the given directory does not look like an Angular build"
 
-API_DIR="$HOME/git/$INSTANCE/GoDataSource-API"
-FE_DIR="$HOME/git/$INSTANCE/GoDataSource-FrontEnd"
+# Everything that describes the deploy host lives outside this repository, which
+# is public. See ops/deploy.env.example for the expected contents.
+DEPLOY_ENV="${GODATA_DEPLOY_ENV:-$HOME/.config/godata/deploy.env}"
+[[ -f "$DEPLOY_ENV" ]] || die "deploy settings file not found: $DEPLOY_ENV"
+# shellcheck disable=SC1090
+set -a; . "$DEPLOY_ENV"; set +a
+
+service_var="GODATA_SERVICE_${INSTANCE^^}"
+PM2_SERVICE="${!service_var:-}"
+[[ -n "$PM2_SERVICE" ]] || die "$service_var not set in $DEPLOY_ENV"
+[[ -n "${GODATA_ROOT:-}" ]] || die "GODATA_ROOT not set in $DEPLOY_ENV"
+
+API_DIR="$GODATA_ROOT/$INSTANCE/GoDataSource-API"
+FE_DIR="$GODATA_ROOT/$INSTANCE/GoDataSource-FrontEnd"
 # The bundle is served statically by the API.
 DIST_DST="$API_DIR/client/dist"
 DIST_PREV="$API_DIR/client/dist.prev"
