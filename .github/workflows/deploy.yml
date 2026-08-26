@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target instance'
+        type: choice
+        options: [teste, opas]
+        default: teste
+      promote:
+        description: 'Merge dev into homologacao before deploying (opas only)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  INSTANCE: ${{ github.event_name == 'push' && 'teste' || inputs.environment }}
+  DEPLOY_REF: ${{ (github.event_name == 'push' || inputs.environment == 'teste') && 'dev' || 'homologacao' }}
+
+# Never cancel a running deploy: aborting midway leaves the instance undefined.
+concurrency:
+  group: deploy-${{ github.event_name == 'push' && 'teste' || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.event_name == 'workflow_dispatch' && inputs.promote && inputs.environment == 'opas'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: homologacao
+          fetch-depth: 0
+
+      - name: Merge dev into homologacao
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin dev
+          # Merge, never rebase: deploy targets are pulled with --ff-only.
+          git merge --no-edit origin/dev
+          git push origin homologacao
+
+  build:
+    needs: [promote]
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      # On a promoted deploy the bundle must come from the merge just pushed,
+      # not from the ref that triggered the workflow.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Production build
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    needs: [build]
+    runs-on: [self-hosted, godata-server]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist-artifact
+
+      - name: Deploy FrontEnd
+        run: ./ops/deploy-frontend.sh --instance "$INSTANCE" --dist "$GITHUB_WORKSPACE/dist-artifact"
