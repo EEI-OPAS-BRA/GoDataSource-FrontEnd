@@ -81,6 +81,30 @@ export abstract class LocalizationHelper {
     format?: moment.MomentFormatSpecification,
     strict?: boolean
   ): Moment {
+    // a display formatted string is ambiguous for the default parser ( 01/09/2026 is read as month first ),
+    // so try the configured display formats before falling back to it
+    if (
+      !format &&
+      typeof data === 'string' &&
+      data &&
+      !/^\d{4}-\d{2}-\d{2}/.test(data)
+    ) {
+      const displayFormats: string[] = [
+        LocalizationHelper.DATE_TIME_DISPLAY_FORMAT,
+        LocalizationHelper.DATE_DISPLAY_FORMAT
+      ];
+      for (const displayFormat of displayFormats) {
+        const displayMoment = moment(
+          data,
+          displayFormat,
+          true
+        );
+        if (displayMoment.isValid()) {
+          return displayMoment.tz(LocalizationHelper.TIMEZONE);
+        }
+      }
+    }
+
     return moment(
       data,
       format,

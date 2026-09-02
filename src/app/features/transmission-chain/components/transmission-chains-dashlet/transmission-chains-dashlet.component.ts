@@ -169,7 +169,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
     [idLocation: string]: LocationModel
   } = {};
   personName: string = '';
-  dateGlobalFilter: string = LocalizationHelper.displayDate(LocalizationHelper.now());
+  dateGlobalFilter: Moment = LocalizationHelper.today();
 
   // reference data categories needed for filters
   referenceDataCategories: any = [
@@ -665,7 +665,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
 
       // date
       if (global.date) {
-        this.dateGlobalFilter = LocalizationHelper.displayDate(global.date);
+        this.dateGlobalFilter = global.date;
       }
 
       // location
@@ -3562,9 +3562,9 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           this.filters.showContacts = (response.data.map.showContacts as IV2SideDialogConfigInputToggleCheckbox).value;
           this.filters.includeContactsOfContacts = (response.data.map.includeContactsOfContacts as IV2SideDialogConfigInputToggleCheckbox).value;
           const date = (response.data.map.dateGlobalFilter as IV2SideDialogConfigInputDate).value;
-          this.dateGlobalFilter = typeof date === 'string' ?
-            date :
-            (date ? LocalizationHelper.displayDate(date) : undefined);
+          this.dateGlobalFilter = date ?
+            LocalizationHelper.toMoment(date) :
+            undefined;
 
           // panel filters - map inputs
           const panelMap: {
