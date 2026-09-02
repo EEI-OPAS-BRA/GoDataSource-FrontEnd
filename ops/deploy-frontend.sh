@@ -32,14 +32,14 @@ esac
 # Everything that describes the deploy host lives outside this repository, which
 # is public. See ops/deploy.env.example for the expected contents.
 DEPLOY_ENV="${GODATA_DEPLOY_ENV:-$HOME/.config/godata/deploy.env}"
-[[ -f "$DEPLOY_ENV" ]] || die "deploy settings file not found: $DEPLOY_ENV"
+[[ -f "$DEPLOY_ENV" ]] || die "deploy settings file not found (see ops/deploy.env.example)"
 # shellcheck disable=SC1090
 set -a; . "$DEPLOY_ENV"; set +a
 
 service_var="GODATA_SERVICE_${INSTANCE^^}"
 PM2_SERVICE="${!service_var:-}"
-[[ -n "$PM2_SERVICE" ]] || die "$service_var not set in $DEPLOY_ENV"
-[[ -n "${GODATA_ROOT:-}" ]] || die "GODATA_ROOT not set in $DEPLOY_ENV"
+[[ -n "$PM2_SERVICE" ]] || die "$service_var not set in the deploy settings file"
+[[ -n "${GODATA_ROOT:-}" ]] || die "GODATA_ROOT not set in the deploy settings file"
 
 API_DIR="$GODATA_ROOT/$INSTANCE/GoDataSource-API"
 FE_DIR="$GODATA_ROOT/$INSTANCE/GoDataSource-FrontEnd"
@@ -54,6 +54,10 @@ DIST_PREV="$API_DIR/client/dist.prev"
 exec 9>"/tmp/godata-deploy-$INSTANCE.lock"
 flock -w 900 9 || die "timed out after 15min waiting for another deploy of instance '$INSTANCE'"
 
+# Verbose sub-command output describes the host, and the Actions log is public.
+RUN_LOG="/tmp/godata-deploy-$INSTANCE.log"
+: >"$RUN_LOG"
+
 # nvm keeps node/pm2 out of a non-interactive PATH.
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 # shellcheck disable=SC1090
@@ -62,7 +66,7 @@ for bin in node pm2 curl; do
   command -v "$bin" >/dev/null 2>&1 || die "'$bin' not found in PATH"
 done
 
-PORT="$(node -p "require('$API_DIR/server/config.json').port")"
+PORT="$(node -p "require('$API_DIR/server/config.json').port" 2>/dev/null)" || die "could not read the port of instance '$INSTANCE'"
 log "instance=$INSTANCE branch=$EXPECTED_BRANCH"
 
 CURRENT_BRANCH="$(git -C "$FE_DIR" rev-parse --abbrev-ref HEAD)"
@@ -114,7 +118,7 @@ cp -r "$DIST_SRC" "$DIST_DST"
 log "bundle installed ($(du -sh "$DIST_DST" | cut -f1))"
 
 log "restarting service"
-pm2 restart "$PM2_SERVICE" --update-env
+pm2 restart "$PM2_SERVICE" --update-env >>"$RUN_LOG" 2>&1 || die "restart failed, see $RUN_LOG on the host"
 
 if health_check; then
   log "deploy finished: $(git -C "$FE_DIR" rev-parse --short HEAD)"
@@ -128,7 +132,7 @@ if [[ -d "$DIST_PREV" ]]; then
 fi
 git -C "$FE_DIR" reset --hard "$PREV"
 restore_local_config
-pm2 restart "$PM2_SERVICE" --update-env
+pm2 restart "$PM2_SERVICE" --update-env >>"$RUN_LOG" 2>&1 || die "restart failed, see $RUN_LOG on the host"
 
 if health_check; then
   die "deploy failed and was rolled back. The instance is up with the previous bundle."
