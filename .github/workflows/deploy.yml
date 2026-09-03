@@ -18,10 +18,6 @@ on:
 permissions:
   contents: read
 
-env:
-  INSTANCE: ${{ github.event_name == 'push' && 'teste' || inputs.environment }}
-  DEPLOY_REF: ${{ (github.event_name == 'push' || inputs.environment == 'teste') && 'dev' || 'homologacao' }}
-
 # Never cancel a running deploy: aborting midway leaves the instance undefined.
 concurrency:
   group: deploy-${{ github.event_name == 'push' && 'teste' || inputs.environment }}
@@ -48,45 +44,21 @@ jobs:
           git merge --no-edit origin/dev
           git push origin homologacao
 
-  build:
+  dispatch:
     needs: [promote]
+    # Runs when promote is skipped, but still blocks on a failed promote.
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     steps:
-      # On a promoted deploy the bundle must come from the merge just pushed,
-      # not from the ref that triggered the workflow.
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.DEPLOY_REF }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Production build
-        run: npm run build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: dist
-          retention-days: 7
-          if-no-files-found: error
-
-  deploy:
-    needs: [build]
-    runs-on: [self-hosted]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: dist-artifact
-
-      - name: Deploy FrontEnd
-        run: ./ops/deploy-frontend.sh --instance "$INSTANCE" --dist "$GITHUB_WORKSPACE/dist-artifact"
+      # The deploy runs in godata-ops, which is private. A self-hosted runner
+      # writes the machine name and the workspace path into its job log, and
+      # the logs of this repository are readable by anyone. The bundle is built
+      # there too, so it is not carried across repositories as an artifact.
+      - name: Trigger the deploy pipeline
+        env:
+          GH_TOKEN: ${{ secrets.OPS_DISPATCH_TOKEN }}
+          INSTANCE: ${{ github.event_name == 'push' && 'teste' || inputs.environment }}
+        run: |
+          jq -n --arg instance "$INSTANCE" \
+            '{event_type: "deploy", client_payload: {component: "frontend", instance: $instance}}' |
+            gh api --method POST repos/EEI-OPAS-BRA/godata-ops/dispatches --input -
