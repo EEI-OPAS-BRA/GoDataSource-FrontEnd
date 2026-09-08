@@ -123,7 +123,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
           '/cases',
           () => this.hasOutbreak.apply(this) // provide context to keep this functionality
         ),
-        
+
         new NavItem(
           'contacts',
           'LNG_LAYOUT_MENU_ITEM_CONTACTS_LABEL',
@@ -366,6 +366,14 @@ export class SidenavComponent implements OnInit, OnDestroy {
               '/teams'
             ),
             new ChildNavItem(
+              'team-notifications',
+              'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_LABEL',
+              [
+                PERMISSION.TEAM_NOTIFICATION_LIST
+              ],
+              '/team-notifications'
+            ),
+            new ChildNavItem(
               'help-admin',
               'LNG_LAYOUT_MENU_ITEM_HELP_ADMIN',
               [
@@ -428,6 +436,14 @@ export class SidenavComponent implements OnInit, OnDestroy {
                 PERMISSION.BACKUP_VIEW_CLOUD_BACKUP
               ],
               '/cloud-backup'
+            ),
+            new ChildNavItem(
+              'notification-settings',
+              'LNG_LAYOUT_MENU_ITEM_NOTIFICATION_SETTINGS_LABEL',
+              [
+                PERMISSION.SYSTEM_SETTINGS_MODIFY
+              ],
+              '/system-config/notification-settings'
             )
           ]
         ),

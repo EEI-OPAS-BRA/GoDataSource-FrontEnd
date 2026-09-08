@@ -398,6 +398,59 @@ export class Constants {
   };
 
   /**
+     * Team notification severity
+     */
+  static TEAM_NOTIFICATION_SEVERITY = {
+    GREEN: {
+      label: 'LNG_TEAM_NOTIFICATION_SEVERITY_GREEN',
+      value: 'LNG_TEAM_NOTIFICATION_SEVERITY_GREEN',
+      color: '#2E7D32'
+    },
+    YELLOW: {
+      label: 'LNG_TEAM_NOTIFICATION_SEVERITY_YELLOW',
+      value: 'LNG_TEAM_NOTIFICATION_SEVERITY_YELLOW',
+      color: '#F9A825'
+    },
+    RED: {
+      label: 'LNG_TEAM_NOTIFICATION_SEVERITY_RED',
+      value: 'LNG_TEAM_NOTIFICATION_SEVERITY_RED',
+      color: '#C62828'
+    }
+  };
+
+  /**
+     * Team notification recurrence unit
+     */
+  static TEAM_NOTIFICATION_RECURRENCE_UNIT = {
+    HOURS: {
+      label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_HOURS',
+      value: 'h'
+    },
+    DAYS: {
+      label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_DAYS',
+      value: 'd'
+    }
+  };
+
+  /**
+     * Notification settings check interval unit
+     */
+  static NOTIFICATION_SETTINGS_CHECK_INTERVAL_UNIT = {
+    MINUTES: {
+      label: 'LNG_NOTIFICATION_SETTINGS_CHECK_INTERVAL_UNIT_MINUTES',
+      value: 'm'
+    },
+    HOURS: {
+      label: 'LNG_NOTIFICATION_SETTINGS_CHECK_INTERVAL_UNIT_HOURS',
+      value: 'h'
+    },
+    DAYS: {
+      label: 'LNG_NOTIFICATION_SETTINGS_CHECK_INTERVAL_UNIT_DAYS',
+      value: 'd'
+    }
+  };
+
+  /**
      * System settings backup modules
      */
   static SYSTEM_BACKUP_MODULES = {
