@@ -350,7 +350,7 @@ export class TeamNotificationListComponent
   /**
    * Get total number of items
    */
-  refreshListCount() {
+  refreshListCount(_applyHasMoreLimit?: boolean) {
     this.pageCount = undefined;
 
     const countQueryBuilder = _.cloneDeep(this.queryBuilder);
