@@ -46,6 +46,7 @@ interface IFlattenNode {
   type: FlattenType;
   level: number;
   canHaveChildren: boolean;
+  canHaveAdditionalQuestions: boolean;
   data: QuestionModel | AnswerModel;
   parent: IFlattenNode;
   parents: {
@@ -196,6 +197,9 @@ export class AppFormEditQuestionnaireV2Component
           // translate sub questions
           translateQuestions(answer.additionalQuestions);
         });
+
+        // translate sub questions attached directly to the question
+        translateQuestions(question.additionalQuestions);
       });
     };
 
@@ -243,6 +247,10 @@ export class AppFormEditQuestionnaireV2Component
       if (item instanceof QuestionModel) {
         this.collapseExpandAllQuestions(
           item.answers,
+          collapsed
+        );
+        this.collapseExpandAllQuestions(
+          item.additionalQuestions,
           collapsed
         );
       } else {
@@ -397,6 +405,9 @@ export class AppFormEditQuestionnaireV2Component
         level,
         canHaveChildren: question.answerType === Constants.ANSWER_TYPES.SINGLE_SELECTION.value ||
           question.answerType === Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value,
+        // sub-questions can be attached directly to any answered question (except markup, which has no answer)
+        // - for single/multiple choice questions this is in addition to sub-questions attached to a specific answer
+        canHaveAdditionalQuestions: question.answerType !== Constants.ANSWER_TYPES.MARKUP.value,
         data: question,
         parent,
         parents,
@@ -406,7 +417,7 @@ export class AppFormEditQuestionnaireV2Component
           index: questionIndex,
           array: questions
         },
-        canCollapseOrExpand: question.answers?.length > 0,
+        canCollapseOrExpand: question.answers?.length > 0 || question.additionalQuestions?.length > 0,
         no: question.answerType !== Constants.ANSWER_TYPES.MARKUP.value ?
           `${noPrefix}${noPrefix ? '.' : ''}${no}` :
           undefined
@@ -440,6 +451,7 @@ export class AppFormEditQuestionnaireV2Component
             type: FlattenType.ANSWER,
             level: flattenedQuestion.level + 1,
             canHaveChildren: true,
+            canHaveAdditionalQuestions: false,
             data: answer,
             parent: flattenedQuestion,
             parents: {
@@ -480,6 +492,24 @@ export class AppFormEditQuestionnaireV2Component
             );
           }
         });
+      }
+
+      // attach question-level sub-questions (shown once this question is answered, regardless of the value given) if we have any
+      if (
+        flattenedQuestion.canHaveAdditionalQuestions &&
+        !question.collapsed
+      ) {
+        this.flatten(
+          question.additionalQuestions,
+          flattenedQuestion.level + 1,
+          flattenedQuestion,
+          {
+            ...flattenedQuestion.parents,
+            [flattenedQuestion.id]: true
+          },
+          flattenedQuestion.oneParentIsInactive || question.inactive,
+          flattenedQuestion.no
+        );
       }
     });
   }
@@ -527,7 +557,7 @@ export class AppFormEditQuestionnaireV2Component
    */
   private showAddModifyQuestion(
     add: boolean,
-    parent: AnswerModel,
+    parent: AnswerModel | QuestionModel,
     modifyQuestion: QuestionModel
   ): void {
     // construct array of inputs
@@ -563,6 +593,11 @@ export class AppFormEditQuestionnaireV2Component
             deepAddVariables(answer.additionalQuestions);
           });
         }
+
+        // go through question-level sub-questions
+        if (question.additionalQuestions?.length > 0) {
+          deepAddVariables(question.additionalQuestions);
+        }
       });
     };
 
@@ -578,7 +613,7 @@ export class AppFormEditQuestionnaireV2Component
         placeholder: this.i18nService.instant(
           'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_DETAILS', {
             details: parent ?
-              parent.label :
+              (parent instanceof AnswerModel ? parent.label : parent.text) :
               '—'
           }
         )
@@ -926,7 +961,7 @@ export class AppFormEditQuestionnaireV2Component
   /**
    * Add question
    */
-  addQuestion(parent: AnswerModel): void {
+  addQuestion(parent: AnswerModel | QuestionModel): void {
     this.showAddModifyQuestion(
       true,
       parent,
@@ -939,7 +974,7 @@ export class AppFormEditQuestionnaireV2Component
    */
   viewEditQuestion(
     question: QuestionModel,
-    parent: AnswerModel
+    parent: AnswerModel | QuestionModel
   ): void {
     this.showAddModifyQuestion(
       false,
@@ -1334,6 +1369,11 @@ export class AppFormEditQuestionnaireV2Component
               deepAddVariables(answer.additionalQuestions);
             });
           }
+
+          // go through question-level sub-questions
+          if (question.additionalQuestions?.length > 0) {
+            deepAddVariables(question.additionalQuestions);
+          }
         });
       };
       const refreshQuestionVariables = () => {
@@ -1442,6 +1482,16 @@ export class AppFormEditQuestionnaireV2Component
                 answer.label
               );
             });
+          }
+
+          // go through question-level sub-questions (answer types without answer options)
+          if (question.additionalQuestions?.length > 0) {
+            createQuestionInputs(
+              question.additionalQuestions,
+              questionNo,
+              false,
+              undefined
+            );
           }
         });
       };
@@ -1671,6 +1721,11 @@ export class AppFormEditQuestionnaireV2Component
                   clonedAnswer.additionalQuestions = cloneQuestions(answer.additionalQuestions);
                 }
               });
+            }
+
+            // clone question-level sub-questions (answer types without answer options)
+            if (item.data.additionalQuestions?.length > 0) {
+              clonedQuestion.additionalQuestions = cloneQuestions(item.data.additionalQuestions);
             }
 
             // scroll item

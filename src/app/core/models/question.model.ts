@@ -46,6 +46,9 @@ export class QuestionModel {
   answerType: string;
   answersDisplay: string;
   answers: AnswerModel[];
+  // sub-questions shown once this question has been answered
+  // used for answer types that don't have selectable answer options (e.g. free text, numeric, date/time, file upload)
+  additionalQuestions: QuestionModel[];
 
   // used by ui
   collapsed: boolean;
@@ -66,6 +69,15 @@ export class QuestionModel {
       (lData: any) => {
         return new AnswerModel(lData);
       });
+
+    this.additionalQuestions = _.map(
+      _.get(data, 'additionalQuestions', null),
+      (lData: any) => {
+        return new QuestionModel(lData);
+      });
+    if (_.isEmpty(this.additionalQuestions)) {
+      this.additionalQuestions = null;
+    }
   }
 
   /**
@@ -120,6 +132,11 @@ export class QuestionModel {
               }
             }
           }
+
+          // go through question-level sub questions (types without answer options)
+          if (question.additionalQuestions?.length > 0) {
+            mapQuestions(question.additionalQuestions);
+          }
         }
       }
     };
@@ -161,11 +178,16 @@ export class QuestionModel {
         // map current question
         questionTypes[question.variable] = question.answerType;
 
-        // check for sub-questions
+        // check for sub-questions attached to a specific answer
         if (!_.isEmpty(question.answers)) {
           _.each(question.answers, (answer: AnswerModel) => {
             determineTypes(answer.additionalQuestions);
           });
+        }
+
+        // check for question-level sub-questions (types without answer options)
+        if (!_.isEmpty(question.additionalQuestions)) {
+          determineTypes(question.additionalQuestions);
         }
       });
     };

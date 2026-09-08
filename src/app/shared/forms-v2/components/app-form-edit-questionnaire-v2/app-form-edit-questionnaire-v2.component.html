@@ -85,7 +85,7 @@
             <mat-icon
               *ngIf="item.canCollapseOrExpand && !item.data.collapsed"
               [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_EXPAND_ALL' | translate"
-              (click)="collapseExpandAllQuestions(item.data.answers, false); nonFlatToFlat()">
+              (click)="collapseExpandAllQuestions(item.data.answers, false); collapseExpandAllQuestions(item.data.additionalQuestions, false); nonFlatToFlat()">
               expand
             </mat-icon>
 
@@ -93,7 +93,7 @@
             <mat-icon
               *ngIf="item.canCollapseOrExpand && !item.data.collapsed"
               [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_COLLAPSE_ALL' | translate"
-              (click)="collapseExpandAllQuestions(item.data.answers, true); nonFlatToFlat()">
+              (click)="collapseExpandAllQuestions(item.data.answers, true); collapseExpandAllQuestions(item.data.additionalQuestions, true); nonFlatToFlat()">
               compress
             </mat-icon>
 
@@ -201,6 +201,16 @@
                 [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_BUTTON_ADD_NEW' | translate"
                 (click)="addAnswer(item.data)">
                 <mat-icon>playlist_add</mat-icon>
+              </button>
+
+              <!-- Add sub-question (answer types without answer options) -->
+              <button
+                *ngIf="!viewOnly && item.canHaveAdditionalQuestions"
+                type="button"
+                mat-icon-button
+                [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_BUTTON_ADD_NEW' | translate"
+                (click)="addQuestion(item.data)">
+                <mat-icon>post_add</mat-icon>
               </button>
 
               <!-- Edit question -->
