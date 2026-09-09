@@ -429,6 +429,18 @@ export class Constants {
     DAYS: {
       label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_DAYS',
       value: 'd'
+    },
+    WEEKS: {
+      label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_WEEKS',
+      value: 'w'
+    },
+    MONTHS: {
+      label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_MONTHS',
+      value: 'M'
+    },
+    YEARS: {
+      label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_YEARS',
+      value: 'y'
     }
   };
 

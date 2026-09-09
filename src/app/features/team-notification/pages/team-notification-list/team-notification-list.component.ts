@@ -483,7 +483,10 @@ export class TeamNotificationListComponent
             placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECURRENCE_UNIT',
             options: [
               Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.HOURS,
-              Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.DAYS
+              Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.DAYS,
+              Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.WEEKS,
+              Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.MONTHS,
+              Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.YEARS
             ],
             value: item?.recurrenceUnit || Constants.TEAM_NOTIFICATION_RECURRENCE_UNIT.HOURS.value,
             validators: {
