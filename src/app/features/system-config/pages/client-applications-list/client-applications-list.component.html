@@ -1,4 +1,5 @@
 <app-list-table-v2
+  #listTable
   pageTitle="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_TITLE"
   [records$]="records$"
   [processSelectedData]="processSelectedData"
@@ -26,4 +27,17 @@
   (filterBy)="filterBy($event)"
   (resetHeaderFilters)="resetFiltersToSideFilters()"
   (advancedFilterBy)="applySideFilters($event)">
+
+  <!-- What this page is for & how it works -->
+  <app-info-banner-v2
+    storageKey="client-applications"
+    icon="vpn_key"
+    heading="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_TITLE"
+    description="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_DESCRIPTION"
+    stepsTitle="LNG_INFO_BANNER_STEPS_TITLE"
+    [steps]="infoBannerSteps"
+    [notes]="infoBannerNotes"
+    (resized)="listTable.resizeTable()">
+  </app-info-banner-v2>
+
 </app-list-table-v2>

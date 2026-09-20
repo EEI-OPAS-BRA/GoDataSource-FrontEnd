@@ -13,6 +13,7 @@ import { ListHelperService } from '../../../../core/services/helper/list-helper.
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
+import { IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
 import { V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
 import { IV2Column, IV2ColumnPinned, V2ColumnFormat } from '../../../../shared/components-v2/app-list-table-v2/models/column.model';
 import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
@@ -28,6 +29,30 @@ import { ClientApplicationHelperService } from '../../../../core/services/helper
 export class ClientApplicationsListComponent
   extends ListComponent<SystemClientApplicationModel, IV2Column>
   implements OnDestroy {
+  // info banner
+  infoBannerSteps: IV2InfoBannerStep[] = [
+    {
+      icon: 'add_circle_outline',
+      title: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_1_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_1_DESCRIPTION'
+    }, {
+      icon: 'tune',
+      title: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_2_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_2_DESCRIPTION'
+    }, {
+      icon: 'share',
+      title: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_3_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_3_DESCRIPTION'
+    }, {
+      icon: 'security',
+      title: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_4_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_STEP_4_DESCRIPTION'
+    }
+  ];
+  infoBannerNotes: string[] = [
+    'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_NOTE_1'
+  ];
+
   /**
    * Constructor
    */

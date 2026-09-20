@@ -15,6 +15,7 @@ import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.serv
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
+import { IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
 import { V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
 import { IV2Column, V2ColumnFormat } from '../../../../shared/components-v2/app-list-table-v2/models/column.model';
 
@@ -25,6 +26,31 @@ import { IV2Column, V2ColumnFormat } from '../../../../shared/components-v2/app-
 export class UpstreamServersListComponent extends ListComponent<SystemUpstreamServerModel, IV2Column> implements OnDestroy {
   // timers
   private _syncCheckIfDoneTimer: number;
+
+  // info banner
+  infoBannerSteps: IV2InfoBannerStep[] = [
+    {
+      icon: 'dns',
+      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_1_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_1_DESCRIPTION'
+    }, {
+      icon: 'schedule',
+      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_2_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_2_DESCRIPTION'
+    }, {
+      icon: 'cloud_upload',
+      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_3_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_3_DESCRIPTION'
+    }, {
+      icon: 'assignment_turned_in',
+      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_4_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_4_DESCRIPTION'
+    }
+  ];
+  infoBannerNotes: string[] = [
+    'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_NOTE_1',
+    'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_NOTE_2'
+  ];
 
   /**
    * Constructor

@@ -1,0 +1,109 @@
+<div
+  class="gd-info-banner"
+  [class.gd-info-banner-expanded]="expanded">
+
+  <!-- Header -->
+  <div
+    class="gd-info-banner-header">
+
+    <!-- Icon -->
+    <span
+      class="gd-info-banner-header-icon">
+      <mat-icon>{{icon}}</mat-icon>
+    </span>
+
+    <!-- Title & description -->
+    <div
+      class="gd-info-banner-header-text">
+      <div
+        class="gd-info-banner-header-text-title">
+        {{heading | translate}}
+      </div>
+      <div
+        class="gd-info-banner-header-text-description">
+        {{description | translate}}
+      </div>
+    </div>
+
+    <!-- Toggle -->
+    <button
+      *ngIf="steps?.length || notes?.length"
+      type="button"
+      mat-button
+      class="gd-info-banner-header-toggle"
+      [attr.aria-expanded]="expanded"
+      (click)="toggle()">
+      <span>{{(expanded ? 'LNG_INFO_BANNER_ACTION_HIDE' : 'LNG_INFO_BANNER_ACTION_SHOW') | translate}}</span>
+      <mat-icon>expand_more</mat-icon>
+    </button>
+
+  </div>
+
+  <!-- Details -->
+  <div
+    class="gd-info-banner-details">
+    <div
+      class="gd-info-banner-details-inner">
+
+      <!-- Steps -->
+      <ng-container
+        *ngIf="steps?.length">
+
+        <div
+          *ngIf="stepsTitle"
+          class="gd-info-banner-details-label">
+          {{stepsTitle | translate}}
+        </div>
+
+        <div
+          class="gd-info-banner-steps">
+          <div
+            *ngFor="let step of steps; let stepIndex = index"
+            class="gd-info-banner-steps-step">
+
+            <!-- Number & icon -->
+            <div
+              class="gd-info-banner-steps-step-top">
+              <span
+                class="gd-info-banner-steps-step-top-number">
+                {{stepIndex + 1}}
+              </span>
+              <mat-icon
+                class="gd-info-banner-steps-step-top-icon">
+                {{step.icon}}
+              </mat-icon>
+            </div>
+
+            <!-- Title -->
+            <div
+              class="gd-info-banner-steps-step-title">
+              {{step.title | translate}}
+            </div>
+
+            <!-- Description -->
+            <div
+              class="gd-info-banner-steps-step-description">
+              {{step.description | translate}}
+            </div>
+
+          </div>
+        </div>
+
+      </ng-container>
+
+      <!-- Notes -->
+      <div
+        *ngIf="notes?.length"
+        class="gd-info-banner-notes">
+        <div
+          *ngFor="let note of notes"
+          class="gd-info-banner-notes-note">
+          <mat-icon>info_outline</mat-icon>
+          <span>{{note | translate}}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -27,6 +27,7 @@ import { AppSpreadsheetEditorV2LoadingComponent } from './app-spreadsheet-editor
 import { AppSpreadsheetEditorV2NoDataComponent } from './app-spreadsheet-editor-v2/components/no-data/app-spreadsheet-editor-v2-no-data.component';
 import { AppSpreadsheetEditorV2CellBasicHeaderPivotComponent } from './app-spreadsheet-editor-v2/components/header-pivot/app-spreadsheet-editor-v2-cell-basic-header-pivot.component';
 import { AppQuickEditorV2Component } from './app-quick-editor-v2/app-quick-editor-v2.component';
+import { AppInfoBannerV2Component } from './app-info-banner-v2/app-info-banner-v2.component';
 
 export const components: any[] = [
   AppBasicPageV2Component,
@@ -34,6 +35,7 @@ export const components: any[] = [
   AppBreadcrumbV2Component,
   AppChangesV2Component,
   AppCreateViewModifyV2Component,
+  AppInfoBannerV2Component,
   AppListTableV2ActionsComponent,
   AppListTableV2ButtonComponent,
   AppListTableV2DetailColumnComponent,
