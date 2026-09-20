@@ -13,6 +13,7 @@ import { SystemSettingsDataService } from '../../../../core/services/data/system
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { SystemSyncLogHelperService } from '../../../../core/services/helper/system-sync-log-helper.service';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ExportDataExtension, ExportDataMethod } from '../../../../core/services/helper/models/dialog-v2.model';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
@@ -44,7 +45,8 @@ export class SystemSyncLogsComponent
     private systemSettingsDataService: SystemSettingsDataService,
     private i18nService: I18nService,
     private activatedRoute: ActivatedRoute,
-    private dialogV2Service: DialogV2Service
+    private dialogV2Service: DialogV2Service,
+    private systemSyncLogHelperService: SystemSyncLogHelperService
   ) {
     super(
       listHelperService, {
@@ -587,64 +589,7 @@ export class SystemSyncLogsComponent
   * @param systemSyncLogModel
   */
   viewError(systemSyncLogModel: SystemSyncLogModel) {
-    // if not string, then there is no point in continuing
-    if (
-      !systemSyncLogModel.error ||
-      !_.isString(systemSyncLogModel.error)
-    ) {
-      return;
-    }
-
-    // fix api issue
-    let error: string = systemSyncLogModel.error.trim();
-    let errJson: any;
-    const detailsString: string = '"details":{';
-    const detailsIndex: number = error.indexOf(detailsString);
-    if (detailsIndex > -1) {
-      // split error object & details object
-      const detailsText: string = error.substr(detailsIndex, error.length - (detailsIndex + 2));
-      const detailsObjectText: string = detailsText.substr(detailsString.length - 1);
-      error = error.substr(0, detailsIndex - 1) + '}';
-
-      // convert to json
-      errJson = JSON.parse(error);
-      errJson.details = JSON.parse(detailsObjectText);
-    }
-
-    this.dialogV2Service
-      .showSideDialog({
-        // title
-        title: {
-          get: () => 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_ERROR_DETAILS_TITLE',
-          data: () => {
-            return { count: '?' };
-          }
-        },
-
-        // hide search bar
-        hideInputFilter: true,
-
-        // inputs
-        width: '65rem',
-        inputs: [
-          {
-            type: V2SideDialogConfigInputType.HTML,
-            name: 'error',
-            placeholder: errJson ?
-              `<code><pre>${JSON.stringify(errJson, null, 1)}</pre></code>` :
-              `<code>${error}</code>`
-          }
-        ],
-
-        // buttons
-        bottomButtons: [
-          {
-            type: IV2SideDialogConfigButtonType.CANCEL,
-            label: 'LNG_COMMON_BUTTON_CANCEL',
-            color: 'text'
-          }
-        ]
-      }).subscribe();
+    this.systemSyncLogHelperService.viewError(systemSyncLogModel);
   }
 
   /**

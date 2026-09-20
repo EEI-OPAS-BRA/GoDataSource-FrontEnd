@@ -3,6 +3,7 @@ import { SystemUpstreamServerCredentialsModel } from './system-upstream-server-c
 import { IPermissionBasic, IPermissionUpstreamServer } from './permission.interface';
 import { UserModel } from './user.model';
 import { PERMISSION } from './permission.model';
+import { SystemSyncLogModel } from './system-sync-log.model';
 
 export class SystemUpstreamServerModel
 implements
@@ -17,6 +18,9 @@ implements
   syncInterval: number;
   syncOnEveryChange: boolean;
   syncEnabled: boolean;
+
+  // not stored in settings; filled by the list page with the most recent sync log of this server
+  lastSyncLog: SystemSyncLogModel;
 
   /**
      * Static Permissions - IPermissionBasic

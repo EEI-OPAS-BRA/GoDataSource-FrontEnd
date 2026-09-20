@@ -1,8 +1,9 @@
 import { Component, OnDestroy } from '@angular/core';
 import * as _ from 'lodash';
-import { throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { ListComponent } from '../../../../core/helperClasses/list-component';
+import { RequestQueryBuilder, RequestSortDirection } from '../../../../core/helperClasses/request-query-builder';
 import { Constants } from '../../../../core/models/constants';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
@@ -12,6 +13,8 @@ import { SystemSettingsDataService } from '../../../../core/services/data/system
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
 import { SystemSyncDataService } from '../../../../core/services/data/system-sync.data.service';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
+import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { SystemSyncLogHelperService } from '../../../../core/services/helper/system-sync-log-helper.service';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
@@ -61,7 +64,9 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
     private toastV2Service: ToastV2Service,
     private systemSyncDataService: SystemSyncDataService,
     private systemSyncLogDataService: SystemSyncLogDataService,
-    private dialogV2Service: DialogV2Service
+    private dialogV2Service: DialogV2Service,
+    private i18nService: I18nService,
+    private systemSyncLogHelperService: SystemSyncLogHelperService
   ) {
     super(
       listHelperService, {
@@ -309,6 +314,44 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         format: {
           type: V2ColumnFormat.BOOLEAN
         }
+      },
+      {
+        field: 'lastSyncLog.actionStartDate',
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_LAST_SYNC_DATE',
+        exclude: () => !SystemSyncLogModel.canList(this.authUser),
+        format: {
+          type: V2ColumnFormat.DATETIME
+        }
+      },
+      {
+        field: 'lastSyncLog.status',
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_LAST_SYNC_STATUS',
+        exclude: () => !SystemSyncLogModel.canList(this.authUser),
+        format: {
+          type: (item: SystemUpstreamServerModel) => item.lastSyncLog?.status ?
+            this.i18nService.instant(item.lastSyncLog.status) :
+            this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_NEVER')
+        }
+      },
+      {
+        field: 'lastSyncLog.error',
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_LAST_SYNC_LOGS',
+        exclude: () => !SystemSyncLogModel.canList(this.authUser),
+        format: {
+          type: V2ColumnFormat.BUTTON
+        },
+        cssCellClass: 'gd-cell-button',
+        color: 'text',
+        buttonLabel: (item: SystemUpstreamServerModel) => this.systemSyncLogHelperService.hasError(item.lastSyncLog) ?
+          this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_VIEW_LOGS') :
+          (
+            item.lastSyncLog?.status === Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS.value ?
+              this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_NO_MESSAGES') :
+              ''
+          ),
+        disabled: (item: SystemUpstreamServerModel) => !this.systemSyncLogHelperService.hasError(item.lastSyncLog) ||
+          !SystemSyncLogModel.canView(this.authUser),
+        click: (item: SystemUpstreamServerModel) => this.systemSyncLogHelperService.viewError(item.lastSyncLog)
       }
     ];
   }
@@ -397,6 +440,37 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         // map data
         map((settings: SystemSettingsModel) => {
           return settings.upstreamServers;
+        }),
+
+        // retrieve the most recent sync of each server
+        switchMap((upstreamServers: SystemUpstreamServerModel[]): Observable<SystemUpstreamServerModel[]> => {
+          if (
+            !upstreamServers.length ||
+            !SystemSyncLogModel.canList(this.authUser)
+          ) {
+            return of(upstreamServers);
+          }
+
+          return forkJoin(
+            upstreamServers.map((upstreamServer) => {
+              const qb = new RequestQueryBuilder();
+              qb.filter.byEquality('syncServerUrl', upstreamServer.url);
+              qb.sort.by('actionStartDate', RequestSortDirection.DESC);
+              qb.limit(1);
+
+              return this.systemSyncLogDataService
+                .getSyncLogList(qb)
+                .pipe(
+                  map((syncLogs: SystemSyncLogModel[]) => {
+                    upstreamServer.lastSyncLog = syncLogs[0];
+                    return upstreamServer;
+                  }),
+
+                  // the servers list must still be displayed if the logs can't be retrieved
+                  catchError(() => of(upstreamServer))
+                );
+            })
+          );
         }),
 
         // set count

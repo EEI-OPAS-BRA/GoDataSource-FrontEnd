@@ -152,6 +152,7 @@ import { CreatedOnResolver } from './resolvers/data/created-on.resolver';
 import { DeletedUserDataResolver } from './resolvers/data/deleted-user.resolver';
 import { ClientApplicationDataService } from './data/client-application.data.service';
 import { ClientApplicationHelperService } from './helper/client-application-helper.service';
+import { SystemSyncLogHelperService } from './helper/system-sync-log-helper.service';
 import { FollowUpCreatedAsDataResolver } from './resolvers/data/follow-up-created-as.resolver';
 
 // export the list of services
@@ -303,6 +304,7 @@ export const services: any[] = [
   // helper services
   CacheService,
   ClientApplicationHelperService,
+  SystemSyncLogHelperService,
   DialogV2Service,
   DomService,
   FormHelperService,
