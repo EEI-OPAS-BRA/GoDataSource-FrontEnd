@@ -4,6 +4,7 @@ import { IPermissionBasic, IPermissionUpstreamServer } from './permission.interf
 import { UserModel } from './user.model';
 import { PERMISSION } from './permission.model';
 import { SystemSyncLogModel } from './system-sync-log.model';
+import { ISystemUpstreamServerConnection } from './system-upstream-server-check.model';
 
 export class SystemUpstreamServerModel
 implements
@@ -19,8 +20,14 @@ implements
   syncOnEveryChange: boolean;
   syncEnabled: boolean;
 
+  // not displayed anywhere, but it must be sent back on save, otherwise the api resets it to its default
+  autoEncrypt: boolean;
+
   // not stored in settings; filled by the list page with the most recent sync log of this server
   lastSyncLog: SystemSyncLogModel;
+
+  // not stored in settings; filled by the list page with the result of checking the server with its credentials
+  connection: ISystemUpstreamServerConnection;
 
   /**
      * Static Permissions - IPermissionBasic
@@ -28,7 +35,7 @@ implements
   static canView(): boolean { return false; }
   static canList(user: UserModel): boolean { return user ? user.hasPermissions(PERMISSION.UPSTREAM_SERVER_LIST) : false; }
   static canCreate(user: UserModel): boolean { return user ? user.hasPermissions(PERMISSION.UPSTREAM_SERVER_CREATE) : false; }
-  static canModify(): boolean { return false; }
+  static canModify(user: UserModel): boolean { return user ? user.hasPermissions(PERMISSION.UPSTREAM_SERVER_CREATE) : false; }
   static canDelete(user: UserModel): boolean { return user ? user.hasPermissions(PERMISSION.UPSTREAM_SERVER_DELETE) : false; }
 
   /**
@@ -51,6 +58,7 @@ implements
     this.syncInterval = _.get(data, 'syncInterval', 0);
     this.syncOnEveryChange = _.get(data, 'syncOnEveryChange', false);
     this.syncEnabled = _.get(data, 'syncEnabled', true);
+    this.autoEncrypt = _.get(data, 'autoEncrypt');
   }
 
   /**
@@ -59,7 +67,7 @@ implements
   canView(): boolean { return SystemUpstreamServerModel.canView(); }
   canList(user: UserModel): boolean { return SystemUpstreamServerModel.canList(user); }
   canCreate(user: UserModel): boolean { return SystemUpstreamServerModel.canCreate(user); }
-  canModify(): boolean { return SystemUpstreamServerModel.canModify(); }
+  canModify(user: UserModel): boolean { return SystemUpstreamServerModel.canModify(user); }
   canDelete(user: UserModel): boolean { return SystemUpstreamServerModel.canDelete(user); }
 
   /**

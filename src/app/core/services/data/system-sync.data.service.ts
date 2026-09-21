@@ -18,11 +18,21 @@ export class SystemSyncDataService {
 
   /**
      * Start sync process
+     * By default only what changed since the last successful sync is sent
+     * @param upstreamServerURL
+     * @param options fromDate: also send what changed since this date (only has effect if it is older than the last successful sync); fullSync: send all the data
      */
-  sync(upstreamServerURL: string): Observable<SystemSyncModel> {
+  sync(
+    upstreamServerURL: string,
+    options?: {
+      fromDate?: string,
+      fullSync?: boolean
+    }
+  ): Observable<SystemSyncModel> {
     return this.modelHelper.mapObservableToModel(
       this.http.post('sync', {
-        upstreamServerURL: upstreamServerURL
+        upstreamServerURL: upstreamServerURL,
+        ...options
       }),
       SystemSyncModel
     );

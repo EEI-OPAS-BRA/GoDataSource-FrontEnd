@@ -3,8 +3,10 @@ import { CreateViewModifyComponent } from '../../../../core/helperClasses/create
 import { ActivatedRoute, Router } from '@angular/router';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
-import { Observable, Subscription, throwError } from 'rxjs';
+import * as _ from 'lodash';
+import { EMPTY, Observable, of, Subscription, throwError } from 'rxjs';
 import {
+  CreateViewModifyV2ActionType,
   CreateViewModifyV2TabInput,
   CreateViewModifyV2TabInputType,
   ICreateViewModifyV2Buttons,
@@ -14,9 +16,10 @@ import {
 import { SystemUpstreamServerModel } from '../../../../core/models/system-upstream-server.model';
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SystemSyncDataService } from '../../../../core/services/data/system-sync.data.service';
+import { UpstreamServerCheckHelperService } from '../../../../core/services/helper/upstream-server-check-helper.service';
 import { ISystemUpstreamServerCheckServer } from '../../../../core/models/system-upstream-server-check.model';
 import { IAppFormIconButtonV2 } from '../../../../shared/forms-v2/core/app-form-icon-button-v2';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap, takeUntil } from 'rxjs/operators';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
 import { OutbreakAndOutbreakTemplateHelperService } from '../../../../core/services/helper/outbreak-and-outbreak-template-helper.service';
 import { RedirectService } from '../../../../core/services/helper/redirect.service';
@@ -31,24 +34,13 @@ import { I18nService } from '../../../../core/services/helper/i18n.service';
   templateUrl: './upstream-servers-create-view-modify.component.html'
 })
 export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyComponent<SystemUpstreamServerModel> implements OnDestroy {
-  // message displayed for each error code returned by the api when checking a server
-  private static readonly CHECK_ERROR_MESSAGES: {
-    [errorCode: string]: string
-  } = {
-      CONNECTION_REFUSED: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_CONNECTION_REFUSED',
-      HOST_NOT_FOUND: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_HOST_NOT_FOUND',
-      TIMEOUT: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_TIMEOUT',
-      CERTIFICATE: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_CERTIFICATE',
-      UNEXPECTED_RESPONSE: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_NOT_GODATA',
-      HTTP_ERROR: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_NOT_GODATA',
-      INVALID_CREDENTIALS: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_INVALID_CREDENTIALS',
-      API_NOT_FOUND: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_API_NOT_FOUND'
-    };
-
   // upstream servers map
   private _upstreamServersMap: {
     [url: string]: true
   } = {};
+
+  // when modifying, the servers don't have an id, so the url they had when the page was opened identifies them
+  private _originalUrl: string;
 
   // url input; its icons show if the server is online
   private _urlInput: Extract<CreateViewModifyV2TabInput, { type: CreateViewModifyV2TabInputType.TEXT }>;
@@ -78,6 +70,7 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
     protected i18nService: I18nService,
     protected systemSettingsDataService: SystemSettingsDataService,
     protected systemSyncDataService: SystemSyncDataService,
+    protected upstreamServerCheckHelperService: UpstreamServerCheckHelperService,
     protected router: Router
   ) {
     // parent
@@ -90,9 +83,20 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
       outbreakAndOutbreakTemplateHelperService
     );
 
+    // server that is being modified
+    this._originalUrl = activatedRoute.snapshot.queryParams.url;
+
     // map upstream servers
+    // the server that is being modified doesn't count as a duplicate of itself
     const upstreamServers: SystemUpstreamServerModel[] = activatedRoute.snapshot.data.upstreamServers;
     upstreamServers.forEach((upstreamServer) => {
+      if (
+        this.isModify &&
+        upstreamServer.url.toLowerCase() === this._originalUrl?.toLowerCase()
+      ) {
+        return;
+      }
+
       this._upstreamServersMap[upstreamServer.url.toLowerCase()] = true;
     });
   }
@@ -120,7 +124,21 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
    * Retrieve item
    */
   protected retrieveItem(): Observable<SystemUpstreamServerModel> {
-    return null;
+    return this.systemSettingsDataService
+      .getSystemSettings()
+      .pipe(
+        switchMap((settings: SystemSettingsModel) => {
+          const upstreamServer: SystemUpstreamServerModel = (settings.upstreamServers || []).find((server) => server.url === this._originalUrl);
+          if (!upstreamServer) {
+            // it was deleted or the url is wrong
+            this.toastV2Service.error('LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_NOT_FOUND');
+            this.router.navigate(['/system-config/upstream-servers']);
+            return EMPTY;
+          }
+
+          return of(upstreamServer);
+        })
+      );
   }
 
   /**
@@ -133,8 +151,15 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
    */
   protected initializePageTitle(): void {
     // add info accordingly to page type
-    this.pageTitle = 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TITLE';
-    this.pageTitleData = undefined;
+    if (this.isCreate) {
+      this.pageTitle = 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TITLE';
+      this.pageTitleData = undefined;
+    } else {
+      this.pageTitle = 'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_TITLE';
+      this.pageTitleData = {
+        name: this.itemData.name
+      };
+    }
   }
 
   /**
@@ -165,7 +190,13 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
     // add info accordingly to page type
     this.breadcrumbs.push({
-      label: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TITLE',
+      label: this.isCreate ?
+        'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TITLE' :
+        this.i18nService.instant(
+          'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_TITLE', {
+            name: this.itemData.name
+          }
+        ),
       action: null
     });
   }
@@ -199,6 +230,9 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
       // buttons
       buttons: this.initializeButtons(),
+
+      // the whole server is saved, not only the fields that were changed
+      modifyGetAllNotOnlyDirtyFields: true,
 
       // create or update
       createOrUpdate: this.initializeProcessData(),
@@ -324,6 +358,14 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
               validators: {
                 required: () => true
               }
+            }, {
+              // the sync history is kept by url
+              type: CreateViewModifyV2TabInputType.LABEL,
+              value: {
+                get: () => 'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_URL_CHANGED_NOTE'
+              },
+              visible: () => this.isModify &&
+                this.itemData.url?.trim().toLowerCase() !== this._originalUrl?.toLowerCase()
             }, {
               type: CreateViewModifyV2TabInputType.BUTTON,
               name: 'testConnection',
@@ -488,24 +530,6 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   }
 
   /**
-   * Message for an error returned by the api when checking a server
-   */
-  private getCheckErrorMessage(
-    errorCode: string,
-    code?: string
-  ): string {
-    const message: string = this.i18nService.instant(
-      UpstreamServersCreateViewModifyComponent.CHECK_ERROR_MESSAGES[errorCode] ||
-      'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_CONNECTION_FAILED'
-    );
-
-    // technical code helps to find out what is wrong
-    return !UpstreamServersCreateViewModifyComponent.CHECK_ERROR_MESSAGES[errorCode] && code ?
-      `${message} (${code})` :
-      message;
-  }
-
-  /**
    * Update the state with the status of the server
    */
   private applyServerResult(server: ISystemUpstreamServerCheckServer): void {
@@ -514,18 +538,14 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
       this._checkResult = {
         status: 'success',
         icon: 'check_circle',
-        message: this.i18nService.instant(
-          'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_ONLINE_MESSAGE', {
-            ms: server.responseTimeMs
-          }
-        )
+        message: this.upstreamServerCheckHelperService.getServerOnlineMessage(server.responseTimeMs)
       };
     } else {
       this._serverStatus = 'offline';
       this._checkResult = {
         status: 'error',
         icon: 'error',
-        message: this.getCheckErrorMessage(
+        message: this.upstreamServerCheckHelperService.getErrorMessage(
           server.errorCode,
           server.code
         )
@@ -622,23 +642,16 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
             result.credentials
           ) {
             if (result.credentials.valid) {
-              const outbreaksCount: number = result.credentials.outbreakIDs?.length || 0;
               this._checkResult = {
                 status: 'success',
                 icon: 'check_circle',
-                message: this.i18nService.instant(
-                  outbreaksCount > 0 ?
-                    'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_CREDENTIALS_ACCEPTED_SOME_OUTBREAKS' :
-                    'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_CREDENTIALS_ACCEPTED_ALL_OUTBREAKS', {
-                    count: outbreaksCount
-                  }
-                )
+                message: this.upstreamServerCheckHelperService.getCredentialsAcceptedMessage(result.credentials.outbreakIDs)
               };
             } else {
               this._checkResult = {
                 status: 'error',
                 icon: 'error',
-                message: this.getCheckErrorMessage(
+                message: this.upstreamServerCheckHelperService.getErrorMessage(
                   result.credentials.errorCode,
                   result.credentials.code
                 )
@@ -665,7 +678,11 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
         }
       },
       viewCancel: undefined,
-      modifyCancel: undefined,
+      modifyCancel: {
+        link: {
+          link: () => ['/system-config/upstream-servers']
+        }
+      },
       quickActions: undefined
     };
   }
@@ -675,13 +692,18 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
    */
   private initializeProcessData(): ICreateViewModifyV2CreateOrUpdate {
     return (
-      _type,
+      type,
       data,
       finished,
       _loading,
       _forms
     ) => {
-      // always create
+      // a space at the end of the url would make the synchronization fail
+      if (_.isString(data.url)) {
+        data.url = data.url.trim();
+      }
+
+      // servers are saved as part of the system settings
       this.systemSettingsDataService
         .getSystemSettings()
         .pipe(
@@ -691,12 +713,27 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
             // finished
             return throwError(err);
-          })
+          }),
+
+          // should be the last pipe
+          takeUntil(this.destroyed$)
         )
         .subscribe((settings: SystemSettingsModel) => {
-          // add the new upstream server
           settings.upstreamServers = settings.upstreamServers || [];
-          settings.upstreamServers.push(data);
+
+          if (type === CreateViewModifyV2ActionType.CREATE) {
+            // add the new upstream server
+            settings.upstreamServers.push(data);
+          } else {
+            // replace the server, keeping what isn't part of the form (e.g. auto encrypt)
+            const index: number = settings.upstreamServers.findIndex((server) => server.url === this._originalUrl);
+            if (index < 0) {
+              finished('LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_NOT_FOUND', undefined);
+              return;
+            }
+
+            settings.upstreamServers[index] = _.merge({}, settings.upstreamServers[index], data);
+          }
 
           // save upstream servers
           this.systemSettingsDataService
@@ -710,11 +747,18 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
                 // finished
                 return throwError(err);
-              })
+              }),
+
+              // should be the last pipe
+              takeUntil(this.destroyed$)
             )
             .subscribe(() => {
               // display success message
-              this.toastV2Service.success('LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_ACTION_CREATE_UPSTREAM_SERVER_SUCCESS_MESSAGE');
+              this.toastV2Service.success(
+                type === CreateViewModifyV2ActionType.CREATE ?
+                  'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_ACTION_CREATE_UPSTREAM_SERVER_SUCCESS_MESSAGE' :
+                  'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_ACTION_MODIFY_UPSTREAM_SERVER_SUCCESS_MESSAGE'
+              );
 
               // hide loading & redirect
               finished(undefined, settings);

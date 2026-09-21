@@ -23,3 +23,15 @@ export interface ISystemUpstreamServerCheck {
   // null when the credentials weren't checked
   credentials: ISystemUpstreamServerCheckCredentials | null;
 }
+
+/**
+ * Summary of a check, used to display if a server can be used with its credentials
+ */
+export type SystemUpstreamServerConnectionStatus = 'checking' | 'online' | 'invalid_credentials' | 'api_not_found' | 'offline' | 'unknown';
+
+export interface ISystemUpstreamServerConnection {
+  status: SystemUpstreamServerConnectionStatus;
+
+  // details, already translated
+  message: string;
+}

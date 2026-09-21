@@ -374,6 +374,69 @@
             width: auto;
           }
 
+          /* Connection status badge */
+          .gd-list-table-connection-status {
+            @include flex_align_items(center);
+            @include flex(inline-flex);
+            background: rgba(var(--gd-secondary-rgb), 0.18);
+            @include border-radius(1.2rem);
+            color: var(--gd-text);
+            cursor: help;
+            font-size: 1.2rem;
+            font-weight: 500;
+            gap: 0.4rem;
+            height: 2.4rem;
+            line-height: 2.4rem;
+            padding: 0 1rem 0 0.6rem;
+            white-space: nowrap;
+
+            .material-icons {
+              color: var(--gd-secondary);
+              font-size: 1.6rem;
+            }
+
+            &.gd-list-table-connection-status-online {
+              background: rgba(var(--gd-success-rgb), 0.14);
+              color: var(--gd-success);
+
+              .material-icons {
+                color: var(--gd-success);
+              }
+            }
+
+            &.gd-list-table-connection-status-offline {
+              background: rgba(var(--gd-danger-rgb), 0.12);
+              color: var(--gd-danger);
+
+              .material-icons {
+                color: var(--gd-danger);
+              }
+            }
+
+            &.gd-list-table-connection-status-invalid_credentials,
+            &.gd-list-table-connection-status-api_not_found {
+              background: rgba(var(--gd-warning-rgb), 0.2);
+
+              .material-icons {
+                color: var(--gd-warning);
+              }
+            }
+
+            &.gd-list-table-connection-status-checking .material-icons {
+              animation: gd-connection-status-spin 1.2s linear infinite;
+            }
+          }
+
+          @keyframes gd-connection-status-spin {
+            from {
+              transform: rotate(0deg);
+            }
+
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
           .gd-list-table-cell-obfuscate {
             .gd-list-table-cell-obfuscate-value {
               overflow: hidden;

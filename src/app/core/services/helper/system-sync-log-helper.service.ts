@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SystemSyncLogModel } from '../../models/system-sync-log.model';
+import { Constants } from '../../models/constants';
 import { DialogV2Service } from './dialog-v2.service';
 import { IV2SideDialogConfigButtonType, V2SideDialogConfigInputType } from '../../../shared/components-v2/app-side-dialog-v2/models/side-dialog-config.model';
 import * as _ from 'lodash';
@@ -16,10 +17,24 @@ export class SystemSyncLogHelperService {
   ) {}
 
   /**
+   * The sync didn't really fail: there was no data changed since the last sync, so the server is already up to date
+   * The api saves this as a failed sync with the error {"code":"NO-DATA"}
+   */
+  isNoDataToSync(syncLog: SystemSyncLogModel): boolean {
+    return !!syncLog &&
+      syncLog.status === Constants.SYSTEM_SYNC_LOG_STATUS.FAILED.value &&
+      _.isString(syncLog.error) &&
+      /^\{\s*"code"\s*:\s*"NO-DATA"\s*\}\s*;?\s*$/.test(syncLog.error.trim());
+  }
+
+  /**
    * Whether a sync log has an error / warning text to display
    */
   hasError(syncLog: SystemSyncLogModel): boolean {
-    return !!syncLog && _.isString(syncLog.error) && !!syncLog.error.trim();
+    return !!syncLog &&
+      _.isString(syncLog.error) &&
+      !!syncLog.error.trim() &&
+      !this.isNoDataToSync(syncLog);
   }
 
   /**
