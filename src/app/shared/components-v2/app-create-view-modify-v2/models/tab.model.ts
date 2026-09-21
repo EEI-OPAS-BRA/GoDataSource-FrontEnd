@@ -79,7 +79,8 @@ export enum CreateViewModifyV2TabInputType {
   // other
   LABEL,
   LINK_LIST,
-  LABEL_LIST
+  LABEL_LIST,
+  BUTTON
 }
 
 /**
@@ -191,6 +192,8 @@ interface ICreateViewModifyV2TabInputText extends Omit<ICreateViewModifyV2TabInp
     }
   };
   suffixIconButtons?: IAppFormIconButtonV2[];
+  exampleValue?: () => string;
+  cssClasses?: string;
 }
 
 /**
@@ -669,6 +672,28 @@ interface ICreateViewModifyV2TabLabelList {
 }
 
 /**
+ * Input - button that runs an action and can display the result of that action next to it
+ */
+export interface ICreateViewModifyV2TabButton {
+  // required
+  type: CreateViewModifyV2TabInputType.BUTTON;
+  name: string;
+  label: () => string;
+  click: () => void;
+
+  // optional
+  icon?: string;
+  loading?: () => boolean;
+  disabled?: () => boolean;
+  visible?: () => boolean;
+  result?: () => {
+    status: 'success' | 'error' | 'warning',
+    icon: string,
+    message: string
+  } | undefined;
+}
+
+/**
  * Input
  */
 export type CreateViewModifyV2TabInput = ICreateViewModifyV2TabInputText | ICreateViewModifyV2TabInputWYSIWYG | ICreateViewModifyV2TabInputEmail
@@ -679,7 +704,7 @@ export type CreateViewModifyV2TabInput = ICreateViewModifyV2TabInputText | ICrea
 | ICreateViewModifyV2TabInputList | ICreateViewModifyV2TabInputLatLng | ICreateViewModifyV2TabInputListText | ICreateViewModifyV2TabInputLocationIdentifier
 | ICreateViewModifyV2TabInputDocument | ICreateViewModifyV2TabInputAddress | ICreateViewModifyV2TabInputVaccine
 | ICreateViewModifyV2TabInputCenterDateRange | ICreateViewModifyV2TabInputMapServer | ICreateViewModifyV2TabLabel | ICreateViewModifyV2TabLinkList
-| ICreateViewModifyV2TabLabelList;
+| ICreateViewModifyV2TabLabelList | ICreateViewModifyV2TabButton;
 
 /**
  * Tab section

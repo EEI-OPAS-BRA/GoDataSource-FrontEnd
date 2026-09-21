@@ -491,18 +491,70 @@
               }
             }
 
+            &.gd-create-view-modify-bottom-section-content-input-wide {
+              width: calc(50% - 1.6rem);
+
+              @include breakpoint('xs') {
+                width: calc(100% - 1.6rem);
+              }
+            }
+
             &.gd-create-view-modify-bottom-section-content-input-has-textarea,
             &.gd-create-view-modify-bottom-section-content-input-has-select-groups,
             &.gd-create-view-modify-bottom-section-content-input-has-wysiwyg,
             &.gd-create-view-modify-bottom-section-content-input-has-label,
             &.gd-create-view-modify-bottom-section-content-input-has-label-list,
-            &.gd-create-view-modify-bottom-section-content-input-has-link-list {
+            &.gd-create-view-modify-bottom-section-content-input-has-link-list,
+            &.gd-create-view-modify-bottom-section-content-input-has-button {
               width: 100%;
+            }
+
+            /* Button with result */
+            .gd-create-view-modify-bottom-section-content-input-button {
+              @include flex_align_items(center);
+              @include flex(flex);
+              flex-wrap: wrap;
+              gap: 1.6rem;
+
+              .mat-flat-button {
+                .mat-icon,
+                .mat-progress-spinner {
+                  margin-right: 0.8rem;
+                }
+              }
+
+              .gd-create-view-modify-bottom-section-content-input-button-result {
+                @include flex_align_items(center);
+                @include flex(flex);
+                font-size: 1.3rem;
+                gap: 0.8rem;
+                line-height: 2rem;
+
+                .mat-icon {
+                  flex: 0 0 auto;
+                  font-size: 2rem;
+                  height: 2rem;
+                  width: 2rem;
+                }
+
+                &.gd-create-view-modify-bottom-section-content-input-button-result-success {
+                  color: var(--gd-success);
+                }
+
+                &.gd-create-view-modify-bottom-section-content-input-button-result-error {
+                  color: var(--gd-danger);
+                }
+
+                &.gd-create-view-modify-bottom-section-content-input-button-result-warning {
+                  color: var(--gd-warning);
+                }
+              }
             }
 
             &.gd-create-view-modify-bottom-section-content-input-has-label,
             &.gd-create-view-modify-bottom-section-content-input-has-label-list,
-            &.gd-create-view-modify-bottom-section-content-input-has-link-list {
+            &.gd-create-view-modify-bottom-section-content-input-has-link-list,
+            &.gd-create-view-modify-bottom-section-content-input-has-button {
               margin-bottom: 1.6rem;
             }
 
