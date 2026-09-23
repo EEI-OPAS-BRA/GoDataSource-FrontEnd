@@ -1305,7 +1305,7 @@ export class ContactDailyFollowUpsListComponent extends ListComponent<FollowUpMo
         ),
         notVisible: true,
         format: {
-          type: 'responsibleUser.name'
+          type: 'responsibleUser.nameAndEmail'
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,

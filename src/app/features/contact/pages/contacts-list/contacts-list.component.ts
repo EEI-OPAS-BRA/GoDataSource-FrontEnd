@@ -1640,7 +1640,7 @@ export class ContactsListComponent
         ),
         notVisible: true,
         format: {
-          type: 'responsibleUser.name'
+          type: 'responsibleUser.nameAndEmail'
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,

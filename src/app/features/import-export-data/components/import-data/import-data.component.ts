@@ -4155,7 +4155,7 @@ export class ImportDataComponent
     } else if (this.languageFields[destinationField] && this.languages.map[destinationOption]) {
       return this.languages.map[destinationOption].name;
     } else if (this.userFields[destinationField] && this.users.map[destinationOption]) {
-      return this.users.map[destinationOption].name;
+      return this.users.map[destinationOption].nameAndEmail;
     } else {
       // general dropdown
       return this.importableObject.modelPropertyValuesMapChildMap[destinationField] &&
