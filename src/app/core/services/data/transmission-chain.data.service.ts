@@ -341,7 +341,7 @@ export class TransmissionChainDataService {
       if (
         mustFilterSnapshot && (
           !snapshotFiltersName ||
-          nodeData.model.name.toLowerCase().indexOf(snapshotFiltersName) > -1
+          (nodeData.model.name || '').toLowerCase().indexOf(snapshotFiltersName) > -1
         ) && (
           !snapshotFiltersLabSeqResult || (
             nodeData.labResults &&
