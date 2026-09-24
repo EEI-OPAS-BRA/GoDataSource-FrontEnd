@@ -532,13 +532,19 @@ export class RelationshipHelperModel {
                 ];
 
                 // View full resource link
-                const sourcePerson = relationshipData.relationship.sourcePerson;
+                // anchored on the dialog's main entity (not the relationship's source person), since
+                // the source person may be masked and unreachable directly, same as the list actions
                 relationshipsInputs.push({
                   type: V2SideDialogConfigInputType.LINK,
                   name: `relationship-list-view-list-${relationshipData.relationship.id}`,
                   placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
                   link: () => [
-                    `/relationships/${sourcePerson.type}/${sourcePerson.id}/contacts/${relationshipData.relationship.id}/view`
+                    '/relationships',
+                    entity.type,
+                    entity.id,
+                    from === SentFromColumn.CONTACTS ? 'contacts' : 'exposures',
+                    relationshipData.relationship.id,
+                    'view'
                   ],
                   visible: () => RelationshipModel.canView(this.parent.authUser) &&
                     (
