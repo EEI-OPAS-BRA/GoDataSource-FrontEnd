@@ -34,6 +34,7 @@ export class EventModel
     IPermissionRelatedContactBulk {
   id: string;
   name: string;
+  masked: boolean;
   date: string | Moment;
   dateApproximate: boolean;
   eventCategory: string;
@@ -143,6 +144,7 @@ export class EventModel
     this.id = _.get(data, 'id');
     this.visualId = _.get(data, 'visualId');
     this.name = _.get(data, 'name');
+    this.masked = _.get(data, 'masked');
     this.date = _.get(data, 'date');
     this.dateApproximate = _.get(data, 'dateApproximate');
     this.eventCategory = _.get(data, 'eventCategory');

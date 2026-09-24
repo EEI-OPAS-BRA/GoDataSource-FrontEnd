@@ -49,6 +49,7 @@ export class CaseModel
   firstName: string;
   middleName: string;
   lastName: string;
+  masked: boolean;
   gender: string;
   occupation: string;
   riskLevel: string;
@@ -253,6 +254,7 @@ export class CaseModel
     this.firstName = _.get(data, 'firstName');
     this.middleName = _.get(data, 'middleName');
     this.lastName = _.get(data, 'lastName');
+    this.masked = _.get(data, 'masked');
     this.gender = _.get(data, 'gender');
     this.occupation = _.get(data, 'occupation');
     this.burialPlaceName = _.get(data, 'burialPlaceName');

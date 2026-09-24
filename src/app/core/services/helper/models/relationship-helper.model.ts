@@ -31,6 +31,7 @@ import { RelationshipDataService } from '../../data/relationship.data.service';
 import { IV2ColumnToVisibleMandatoryConf, V2AdvancedFilterToVisibleMandatoryConf } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
 import { LocalizationHelper, Moment } from '../../../helperClasses/localization-helper';
 import { LocationModel } from '../../../models/location.model';
+import { AddressModel } from '../../../models/address.model';
 
 /**
  * From ?
@@ -497,7 +498,8 @@ export class RelationshipHelperModel {
                     selectedOutbreak?.isContactsOfContactsActive
                   ) &&
                   relationshipData.model.canView(this.parent.authUser) &&
-                  !relationshipData.model.deleted
+                  !relationshipData.model.deleted &&
+                  !relationshipData.model.masked
                 }, {
                   type: V2SideDialogConfigInputType.DIVIDER
                 });
@@ -530,13 +532,19 @@ export class RelationshipHelperModel {
                 ];
 
                 // View full resource link
-                const sourcePerson = relationshipData.relationship.sourcePerson;
+                // anchored on the dialog's main entity (not the relationship's source person), since
+                // the source person may be masked and unreachable directly, same as the list actions
                 relationshipsInputs.push({
                   type: V2SideDialogConfigInputType.LINK,
                   name: `relationship-list-view-list-${relationshipData.relationship.id}`,
                   placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
                   link: () => [
-                    `/relationships/${sourcePerson.type}/${sourcePerson.id}/contacts/${relationshipData.relationship.id}/view`
+                    '/relationships',
+                    entity.type,
+                    entity.id,
+                    from === SentFromColumn.CONTACTS ? 'contacts' : 'exposures',
+                    relationshipData.relationship.id,
+                    'view'
                   ],
                   visible: () => RelationshipModel.canView(this.parent.authUser) &&
                     (
@@ -1348,6 +1356,11 @@ export class RelationshipHelperModel {
       }
     }
   ): IV2Column[] {
+    // address model used to search by location, combined across the address columns below
+    const filterAddressModel: AddressModel = new AddressModel({
+      geoLocationAccurate: ''
+    });
+
     // default table columns
     const tableColumns: IV2ColumnToVisibleMandatoryConf[] = [
       {
@@ -1376,7 +1389,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1407,7 +1420,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1442,7 +1455,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1908,6 +1921,14 @@ export class RelationshipHelperModel {
         format: {
           type: 'model.mainAddress.location.name'
         },
+        filter: {
+          type: V2FilterType.ADDRESS_MULTIPLE_LOCATION,
+          address: filterAddressModel,
+          field: 'addresses',
+          fieldIsArray: true,
+          // events only have a single `address`, not an `addresses` array
+          singleAddressField: 'address'
+        },
         link: (data) => {
           return data.model?.mainAddress?.location?.name && LocationModel.canView(this.parent.authUser) ?
             `/locations/${data.model.mainAddress.location.id}/view` :
@@ -1920,7 +1941,8 @@ export class RelationshipHelperModel {
         ...this.parent.list.retrieveAddressLocationColumnsPerType(
           definitions.options.addressType,
           this.parent.authUser,
-          (item) => item?.model?.addresses || (item?.model?.address ? [item.model.address] : [])
+          (item) => item?.model?.addresses || (item?.model?.address ? [item.model.address] : []),
+          filterAddressModel
         )
       );
     }
