@@ -2159,8 +2159,14 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           data: entity,
           selected: (_mapComponent: WorldMapComponent, mark: WorldMapMarker) => {
             // display entity information ( case / contact / event )
-            const loadingDialog = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
             const localEntity: EntityModel = mark.data;
+
+            // masked nodes carry no link or action that would open the person
+            if (localEntity.model.masked) {
+              return;
+            }
+
+            const loadingDialog = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
             this.entityDataService
               .getEntity(
                 localEntity.type,

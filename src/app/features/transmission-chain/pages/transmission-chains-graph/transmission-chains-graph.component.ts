@@ -226,6 +226,11 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // masked nodes carry no link or action that would open the person
+    if (entity.masked) {
+      return;
+    }
+
     // retrieve entity info
     const loadingDialog = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
     this.entityDataService
