@@ -697,23 +697,32 @@ export class RelationshipHelperModel {
     const relationshipConfig = config as {
       showResourceViewPageLink: boolean
     };
-    // don't offer a link that would open a masked person's record
-    const relationshipHasMaskedPerson: boolean = entity instanceof RelationshipModel &&
-      (entity.people || []).some((person) => person.model?.masked);
+    let relationshipLink: string;
     if (
       entity instanceof RelationshipModel &&
       relationshipConfig?.showResourceViewPageLink &&
-      entity.sourcePerson &&
-      !relationshipHasMaskedPerson
+      entity.sourcePerson
     ) {
-      // determine relationship link
+      const sourcePeople = (entity.people || []).find((people) => people.model.id === entity.sourcePerson.id);
+      if (!sourcePeople?.model.masked) {
+        relationshipLink = `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`;
+      } else {
+        const targetPerson = (entity.persons || []).find((person) => person.target);
+        const targetPeople = (entity.people || []).find((people) => people.model.id === targetPerson?.id);
+        if (
+          targetPerson &&
+          !targetPeople?.model.masked
+        ) {
+          relationshipLink = `/relationships/${targetPerson.type}/${targetPerson.id}/exposures/${entity.id}/view`;
+        }
+      }
+    }
+    if (relationshipLink) {
       inputs.push({
         type: V2SideDialogConfigInputType.LINK,
         name: uuid(),
         placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
-        link: () => [
-          `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`
-        ]
+        link: () => [relationshipLink]
       });
     }
 
