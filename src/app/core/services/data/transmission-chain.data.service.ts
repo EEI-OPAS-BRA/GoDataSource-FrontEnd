@@ -1017,6 +1017,11 @@ export class TransmissionChainDataService {
             }
           }
 
+          // a masked node is identified by its visual ID no matter which label criteria is selected
+          if (nodeData.masked) {
+            nodeData.label = node.model.visualId ? node.model.visualId : '';
+          }
+
           // check min / max dates
           if (nodeData.dateTimeline) {
             if (LocalizationHelper.toMoment(nodeData.dateTimeline).isAfter(maxTimelineDate) || !maxTimelineDate) {

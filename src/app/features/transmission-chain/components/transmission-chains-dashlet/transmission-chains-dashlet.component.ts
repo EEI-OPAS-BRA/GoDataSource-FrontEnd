@@ -2152,7 +2152,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           type: WorldMapMarkerType.CIRCLE,
           radius: markerCircleRadius,
           color: typeToColorMap[entity.type] ? typeToColorMap[entity.type] : Constants.DEFAULT_COLOR_CHAINS,
-          label: gNode.data.name,
+          label: entity.model.masked ? (entity.model.visualId || '') : gNode.data.name,
           labelColor: (entity.model as CaseModel).classification && caseClassificationToColorMap[(entity.model as CaseModel).classification] ?
             caseClassificationToColorMap[(entity.model as CaseModel).classification] :
             Constants.DEFAULT_COLOR_CHAINS,
