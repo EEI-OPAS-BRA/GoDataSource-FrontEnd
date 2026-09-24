@@ -7,6 +7,8 @@ export class GraphNodeModel {
   id: string;
   name: string;
   type: EntityType;
+  // true when the API withheld this person's name because it is outside the user's geographic scope
+  masked: boolean;
   // date used when displaying the timeline
   dateTimeline: string;
   // use this field to remove nodes with no date for timeline
@@ -36,6 +38,7 @@ export class GraphNodeModel {
     this.id = _.get(data, 'id');
     this.name = _.get(data, 'name');
     this.type = _.get(data, 'type');
+    this.masked = _.get(data, 'masked', false);
     this.dateTimeline = _.get(data, 'dateTimeline', '');
     this.displayTimeline = _.get(data, 'displayTimeline', 'element');
     this.nodeColor = _.get(data, 'nodeColor', Constants.DEFAULT_COLOR_CHAINS);

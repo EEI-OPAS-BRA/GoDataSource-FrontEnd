@@ -58,6 +58,7 @@ export class EventModel
 
   // visual id
   visualId: string;
+  masked: boolean;
 
   responsibleUserId: string;
   responsibleUser: UserModel;
@@ -142,6 +143,7 @@ export class EventModel
 
     this.id = _.get(data, 'id');
     this.visualId = _.get(data, 'visualId');
+    this.masked = _.get(data, 'masked', false);
     this.name = _.get(data, 'name');
     this.date = _.get(data, 'date');
     this.dateApproximate = _.get(data, 'dateApproximate');
