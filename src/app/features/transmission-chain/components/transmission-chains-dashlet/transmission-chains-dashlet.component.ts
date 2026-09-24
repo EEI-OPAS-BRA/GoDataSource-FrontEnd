@@ -2141,6 +2141,11 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           return;
         }
 
+        // don't draw a marker at a masked person's residence
+        if (entity.model.masked) {
+          return;
+        }
+
         // create marker
         const marker: WorldMapMarker = new WorldMapMarker({
           point: new WorldMapPoint(
@@ -2152,21 +2157,15 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           type: WorldMapMarkerType.CIRCLE,
           radius: markerCircleRadius,
           color: typeToColorMap[entity.type] ? typeToColorMap[entity.type] : Constants.DEFAULT_COLOR_CHAINS,
-          label: entity.model.masked ? (entity.model.visualId || '') : gNode.data.name,
+          label: gNode.data.name,
           labelColor: (entity.model as CaseModel).classification && caseClassificationToColorMap[(entity.model as CaseModel).classification] ?
             caseClassificationToColorMap[(entity.model as CaseModel).classification] :
             Constants.DEFAULT_COLOR_CHAINS,
           data: entity,
           selected: (_mapComponent: WorldMapComponent, mark: WorldMapMarker) => {
             // display entity information ( case / contact / event )
-            const localEntity: EntityModel = mark.data;
-
-            // masked nodes carry no link or action that would open the person
-            if (localEntity.model.masked) {
-              return;
-            }
-
             const loadingDialog = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
+            const localEntity: EntityModel = mark.data;
             this.entityDataService
               .getEntity(
                 localEntity.type,
