@@ -1925,7 +1925,9 @@ export class RelationshipHelperModel {
           type: V2FilterType.ADDRESS_MULTIPLE_LOCATION,
           address: filterAddressModel,
           field: 'addresses',
-          fieldIsArray: true
+          fieldIsArray: true,
+          // events only have a single `address`, not an `addresses` array
+          singleAddressField: 'address'
         },
         link: (data) => {
           return data.model?.mainAddress?.location?.name && LocationModel.canView(this.parent.authUser) ?

@@ -172,6 +172,9 @@ interface IV2FilterAddressMultipleLocation extends Omit<IV2FilterBasic, 'address
   defaultValue?: string[];
   // when set, the location filter targets addresses of this type (typeId) instead of the current address
   addressType?: string;
+  // when set, the current address location filter also matches this singular address field, for records
+  // that don't have `field` as an array (e.g. events, which have a single `address` instead of `addresses`)
+  singleAddressField?: string;
 }
 
 /**
