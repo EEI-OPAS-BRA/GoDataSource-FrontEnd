@@ -497,7 +497,8 @@ export class RelationshipHelperModel {
                     selectedOutbreak?.isContactsOfContactsActive
                   ) &&
                   relationshipData.model.canView(this.parent.authUser) &&
-                  !relationshipData.model.deleted
+                  !relationshipData.model.deleted &&
+                  !relationshipData.model.masked
                 }, {
                   type: V2SideDialogConfigInputType.DIVIDER
                 });
@@ -1376,7 +1377,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1407,7 +1408,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1442,7 +1443,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
