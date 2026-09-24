@@ -233,7 +233,11 @@ export abstract class AppFormLocationBaseV2<T>
       this.outbreakSubscription = this.outbreakDataService
         .getSelectedOutbreakSubject()
         .subscribe((outbreak) => {
-          if (outbreak && outbreak.id) {
+          if (
+            outbreak &&
+            outbreak.id &&
+            outbreak.id !== this.outbreakId
+          ) {
             // select outbreak
             this.outbreakId = outbreak.id;
 
