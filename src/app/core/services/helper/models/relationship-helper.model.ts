@@ -697,10 +697,14 @@ export class RelationshipHelperModel {
     const relationshipConfig = config as {
       showResourceViewPageLink: boolean
     };
+    // don't offer a link that would open a masked person's record
+    const relationshipHasMaskedPerson: boolean = entity instanceof RelationshipModel &&
+      (entity.people || []).some((person) => person.model?.masked);
     if (
       entity instanceof RelationshipModel &&
       relationshipConfig?.showResourceViewPageLink &&
-      entity.sourcePerson
+      entity.sourcePerson &&
+      !relationshipHasMaskedPerson
     ) {
       // determine relationship link
       inputs.push({
@@ -1046,10 +1050,10 @@ export class RelationshipHelperModel {
     // create list of fields to display
     const lightObject: ILabelValuePairModel[] = [{
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_SOURCE',
-      value: sourcePeople.model.name
+      value: sourcePeople.model.masked ? (sourcePeople.model.visualId || '') : sourcePeople.model.name
     }, {
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_TARGET',
-      value: destinationPeople.model.name
+      value: destinationPeople.model.masked ? (destinationPeople.model.visualId || '') : destinationPeople.model.name
     }];
 
     // contactDate
