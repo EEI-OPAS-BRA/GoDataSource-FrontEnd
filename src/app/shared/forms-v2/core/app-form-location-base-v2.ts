@@ -135,7 +135,7 @@ export abstract class AppFormLocationBaseV2<T>
     );
 
     // check if we have a request cached for this query
-    const cacheKey: string = queryBuilder.buildQuery();
+    const cacheKey: string = `${outbreakId || ''}_${queryBuilder.buildQuery()}`;
     if (
       !AppFormLocationBaseV2.CACHE[methodKey] ||
       !AppFormLocationBaseV2.CACHE[methodKey][cacheKey]
@@ -231,7 +231,7 @@ export abstract class AppFormLocationBaseV2<T>
     if (this.useOutbreakLocations) {
       // get selected outbreak
       this.outbreakSubscription = this.outbreakDataService
-        .getSelectedOutbreak()
+        .getSelectedOutbreakSubject()
         .subscribe((outbreak) => {
           if (outbreak && outbreak.id) {
             // select outbreak
