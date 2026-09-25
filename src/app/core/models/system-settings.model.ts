@@ -2,11 +2,13 @@ import * as _ from 'lodash';
 import { SystemBackupSettingsModel } from './system-backup-settings.model';
 import { SystemUpstreamServerModel } from './system-upstream-server.model';
 import { SystemSyncSettingsModel } from './system-sync-settings.model';
+import { NotificationSettingsModel } from './notification-settings.model';
 
 export class SystemSettingsModel {
   dataBackup: SystemBackupSettingsModel;
   upstreamServers: SystemUpstreamServerModel[];
   sync: SystemSyncSettingsModel;
+  notificationSettings: NotificationSettingsModel;
 
   constructor(data = null) {
     this.dataBackup = new SystemBackupSettingsModel(_.get(data, 'dataBackup'));
@@ -17,5 +19,7 @@ export class SystemSettingsModel {
     });
 
     this.sync = new SystemSyncSettingsModel(_.get(data, 'sync'));
+
+    this.notificationSettings = new NotificationSettingsModel(_.get(data, 'notificationSettings'));
   }
 }

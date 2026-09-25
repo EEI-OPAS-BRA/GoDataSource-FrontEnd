@@ -175,6 +175,13 @@ export enum PERMISSION {
   TEAM_IMPORT = 'team_import',
   TEAM_LIST_WORKLOAD = 'team_list_workload',
 
+  // team notifications
+  TEAM_NOTIFICATION_LIST = 'team_notification_list',
+  TEAM_NOTIFICATION_VIEW = 'team_notification_view',
+  TEAM_NOTIFICATION_CREATE = 'team_notification_create',
+  TEAM_NOTIFICATION_MODIFY = 'team_notification_modify',
+  TEAM_NOTIFICATION_DELETE = 'team_notification_delete',
+
   // clusters
   CLUSTER_LIST = 'cluster_list',
   CLUSTER_VIEW = 'cluster_view',

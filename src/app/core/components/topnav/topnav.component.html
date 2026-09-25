@@ -104,6 +104,27 @@
 
     </ng-container>
 
+    <!-- Team notifications -->
+    <button
+      *ngIf="authUser"
+      class="gd-top-right-notifications"
+      type="button"
+      mat-icon-button
+      [matTooltip]="'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_LABEL' | translate"
+      (click)="displayNotifications()">
+
+      <!-- Icon -->
+      <mat-icon>{{ unreadNotificationsCount > 0 ? 'notifications_active' : 'notifications' }}</mat-icon>
+
+      <!-- Unread badge -->
+      <span
+        *ngIf="unreadNotificationsCount > 0"
+        class="gd-top-right-notifications-badge">
+        {{ unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount }}
+      </span>
+
+    </button>
+
     <!-- Help -->
     <button
       *ngIf="contextSearchHelpLoading || contextSearchHelpItems?.length > 0"

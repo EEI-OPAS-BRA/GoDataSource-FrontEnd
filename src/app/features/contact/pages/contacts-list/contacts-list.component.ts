@@ -1059,6 +1059,39 @@ export class ContactsListComponent
         undefined,
         filterAddressModel
       ),
+      // one logradouro / numero / complemento / bairro column per address type (except current)
+      ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        'logradouro',
+        'LNG_ADDRESS_FIELD_LABEL_LOGRADOURO',
+        this.personAndRelatedHelperService.i18nService,
+        undefined,
+        filterAddressModel
+      ),
+      ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        'numero',
+        'LNG_ADDRESS_FIELD_LABEL_NUMERO',
+        this.personAndRelatedHelperService.i18nService,
+        undefined,
+        filterAddressModel
+      ),
+      ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        'complemento',
+        'LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO',
+        this.personAndRelatedHelperService.i18nService,
+        undefined,
+        filterAddressModel
+      ),
+      ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        'bairro',
+        'LNG_ADDRESS_FIELD_LABEL_BAIRRO',
+        this.personAndRelatedHelperService.i18nService,
+        undefined,
+        filterAddressModel
+      ),
       {
         field: 'addresses.emailAddress',
         label: 'LNG_CONTACT_FIELD_LABEL_EMAIL',
@@ -1094,6 +1127,86 @@ export class ContactsListComponent
           type: V2FilterType.ADDRESS_FIELD,
           address: filterAddressModel,
           addressField: 'addressLine1',
+          field: 'addresses',
+          fieldIsArray: true
+        },
+        sortable: true
+      },
+      {
+        field: 'addresses.logradouro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_LOGRADOURO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.logradouro'
+        ),
+        notVisible: true,
+        format: {
+          type: 'mainAddress.logradouro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'logradouro',
+          field: 'addresses',
+          fieldIsArray: true
+        },
+        sortable: true
+      },
+      {
+        field: 'addresses.numero',
+        label: 'LNG_ADDRESS_FIELD_LABEL_NUMERO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.numero'
+        ),
+        notVisible: true,
+        format: {
+          type: 'mainAddress.numero'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'numero',
+          field: 'addresses',
+          fieldIsArray: true
+        },
+        sortable: true
+      },
+      {
+        field: 'addresses.complemento',
+        label: 'LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.complemento'
+        ),
+        notVisible: true,
+        format: {
+          type: 'mainAddress.complemento'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'complemento',
+          field: 'addresses',
+          fieldIsArray: true
+        },
+        sortable: true
+      },
+      {
+        field: 'addresses.bairro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_BAIRRO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.bairro'
+        ),
+        notVisible: true,
+        format: {
+          type: 'mainAddress.bairro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'bairro',
           field: 'addresses',
           fieldIsArray: true
         },
@@ -1644,7 +1757,7 @@ export class ContactsListComponent
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(this.selectedOutbreak.id)),
           includeNoValue: true
         },
         exclude: (): boolean => {

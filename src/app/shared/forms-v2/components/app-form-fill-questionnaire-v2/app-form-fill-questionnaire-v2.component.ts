@@ -123,6 +123,10 @@ interface IFlattenNodeAnswer {
   definition: FlattenNodeAnswerDraw;
   collapsed: boolean;
 
+  // whether question-level sub-questions were rendered for this answer at last flatten - used to avoid
+  // rebuilding the whole list (and losing input focus) on every keystroke when the shown/hidden state hasn't changed
+  additionalQuestionsShown?: boolean;
+
   // might need this information if definition is FILE
   // we need them here otherwise the same uploader is used by multiple answers if question is multianswer per date
   uploader?: FileUploader;
@@ -409,6 +413,45 @@ export class AppFormFillQuestionnaireV2Component
 
     // update errors data
     this.updateErrorsData();
+
+    // this component uses OnPush change detection; when this runs from the debounced (async) branch below,
+    // Angular won't know to re-render unless we ask it to
+    this.detectChanges();
+  }
+
+  /**
+   * Identify flattened list rows across re-renders so cdk-virtual-scroll can reuse existing DOM nodes
+   * instead of destroying and recreating them (which would steal focus from whatever input is being typed into)
+   */
+  trackByFn(
+    index: number,
+    item: IFlattenNodeQuestion | IFlattenNodeAnswerMultiDate | IFlattenNodeAnswer | IFlattenNodeCategory
+  ): string {
+    switch (item.type) {
+      case FlattenType.CATEGORY:
+        return `cat_${item.category}_${index}`;
+      case FlattenType.QUESTION:
+        return `q_${item.data.variable}_${item.no}`;
+      case FlattenType.ANSWER_MULTI_DATE:
+        return `d_${item.parent.data.variable}_${item.no}`;
+      case FlattenType.ANSWER:
+        return `a_${item.parent.data.variable}_${item.parent.no}_${item.index}`;
+      default:
+        return `i_${index}`;
+    }
+  }
+
+  /**
+   * Check if a question-level answer has a value (used to determine if sub-questions attached directly to a question should be shown)
+   */
+  private hasAnsweredValue(value: any): boolean {
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+
+    return value !== undefined &&
+      value !== null &&
+      value !== '';
   }
 
   /**
@@ -478,7 +521,7 @@ export class AppFormFillQuestionnaireV2Component
         data: question,
         parent,
         oneParentIsInactive,
-        canCollapseOrExpand: question.answers?.length > 0,
+        canCollapseOrExpand: question.answers?.length > 0 || question.additionalQuestions?.length > 0,
         questionRow: accumulator.length,
         no: question.answerType !== Constants.ANSWER_TYPES.MARKUP.value ?
           `${noPrefix}${noPrefix ? '.' : ''}${no}` :
@@ -584,6 +627,22 @@ export class AppFormFillQuestionnaireV2Component
               // add to list
               flattenedQuestion.usedAnswers.push(answerIndex);
               accumulator.push(flattenedAnswer);
+
+              // question-level sub-questions - shown once this question has been answered (regardless of which option was picked)
+              flattenedAnswer.additionalQuestionsShown = question.additionalQuestions?.length > 0 &&
+                this.hasAnsweredValue(item.value);
+              if (flattenedAnswer.additionalQuestionsShown) {
+                this.flatten(
+                  accumulator,
+                  question.additionalQuestions,
+                  flattenedAnswer.level + 1,
+                  flattenedAnswer,
+                  flattenedAnswer.oneParentIsInactive,
+                  answerIndex,
+                  `${flattenedQuestion.no}.${answerIndex + 1}`,
+                  collapsed || flattenedQuestion.data.collapsed
+                );
+              }
 
               // determine if we need to show other things depending on what was selected
               // multiple answer question ?
@@ -860,6 +919,17 @@ export class AppFormFillQuestionnaireV2Component
                     true
                   );
 
+                  // re-render so question-level sub-questions show / hide accordingly to the answered value
+                  if (
+                    childFlatAnswer.parent.data.additionalQuestions?.length > 0 &&
+                    this.hasAnsweredValue(this.value[childFlatAnswer.parent.data.variable][childFlatAnswer.index]?.value) !== !!childFlatAnswer.additionalQuestionsShown
+                  ) {
+                    this.nonFlatToFlat(
+                      false,
+                      false
+                    );
+                  }
+
                   // changed
                   this.onChange(this.value);
 
@@ -875,6 +945,22 @@ export class AppFormFillQuestionnaireV2Component
             // add to list
             flattenedQuestion.usedAnswers.push(answerIndex);
             accumulator.push(flattenedAnswer);
+
+            // question-level sub-questions (answer types without answer options) - shown once this question has been answered
+            flattenedAnswer.additionalQuestionsShown = question.additionalQuestions?.length > 0 &&
+              this.hasAnsweredValue(this.value[flattenedQuestion.data.variable][answerIndex]?.value);
+            if (flattenedAnswer.additionalQuestionsShown) {
+              this.flatten(
+                accumulator,
+                question.additionalQuestions,
+                flattenedAnswer.level + 1,
+                flattenedAnswer,
+                flattenedAnswer.oneParentIsInactive,
+                answerIndex,
+                `${flattenedQuestion.no}.${answerIndex + 1}`,
+                collapsed || flattenedQuestion.data.collapsed
+              );
+            }
           };
 
           // determine how many answers we should generate
@@ -1290,6 +1376,19 @@ export class AppFormFillQuestionnaireV2Component
       true
     );
 
+    // re-render so question-level sub-questions show / hide accordingly to the answered value
+    // - only when the shown/hidden state actually changes, otherwise rebuilding the list on every
+    //   keystroke would recreate the DOM node being typed into and steal the input focus
+    if (
+      item.parent.data.additionalQuestions?.length > 0 &&
+      this.hasAnsweredValue(this.value[item.parent.data.variable][item.index]?.value) !== !!item.additionalQuestionsShown
+    ) {
+      this.nonFlatToFlat(
+        false,
+        false
+      );
+    }
+
     // make dirty
     this.onChange(this.value);
   }
@@ -1413,6 +1512,17 @@ export class AppFormFillQuestionnaireV2Component
           item.parent,
           true
         );
+
+        // re-render so question-level sub-questions show / hide accordingly to the answered value
+        if (
+          item.parent.data.additionalQuestions?.length > 0 &&
+          this.hasAnsweredValue(this.value[item.parent.data.variable][item.index]?.value) !== !!item.additionalQuestionsShown
+        ) {
+          this.nonFlatToFlat(
+            false,
+            false
+          );
+        }
 
         // change
         this.onChange(this.value);
