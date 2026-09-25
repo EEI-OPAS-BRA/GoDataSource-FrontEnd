@@ -177,7 +177,7 @@ interface IV2FilterAddressMultipleLocation extends Omit<IV2FilterBasic, 'address
 /**
  * Simple address field
  */
-interface IV2FilterAddressField extends Omit<IV2FilterBasic, 'address' | 'addressField' | 'defaultValue'> {
+interface IV2FilterAddressField extends Omit<IV2FilterBasic, 'address' | 'addressField' | 'defaultValue' | 'addressType'> {
   // required
   type: V2FilterType.ADDRESS_FIELD;
   address: AddressModel;
@@ -188,6 +188,8 @@ interface IV2FilterAddressField extends Omit<IV2FilterBasic, 'address' | 'addres
   // optional
   defaultValue?: any;
   useLike?: boolean;
+  // when set, the field filter targets addresses of this type (typeId) instead of the current address
+  addressType?: string;
 }
 
 /**

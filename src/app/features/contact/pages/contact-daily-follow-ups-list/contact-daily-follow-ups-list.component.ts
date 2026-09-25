@@ -1211,6 +1211,86 @@ export class ContactDailyFollowUpsListComponent extends ListComponent<FollowUpMo
         }
       },
       {
+        field: 'address.logradouro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_LOGRADOURO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.followUp.visibleMandatoryKey,
+          'address.logradouro'
+        ),
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: 'address.logradouro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'logradouro',
+          field: 'address',
+          fieldIsArray: false
+        }
+      },
+      {
+        field: 'address.numero',
+        label: 'LNG_ADDRESS_FIELD_LABEL_NUMERO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.followUp.visibleMandatoryKey,
+          'address.numero'
+        ),
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: 'address.numero'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'numero',
+          field: 'address',
+          fieldIsArray: false
+        }
+      },
+      {
+        field: 'address.complemento',
+        label: 'LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.followUp.visibleMandatoryKey,
+          'address.complemento'
+        ),
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: 'address.complemento'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'complemento',
+          field: 'address',
+          fieldIsArray: false
+        }
+      },
+      {
+        field: 'address.bairro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_BAIRRO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.followUp.visibleMandatoryKey,
+          'address.bairro'
+        ),
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: 'address.bairro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: 'bairro',
+          field: 'address',
+          fieldIsArray: false
+        }
+      },
+      {
         field: 'address.city',
         label: 'LNG_ADDRESS_FIELD_LABEL_CITY',
         visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
