@@ -230,6 +230,18 @@ const routes: Routes = [
     ]
   },
 
+  // Notification settings
+  {
+    path: 'notification-settings',
+    component: fromPages.NotificationSettingsComponent,
+    canActivate: [AuthGuard],
+    data: {
+      permissions: [
+        PERMISSION.SYSTEM_SETTINGS_MODIFY
+      ]
+    }
+  },
+
   // Sync
   {
     path: 'sync-logs',

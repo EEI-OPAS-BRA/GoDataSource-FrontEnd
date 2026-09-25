@@ -34,6 +34,18 @@ export class AddressModel {
   filterLocationIds: string[];
   // used by ui - location filter values per address type (typeId => location ids)
   filterLocationIdsByType: { [typeId: string]: string[] } = {};
+  // used by ui - text field filter values per address type (`${typeId}::${field}` => value)
+  filterFieldsByType: { [typeAndField: string]: string } = {};
+
+  /**
+   * Build the filterFieldsByType map key for a given address type + field
+   */
+  static filterFieldsByTypeKey(
+    typeId: string,
+    field: string
+  ): string {
+    return `${typeId}::${field}`;
+  }
 
   /**
    * Search for current address
@@ -286,6 +298,21 @@ export class AddressModel {
         };
       }
 
+      // check for logradouro / numero / complemento / bairro
+      ['logradouro', 'numero', 'complemento', 'bairro'].forEach((customField) => {
+        const customValue: string = (addressModel as any)[customField];
+        if (customValue) {
+          query[customField] = {
+            // text start with
+            $regex: '^' +
+              RequestFilter.escapeStringForRegex(customValue)
+                .replace(/%/g, '.*')
+                .replace(/\\\?/g, '.'),
+            $options: 'i'
+          };
+        }
+      });
+
       // check for phone number
       if (addressModel.phoneNumber) {
         // build number pattern condition
@@ -336,6 +363,14 @@ export class AddressModel {
       if (addressModel.postalCode) {
         query[`${property}.postalCode`] = RequestFilterGenerator.textStartWith(addressModel.postalCode, useLike);
       }
+
+      // check for logradouro / numero / complemento / bairro
+      ['logradouro', 'numero', 'complemento', 'bairro'].forEach((customField) => {
+        const customValue: string = (addressModel as any)[customField];
+        if (customValue) {
+          query[`${property}.${customField}`] = RequestFilterGenerator.textStartWith(customValue, useLike);
+        }
+      });
 
       // check for geo location accurate
       if (
@@ -402,6 +437,46 @@ export class AddressModel {
             }
           });
         }
+      });
+
+      // add a text field condition for each address type that has a field filter set
+      const fieldsByType = addressModel.filterFieldsByType || {};
+      const perTypeFieldConditions: { [typeId: string]: { [field: string]: {} } } = {};
+      Object.keys(fieldsByType).forEach((key) => {
+        const value = fieldsByType[key];
+        if (!value) {
+          return;
+        }
+
+        // split key into typeId + field
+        const separatorIndex = key.indexOf('::');
+        if (separatorIndex < 0) {
+          return;
+        }
+        const typeId = key.substring(0, separatorIndex);
+        const field = key.substring(separatorIndex + 2);
+
+        // add condition
+        if (!perTypeFieldConditions[typeId]) {
+          perTypeFieldConditions[typeId] = {};
+        }
+        perTypeFieldConditions[typeId][field] = {
+          $regex: '^' +
+            RequestFilter.escapeStringForRegex(value)
+              .replace(/%/g, '.*')
+              .replace(/\\\?/g, '.'),
+          $options: 'i'
+        };
+      });
+      Object.keys(perTypeFieldConditions).forEach((typeId) => {
+        innerConditions.push({
+          [property]: {
+            elemMatch: {
+              typeId,
+              ...perTypeFieldConditions[typeId]
+            }
+          }
+        });
       });
 
       // add the conditions

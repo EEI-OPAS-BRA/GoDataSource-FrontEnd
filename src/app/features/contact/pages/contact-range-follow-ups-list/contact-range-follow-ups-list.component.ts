@@ -323,6 +323,110 @@ export class ContactRangeFollowUpsListComponent
         }
       },
       {
+        field: 'logradouro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_LOGRADOURO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.logradouro'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.logradouro'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contactOfContact.visibleMandatoryKey,
+          'addresses.logradouro'
+        ),
+        notVisible: true,
+        format: {
+          type: 'person.mainAddress.logradouro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          childQueryBuilderKey: 'contact',
+          address: this._filterAddress,
+          addressField: 'logradouro',
+          field: 'addresses',
+          fieldIsArray: true
+        }
+      },
+      {
+        field: 'numero',
+        label: 'LNG_ADDRESS_FIELD_LABEL_NUMERO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.numero'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.numero'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contactOfContact.visibleMandatoryKey,
+          'addresses.numero'
+        ),
+        notVisible: true,
+        format: {
+          type: 'person.mainAddress.numero'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          childQueryBuilderKey: 'contact',
+          address: this._filterAddress,
+          addressField: 'numero',
+          field: 'addresses',
+          fieldIsArray: true
+        }
+      },
+      {
+        field: 'complemento',
+        label: 'LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.complemento'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.complemento'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contactOfContact.visibleMandatoryKey,
+          'addresses.complemento'
+        ),
+        notVisible: true,
+        format: {
+          type: 'person.mainAddress.complemento'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          childQueryBuilderKey: 'contact',
+          address: this._filterAddress,
+          addressField: 'complemento',
+          field: 'addresses',
+          fieldIsArray: true
+        }
+      },
+      {
+        field: 'bairro',
+        label: 'LNG_ADDRESS_FIELD_LABEL_BAIRRO',
+        visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.bairro'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+          'addresses.bairro'
+        ) || this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.contactOfContact.visibleMandatoryKey,
+          'addresses.bairro'
+        ),
+        notVisible: true,
+        format: {
+          type: 'person.mainAddress.bairro'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_FIELD,
+          childQueryBuilderKey: 'contact',
+          address: this._filterAddress,
+          addressField: 'bairro',
+          field: 'addresses',
+          fieldIsArray: true
+        }
+      },
+      {
         field: 'city',
         label: 'LNG_ADDRESS_FIELD_LABEL_CITY',
         visibleMandatoryIf: () => this.shouldVisibleMandatoryTableColumnBeVisible(

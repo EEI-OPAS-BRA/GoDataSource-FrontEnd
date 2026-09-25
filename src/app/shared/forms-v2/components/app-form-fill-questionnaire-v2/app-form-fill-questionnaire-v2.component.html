@@ -14,7 +14,7 @@
         [itemSize]="viewOnly ? 45 : 60">
         <!-- Item -->
         <div
-          *cdkVirtualFor="let item of flattenedQuestions; templateCacheSize: 0"
+          *cdkVirtualFor="let item of flattenedQuestions; trackBy: trackByFn; templateCacheSize: 0"
           class="gd-form-fill-questionnaire-v2-list-item"
           [class.gd-form-fill-questionnaire-v2-list-item-inactive]="item.data?.inactive || item.oneParentIsInactive"
           [class.gd-form-fill-questionnaire-v2-list-item-markup]="item.data?.answerType === Constants.ANSWER_TYPES.MARKUP.value"

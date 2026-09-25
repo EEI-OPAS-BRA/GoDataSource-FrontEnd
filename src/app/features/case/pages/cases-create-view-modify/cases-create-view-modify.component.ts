@@ -44,6 +44,7 @@ import { EntityDataService } from '../../../../core/services/data/entity.data.se
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import { ClusterModel } from '../../../../core/models/cluster.model';
 import { TeamModel } from '../../../../core/models/team.model';
+import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
 import { V2ColumnStatusForm } from '../../../../shared/components-v2/app-list-table-v2/models/column.model';
 import { AppListTableV2Component } from '../../../../shared/components-v2/app-list-table-v2/app-list-table-v2.component';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -91,6 +92,10 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
   hideCaseQuestionNumbers: boolean = false;
   hideContactQuestionNumbers: boolean = false;
 
+  // notify team - transient UI state, not persisted on the case model
+  private _notifyTeam: boolean = false;
+  private _notifyTeamId: string;
+
   /**
    * Constructor
    */
@@ -105,7 +110,8 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
     protected entityDataService: EntityDataService,
     protected domSanitizer: DomSanitizer,
     protected referenceDataHelperService: ReferenceDataHelperService,
-    private personAndRelatedHelperService: PersonAndRelatedHelperService
+    private personAndRelatedHelperService: PersonAndRelatedHelperService,
+    private teamNotificationDataService: TeamNotificationDataService
   ) {
     super(
       authDataService,
@@ -416,6 +422,9 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
         // Personal
         this.initializeTabsPersonal(),
 
+        // Notify team
+        this.initializeTabsNotifyTeam(),
+
         // Epidemiology
         this.initializeTabsEpidemiology(),
 
@@ -461,6 +470,53 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
           }
         );
       }
+    };
+  }
+
+  /**
+   * Initialize tabs - Notify team
+   * NOTE: notifyTeam / notifyTeamId are transient UI state only - never persisted on the case model
+   */
+  private initializeTabsNotifyTeam(): ICreateViewModifyV2Tab {
+    return {
+      type: CreateViewModifyV2TabInputType.TAB,
+      name: 'notify_team',
+      label: 'LNG_PAGE_CREATE_CASE_TAB_NOTIFY_TEAM',
+      visible: () => this.isCreate,
+      sections: [{
+        type: CreateViewModifyV2TabInputType.SECTION,
+        label: 'LNG_PAGE_CREATE_CASE_TAB_NOTIFY_TEAM',
+        inputs: [
+          {
+            type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+            name: 'notifyTeam',
+            placeholder: () => 'LNG_PAGE_CREATE_CASE_LABEL_NOTIFY_TEAM',
+            description: () => 'LNG_PAGE_CREATE_CASE_LABEL_NOTIFY_TEAM_DESCRIPTION',
+            value: {
+              get: () => this._notifyTeam,
+              set: (value) => {
+                this._notifyTeam = value;
+              }
+            }
+          }, {
+            type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
+            name: 'notifyTeamId',
+            placeholder: () => 'LNG_PAGE_CREATE_CASE_LABEL_NOTIFY_TEAM_ID',
+            description: () => 'LNG_PAGE_CREATE_CASE_LABEL_NOTIFY_TEAM_ID_DESCRIPTION',
+            options: (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).options,
+            value: {
+              get: () => this._notifyTeamId,
+              set: (value) => {
+                this._notifyTeamId = value;
+              }
+            },
+            validators: {
+              required: () => this._notifyTeam
+            },
+            disabled: () => !this._notifyTeam
+          }
+        ]
+      }]
     };
   }
 
@@ -1550,6 +1606,30 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
           // should be the last pipe
           takeUntil(this.destroyed$)
         ).subscribe((item: CaseModel) => {
+          // notify team - fire and forget, non-blocking, doesn't affect the case create flow
+          if (
+            type === CreateViewModifyV2ActionType.CREATE &&
+            this._notifyTeam &&
+            this._notifyTeamId
+          ) {
+            this.teamNotificationDataService
+              .createTeamNotification({
+                teamId: this._notifyTeamId,
+                title: 'LNG_PAGE_CREATE_CASE_NOTIFY_TEAM_DEFAULT_TITLE',
+                message: item.name,
+                severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
+                recurring: false,
+                active: true
+              })
+              .pipe(
+                catchError((err) => {
+                  this.toastV2Service.error(err);
+                  return throwError(err);
+                })
+              )
+              .subscribe();
+          }
+
           // finished
           const finishedProcessingData = () => {
             // success creating / updating case

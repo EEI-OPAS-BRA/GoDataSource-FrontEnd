@@ -9,6 +9,7 @@ import { ClientApplicationsCreateViewModifyComponent } from './client-applicatio
 import { SystemDevicesCreateViewModifyComponent } from './system-devices-create-view-modify/system-devices-create-view-modify.component';
 import { SystemDevicesComponent } from './system-devices-list/system-devices.component';
 import { BackupsRestoresComponent } from './backups-restores/backups-restores.component';
+import { NotificationSettingsComponent } from './notification-settings/notification-settings.component';
 
 // export each page component individually
 export * from './upstream-servers-create-view-modify/upstream-servers-create-view-modify.component';
@@ -17,6 +18,7 @@ export * from './client-applications-create-view-modify/client-applications-crea
 export * from './client-applications-list/client-applications-list.component';
 export * from './backups/backups.component';
 export * from './backups-restores/backups-restores.component';
+export * from './notification-settings/notification-settings.component';
 export * from './system-devices-create-view-modify/system-devices-create-view-modify.component';
 export * from './system-devices-list/system-devices.component';
 export * from './view-history-system-device/view-history-system-device.component';
@@ -28,6 +30,7 @@ export const pageComponents: any[] = [
   BackupsRestoresComponent,
   ClientApplicationsCreateViewModifyComponent,
   ClientApplicationsListComponent,
+  NotificationSettingsComponent,
   SystemDevicesCreateViewModifyComponent,
   SystemDevicesComponent,
   SystemSyncLogsComponent,

@@ -98,8 +98,7 @@ export abstract class AppFormLocationBaseV2<T>
   // retrieving locations ?
   locationLoading: boolean = false;
 
-  // not found & minimum length
-  private _minimumSearchLength: string = 'LNG_SEARCH_LOCATIONS_AUTO_COMPLETE_MINIMUM_SEARCH_LENGTH';
+  // not found text
   private _notFoundText: string = 'LNG_SEARCH_LOCATIONS_AUTO_COMPLETE_NO_ITEMS_FOUND_TEXT';
   currentNotFoundText: string = this._notFoundText;
   notFoundTextData = {
@@ -237,7 +236,7 @@ export abstract class AppFormLocationBaseV2<T>
             // select outbreak
             this.outbreakId = outbreak.id;
 
-            // bring only top location when empty search
+            // load full locations hierarchy (including sub-locations) right away
             this.addLocationCondition();
 
             // retrieve data
@@ -256,6 +255,12 @@ export abstract class AppFormLocationBaseV2<T>
       'disabled',
       'geoLocation'
     );
+
+    // load full locations hierarchy (including sub-locations) right away so users don't need to type anything to see suggestions
+    if (!this.useOutbreakLocations) {
+      this.addLocationCondition();
+      this.refreshLocationList();
+    }
   }
 
   /**
@@ -408,26 +413,10 @@ export abstract class AppFormLocationBaseV2<T>
     this.locations = [];
     this.locationMap = {};
 
-    // don't search if we entered at least on character but less than minimum search
-    if (
-      this.searchValue &&
-      this.searchValue.length < AppFormLocationBaseV2.MIN_SEARCH_LENGTH
-    ) {
-      // finished loading - since we won't retrieve anything
-      this.currentNotFoundText = this._minimumSearchLength;
-      this.locationLoading = false;
-
-      // re-render
-      this.changeDetectorRef.detectChanges();
-
-      // finished
-      return;
-    }
-
     // re-render
     this.changeDetectorRef.detectChanges();
 
-    // filter list
+    // filter list - search regardless of how many characters were typed
     if (this.searchValue) {
       this.queryBuilder.filter
         .remove('parentLocationId')
@@ -438,7 +427,7 @@ export abstract class AppFormLocationBaseV2<T>
           true
         );
     } else {
-      // bring only top location when empty search
+      // bring the full locations hierarchy (including sub-locations) when search is empty
       this.addLocationCondition();
     }
 
@@ -453,13 +442,8 @@ export abstract class AppFormLocationBaseV2<T>
     // construct the value filter
     let whereFilter;
     if (_.isEmpty(this.value)) {
-      // empty value => selecting only top-level locations
-      whereFilter = (this.useOutbreakLocations && this.outbreakId) ?
-        null : {
-          parentLocationId: {
-            eq: null
-          }
-        };
+      // empty value => load the full locations hierarchy (including sub-locations)
+      whereFilter = null;
     } else if (this.multipleSelect) {
       // multi select
       whereFilter = {

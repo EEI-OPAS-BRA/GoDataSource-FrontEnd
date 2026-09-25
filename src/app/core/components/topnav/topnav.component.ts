@@ -37,6 +37,10 @@ import { I18nService } from '../../services/helper/i18n.service';
 import { LanguageDataService } from '../../services/data/language.data.service';
 import { SystemSettingsVersionModel } from '../../models/system-settings-version.model';
 import { SystemSettingsDataService } from '../../services/data/system-settings.data.service';
+import { TeamNotificationDataService } from '../../services/data/team-notification.data.service';
+import { TeamNotificationOccurrenceModel } from '../../models/team-notification-occurrence.model';
+import { Constants } from '../../models/constants';
+import { LocalizationHelper } from '../../helperClasses/localization-helper';
 
 @Component({
   selector: 'app-topnav',
@@ -50,6 +54,7 @@ export class TopnavComponent implements OnInit, OnDestroy {
   private static _REFRESH_CALLBACK: () => void;
   private static _UPDATE_CALLBACK: () => void;
   private static _SELECTED_OUTBREAK_DROPDOWN_DISABLED: boolean = false;
+  private static readonly NOTIFICATIONS_POLLING_INTERVAL_MS: number = 60000;
   static set SELECTED_OUTBREAK_DROPDOWN_DISABLED(disabled: boolean) {
     // set value
     TopnavComponent._SELECTED_OUTBREAK_DROPDOWN_DISABLED = disabled;
@@ -81,6 +86,11 @@ export class TopnavComponent implements OnInit, OnDestroy {
   OutbreakModel = OutbreakModel;
   ToastV2Service = ToastV2Service;
   RenderMode = RenderMode;
+
+  // team notifications
+  unreadNotificationsCount: number = 0;
+  private _notificationsHistory: TeamNotificationOccurrenceModel[] = [];
+  private _notificationsPollingHandle: any;
 
   // authenticated user
   authUser: UserModel;
@@ -187,7 +197,8 @@ export class TopnavComponent implements OnInit, OnDestroy {
     private globalEntitySearchDataService: GlobalEntitySearchDataService,
     private redirectService: RedirectService,
     private languageDataService: LanguageDataService,
-    private systemSettingsDataService: SystemSettingsDataService
+    private systemSettingsDataService: SystemSettingsDataService,
+    private teamNotificationDataService: TeamNotificationDataService
   ) {
     // update render mode
     this.updateRenderMode();
@@ -298,6 +309,19 @@ export class TopnavComponent implements OnInit, OnDestroy {
 
     // subscribe to language change
     this.initializeLanguageChangeListener();
+
+    // team notifications - retrieve unread count / history & start polling for updates
+    // - available to any authenticated user, not gated by the team_notification_list admin permission
+    //   (that permission only controls the admin CRUD list of notification definitions)
+    if (this.authDataService.getAuthenticatedUser()) {
+      this.refreshNotificationsOccurrences();
+      this._notificationsPollingHandle = setInterval(
+        () => {
+          this.refreshNotificationsOccurrences();
+        },
+        TopnavComponent.NOTIFICATIONS_POLLING_INTERVAL_MS
+      );
+    }
   }
 
   /**
@@ -333,6 +357,12 @@ export class TopnavComponent implements OnInit, OnDestroy {
 
     // close loading handler
     this.hideLoading();
+
+    // stop notifications polling
+    if (this._notificationsPollingHandle) {
+      clearInterval(this._notificationsPollingHandle);
+      this._notificationsPollingHandle = undefined;
+    }
   }
 
   /**
@@ -576,6 +606,139 @@ export class TopnavComponent implements OnInit, OnDestroy {
 
         // update ui
         this.changeDetectorRef.detectChanges();
+      });
+  }
+
+  /**
+   * Refresh team notifications unread count / history
+   */
+  refreshNotificationsOccurrences(): void {
+    this.teamNotificationDataService
+      .getMyOccurrences()
+      .subscribe((response) => {
+        // update data
+        this.unreadNotificationsCount = response.unreadCount;
+        this._notificationsHistory = response.history;
+
+        // update ui
+        this.changeDetectorRef.detectChanges();
+      });
+  }
+
+  /**
+   * Retrieve severity css class suffix for a team notification occurrence
+   */
+  private getNotificationSeverityCssClass(severity: string): string {
+    switch (severity) {
+      case Constants.TEAM_NOTIFICATION_SEVERITY.YELLOW.value:
+        return 'gd-team-notification-severity-yellow';
+      case Constants.TEAM_NOTIFICATION_SEVERITY.RED.value:
+        return 'gd-team-notification-severity-red';
+      default:
+        return 'gd-team-notification-severity-green';
+    }
+  }
+
+  /**
+   * Display team notifications history panel
+   */
+  displayNotifications(): void {
+    // current user
+    const currentUserId: string = this.authUser?.id;
+
+    // construct list of notification history items
+    const parent: IV2SideDialogConfigInputAccordion = {
+      type: V2SideDialogConfigInputType.ACCORDION,
+      placeholder: '',
+      name: 'notifications',
+      panels: []
+    };
+    this._notificationsHistory.forEach((item: TeamNotificationOccurrenceModel) => {
+      // is it already read by current user ?
+      const isRead: boolean = item.isReadByUser(currentUserId);
+
+      // attach accordion panel
+      parent.panels.push({
+        type: V2SideDialogConfigInputType.ACCORDION_PANEL,
+        name: `notification-${item.id}`,
+        placeholder: `${item.title} - ${LocalizationHelper.displayDateTime(item.triggeredAt)}`,
+        cssClasses: this.getNotificationSeverityCssClass(item.severity),
+        iconButton: isRead ?
+          undefined :
+          {
+            icon: 'done',
+            color: 'primary',
+            data: item,
+            click: (_dialogData, handler, iconButton) => {
+              // mark as read
+              this.teamNotificationDataService
+                .markOccurrenceRead(iconButton.data.id)
+                .subscribe(() => {
+                  // update badge count
+                  this.refreshNotificationsOccurrences();
+
+                  // hide the mark as read button
+                  iconButton.data.readBy = [
+                    ...(iconButton.data.readBy || []),
+                    currentUserId
+                  ];
+
+                  // update ui
+                  handler.detectChanges();
+                });
+            }
+          },
+        inputs: [{
+          type: V2SideDialogConfigInputType.HTML,
+          name: `notification-message-${item.id}`,
+          placeholder: item.message
+        }]
+      });
+    });
+
+    // nothing to display ?
+    if (parent.panels.length < 1) {
+      this.toastV2Service.notice('LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_NO_DATA_LABEL');
+      return;
+    }
+
+    // display dialog
+    this.dialogV2Service
+      .showSideDialog({
+        title: {
+          get: () => 'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_LABEL'
+        },
+        width: '60rem',
+        bottomButtons: [{
+          type: IV2SideDialogConfigButtonType.OTHER,
+          label: 'LNG_COMMON_BUTTON_MARK_ALL_AS_READ',
+          color: 'primary',
+          key: 'mark-all-read',
+          disabled: (): boolean => this.unreadNotificationsCount < 1
+        }, {
+          type: IV2SideDialogConfigButtonType.CANCEL,
+          label: 'LNG_COMMON_BUTTON_CLOSE',
+          color: 'text'
+        }],
+        inputs: [parent]
+      })
+      .subscribe((response) => {
+        // cancelled ?
+        if (response.button.type === IV2SideDialogConfigButtonType.CANCEL) {
+          // finished
+          return;
+        }
+
+        // mark all as read
+        this.teamNotificationDataService
+          .markAllOccurrencesRead()
+          .subscribe(() => {
+            // update badge count
+            this.refreshNotificationsOccurrences();
+
+            // close popup
+            response.handler.hide();
+          });
       });
   }
 
