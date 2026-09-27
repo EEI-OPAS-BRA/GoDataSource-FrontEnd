@@ -27,6 +27,8 @@ import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-val
 import { Constants } from '../../../../core/models/constants';
 import { ExportSyncErrorModel, ExportSyncErrorModelCode } from '../../../../core/models/export-sync-error.model';
 import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
+import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 
 @Component({
   selector: 'app-system-sync-logs-list',
@@ -35,6 +37,53 @@ import { LocalizationHelper } from '../../../../core/helperClasses/localization-
 export class SystemSyncLogsComponent
   extends ListComponent<SystemSyncLogModel, IV2Column>
   implements OnDestroy {
+  // sync direction - logs with the server url were sent by this instance, logs with the client id were received
+  private static readonly DIRECTION_SENT: string = 'sent';
+  private static readonly DIRECTION_RECEIVED: string = 'received';
+  private static readonly DIRECTION_CONDITIONS: {
+    [direction: string]: any
+  } = {
+      [SystemSyncLogsComponent.DIRECTION_SENT]: {
+        syncServerUrl: {
+          neq: null
+        }
+      },
+      [SystemSyncLogsComponent.DIRECTION_RECEIVED]: {
+        syncClientId: {
+          neq: null
+        }
+      }
+    };
+
+  // info banner
+  infoBannerSteps: IV2InfoBannerStep[] = [
+    {
+      icon: 'swap_horiz',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_1_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_1_DESCRIPTION'
+    }, {
+      icon: 'done_all',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_2_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_2_DESCRIPTION'
+    }, {
+      icon: 'visibility',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_3_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_3_DESCRIPTION'
+    }, {
+      icon: 'tune',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_4_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_4_DESCRIPTION'
+    }
+  ];
+  infoBannerNotes: string[] = [
+    'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_NOTE_1'
+  ];
+
+  // which data is synchronized
+  infoBannerAccordions: IV2InfoBannerAccordion[] = [
+    SYNCED_DATA_INFO_BANNER_ACCORDION
+  ];
+
   /**
   * Constructor
   */
@@ -177,6 +226,49 @@ export class SystemSyncLogsComponent
     // default table columns
     this.tableColumns = [
       {
+        field: 'direction',
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_DIRECTION',
+        width: 150,
+        format: {
+          type: V2ColumnFormat.HTML
+        },
+        html: (item: SystemSyncLogModel) => this.getDirectionHtml(item),
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: [
+            {
+              label: 'LNG_SYNC_DIRECTION_SENT',
+              value: SystemSyncLogsComponent.DIRECTION_SENT
+            }, {
+              label: 'LNG_SYNC_DIRECTION_RECEIVED',
+              value: SystemSyncLogsComponent.DIRECTION_RECEIVED
+            }
+          ],
+          search: (column: IV2Column) => {
+            // remove existing filters
+            Object.values(SystemSyncLogsComponent.DIRECTION_CONDITIONS).forEach((condition) => {
+              this.queryBuilder.filter.removeExactCondition(
+                condition,
+                false
+              );
+            });
+
+            // both directions selected means no filter
+            const values: string[] = (column.filter as IV2FilterMultipleSelect).value;
+            if (values?.length === 1) {
+              this.queryBuilder.filter.where(
+                SystemSyncLogsComponent.DIRECTION_CONDITIONS[values[0]],
+                false,
+                false
+              );
+            }
+
+            // refresh list
+            this.needsRefreshList();
+          }
+        }
+      },
+      {
         field: 'syncServerUrl',
         label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SERVER_URL',
         sortable: true,
@@ -291,6 +383,33 @@ export class SystemSyncLogsComponent
         }
       }
     ];
+  }
+
+  /**
+   * Badge with the sync direction
+   */
+  private getDirectionHtml(item: SystemSyncLogModel): string {
+    // determine direction
+    let direction: string;
+    let icon: string;
+    let label: string;
+    if (item.syncServerUrl) {
+      direction = SystemSyncLogsComponent.DIRECTION_SENT;
+      icon = 'arrow_upward';
+      label = 'LNG_SYNC_DIRECTION_SENT';
+    } else if (item.syncClientId) {
+      direction = SystemSyncLogsComponent.DIRECTION_RECEIVED;
+      icon = 'arrow_downward';
+      label = 'LNG_SYNC_DIRECTION_RECEIVED';
+    } else {
+      return '';
+    }
+
+    // render
+    return `<span class="gd-list-table-sync-direction gd-list-table-sync-direction-${direction}" title="${_.escape(item.syncServerUrl || item.syncClientId)}">` +
+      `<span class="material-icons">${icon}</span>` +
+      `<span>${_.escape(this.i18nService.instant(label))}</span>` +
+      '</span>';
   }
 
   /**

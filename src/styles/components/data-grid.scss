@@ -427,6 +427,34 @@
             }
           }
 
+          /* Sync direction badge */
+          .gd-list-table-sync-direction {
+            @include flex_align_items(center);
+            @include flex(inline-flex);
+            @include border-radius(1.2rem);
+            font-size: 1.2rem;
+            font-weight: 500;
+            gap: 0.4rem;
+            height: 2.4rem;
+            line-height: 2.4rem;
+            padding: 0 1rem 0 0.6rem;
+            white-space: nowrap;
+
+            .material-icons {
+              font-size: 1.6rem;
+            }
+
+            &.gd-list-table-sync-direction-sent {
+              background: rgba(var(--gd-primary-rgb), 0.14);
+              color: var(--gd-primary);
+            }
+
+            &.gd-list-table-sync-direction-received {
+              background: rgba(var(--gd-primary-alt-rgb), 0.14);
+              color: var(--gd-primary-alt);
+            }
+          }
+
           @keyframes gd-connection-status-spin {
             from {
               transform: rotate(0deg);
