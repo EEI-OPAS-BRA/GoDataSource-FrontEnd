@@ -25,6 +25,8 @@ import { CreateViewModifyV2ExpandColumnType } from '../../../../shared/component
 import { RequestFilterGenerator } from '../../../../core/helperClasses/request-query-builder';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { ClientApplicationHelperService } from '../../../../core/services/helper/client-application-helper.service';
+import { Clipboard } from '@angular/cdk/clipboard';
+import { IAppFormIconButtonV2 } from '../../../../shared/forms-v2/core/app-form-icon-button-v2';
 
 /**
  * Component
@@ -48,7 +50,8 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
     private clientApplicationDataService: ClientApplicationDataService,
     private router: Router,
     private dialogV2Service: DialogV2Service,
-    private clientApplicationHelperService: ClientApplicationHelperService
+    private clientApplicationHelperService: ClientApplicationHelperService,
+    private clipboard: Clipboard
   ) {
     // parent
     super(
@@ -229,10 +232,10 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
       name: 'details',
       label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_TAB_DETAILS_TITLE',
       sections: [
-        // Details
+        // General
         {
           type: CreateViewModifyV2TabInputType.SECTION,
-          label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_TAB_DETAILS_TITLE',
+          label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_SECTION_GENERAL',
           inputs: [
             {
               type: CreateViewModifyV2TabInputType.TEXT,
@@ -261,7 +264,16 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                   this.itemData.active = value;
                 }
               }
-            }, {
+            }
+          ]
+        },
+
+        // Access
+        {
+          type: CreateViewModifyV2TabInputType.SECTION,
+          label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_SECTION_ACCESS',
+          inputs: [
+            {
               type: CreateViewModifyV2TabInputType.SELECT_MULTIPLE,
               name: 'outbreakIDs',
               placeholder: () => this.itemData.outbreakIDs?.length > 0 ? 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' : 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS',
@@ -274,7 +286,16 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                 }
               },
               options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<ReferenceDataEntryModel>).options
-            }, {
+            }
+          ]
+        },
+
+        // Credentials
+        {
+          type: CreateViewModifyV2TabInputType.SECTION,
+          label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_SECTION_CREDENTIALS',
+          inputs: [
+            {
               type: CreateViewModifyV2TabInputType.PASSWORD,
               name: 'credentials[clientId]',
               placeholder: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CLIENT_ID',
@@ -303,7 +324,7 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                   input.control?.markAsDirty();
                   tab.form?.controls['credentials[clientSecret]']?.markAsDirty();
                 }
-              }]
+              }, this.createCopySuffixButton(() => this.itemData.credentials.clientId)]
             }, {
               type: CreateViewModifyV2TabInputType.PASSWORD,
               name: 'credentials[clientSecret]',
@@ -333,7 +354,14 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                   input.control?.markAsDirty();
                   tab.form?.controls['credentials[clientId]']?.markAsDirty();
                 }
-              }]
+              }, this.createCopySuffixButton(() => this.itemData.credentials.clientSecret)]
+            }, {
+              // whoever has the secret can connect as this application
+              type: CreateViewModifyV2TabInputType.LABEL,
+              value: {
+                get: () => 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_NOTE_1'
+              },
+              visible: () => !this.isView
             }
           ]
         }
@@ -342,6 +370,23 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
 
     // finished
     return tab;
+  }
+
+  /**
+   * Suffix button that copies a credential to clipboard
+   */
+  private createCopySuffixButton(value: () => string): IAppFormIconButtonV2 {
+    return {
+      icon: 'content_copy',
+      tooltip: 'LNG_PAGE_ACTION_COPY_TO_CLIPBOARD',
+      disabled: () => !value(),
+      clickAction: () => {
+        // copy
+        if (this.clipboard.copy(value())) {
+          this.toastV2Service.success('LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_COPY_CREDENTIAL_SUCCESS_MESSAGE');
+        }
+      }
+    };
   }
 
   /**
