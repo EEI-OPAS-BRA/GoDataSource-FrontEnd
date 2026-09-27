@@ -558,6 +558,25 @@
               margin-bottom: 1.6rem;
             }
 
+            /* Button on the same row as the inputs, aligned with their boxes */
+            &.gd-create-view-modify-bottom-section-content-input-has-button.gd-create-view-modify-bottom-section-content-input-button-inline {
+              align-self: flex-start;
+              width: calc(50% - 1.6rem);
+
+              @include breakpoint('xs') {
+                width: calc(100% - 1.6rem);
+              }
+
+              .gd-create-view-modify-bottom-section-content-input-button {
+                flex-wrap: nowrap;
+                min-height: 4rem;
+
+                .mat-flat-button {
+                  flex: 0 0 auto;
+                }
+              }
+            }
+
             &.gd-create-view-modify-bottom-section-content-input-has-address {
               width: 100%;
 

@@ -27,7 +27,7 @@
 
     <!-- Toggle -->
     <button
-      *ngIf="steps?.length || notes?.length"
+      *ngIf="steps?.length || notes?.length || accordions?.length"
       type="button"
       mat-button
       class="gd-info-banner-header-toggle"
@@ -90,6 +90,85 @@
         </div>
 
       </ng-container>
+
+      <!-- Accordions -->
+      <div
+        *ngFor="let accordion of accordions; let accordionIndex = index"
+        class="gd-info-banner-accordion"
+        [class.gd-info-banner-accordion-expanded]="expandedAccordions[accordionIndex]">
+
+        <!-- Header -->
+        <button
+          type="button"
+          class="gd-info-banner-accordion-header"
+          [attr.aria-expanded]="!!expandedAccordions[accordionIndex]"
+          (click)="toggleAccordion(accordionIndex)">
+          <mat-icon
+            class="gd-info-banner-accordion-header-icon">
+            {{accordion.icon}}
+          </mat-icon>
+          <span
+            class="gd-info-banner-accordion-header-title">
+            {{accordion.title | translate}}
+          </span>
+          <mat-icon
+            class="gd-info-banner-accordion-header-arrow">
+            expand_more
+          </mat-icon>
+        </button>
+
+        <!-- Body -->
+        <div
+          class="gd-info-banner-accordion-body">
+          <div
+            class="gd-info-banner-accordion-body-inner">
+
+            <!-- Lists -->
+            <div
+              *ngFor="let list of accordion.lists"
+              class="gd-info-banner-accordion-list gd-info-banner-accordion-list-{{list.type}}">
+              <div
+                class="gd-info-banner-details-label">
+                {{list.title | translate}}
+              </div>
+              <div
+                class="gd-info-banner-accordion-list-items">
+                <div
+                  *ngFor="let item of list.items"
+                  class="gd-info-banner-accordion-list-items-item">
+                  <mat-icon>{{item.icon}}</mat-icon>
+                  <div
+                    class="gd-info-banner-accordion-list-items-item-text">
+                    <div
+                      class="gd-info-banner-accordion-list-items-item-text-label">
+                      {{item.label | translate}}
+                    </div>
+                    <div
+                      *ngIf="item.description"
+                      class="gd-info-banner-accordion-list-items-item-text-description">
+                      {{item.description | translate}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Accordion notes -->
+            <div
+              *ngIf="accordion.notes?.length"
+              class="gd-info-banner-notes">
+              <div
+                *ngFor="let note of accordion.notes"
+                class="gd-info-banner-notes-note">
+                <mat-icon>info_outline</mat-icon>
+                <span>{{note | translate}}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
 
       <!-- Notes -->
       <div

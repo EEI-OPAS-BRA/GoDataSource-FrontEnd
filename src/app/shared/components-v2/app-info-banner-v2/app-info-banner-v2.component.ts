@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output } from '@angular/core';
 import { StorageService } from '../../../core/services/helper/storage.service';
-import { IV2InfoBannerStep } from './models/info-banner.model';
+import { IV2InfoBannerAccordion, IV2InfoBannerStep } from './models/info-banner.model';
 
 /**
  * Component
@@ -25,6 +25,7 @@ export class AppInfoBannerV2Component implements AfterViewInit, OnDestroy {
   @Input() stepsTitle: string;
   @Input() steps: IV2InfoBannerStep[] = [];
   @Input() notes: string[] = [];
+  @Input() accordions: IV2InfoBannerAccordion[] = [];
 
   // remember collapsed state per banner
   private _storageKey: string;
@@ -38,6 +39,11 @@ export class AppInfoBannerV2Component implements AfterViewInit, OnDestroy {
 
   // details visible
   expanded: boolean = true;
+
+  // accordions start collapsed
+  expandedAccordions: {
+    [accordionIndex: number]: boolean
+  } = {};
 
   /**
    * Constructor
@@ -82,6 +88,13 @@ export class AppInfoBannerV2Component implements AfterViewInit, OnDestroy {
   toggle(): void {
     this.expanded = !this.expanded;
     this.writeCollapsed(!this.expanded);
+  }
+
+  /**
+   * Expand / collapse accordion
+   */
+  toggleAccordion(accordionIndex: number): void {
+    this.expandedAccordions[accordionIndex] = !this.expandedAccordions[accordionIndex];
   }
 
   /**

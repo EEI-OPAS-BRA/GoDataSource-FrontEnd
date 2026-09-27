@@ -382,36 +382,12 @@ export class SidenavComponent implements OnInit, OnDestroy {
           [],
           [
             new ChildNavItem(
-              'upstream-servers',
-              'LNG_LAYOUT_MENU_ITEM_UPSTREAM_SERVERS_LABEL',
-              [
-                PERMISSION.UPSTREAM_SERVER_LIST
-              ],
-              '/system-config/upstream-servers'
-            ),
-            new ChildNavItem(
-              'client-applications',
-              'LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL',
-              [
-                PERMISSION.CLIENT_APPLICATION_LIST
-              ],
-              '/system-config/client-applications'
-            ),
-            new ChildNavItem(
               'devices',
               'LNG_LAYOUT_MENU_ITEM_DEVICES_LABEL',
               [
                 PERMISSION.DEVICE_LIST
               ],
               '/system-config/devices'
-            ),
-            new ChildNavItem(
-              'sync',
-              'LNG_LAYOUT_MENU_ITEM_SYNC_LABEL',
-              [
-                PERMISSION.SYNC_LOG_LIST
-              ],
-              '/system-config/sync-logs'
             ),
             new ChildNavItem(
               'backups',
@@ -428,6 +404,38 @@ export class SidenavComponent implements OnInit, OnDestroy {
                 PERMISSION.BACKUP_VIEW_CLOUD_BACKUP
               ],
               '/cloud-backup'
+            )
+          ]
+        ),
+        new NavItem(
+          'data-sync',
+          'LNG_LAYOUT_MENU_ITEM_DATA_SYNC_LABEL',
+          'public',
+          [],
+          [
+            new ChildNavItem(
+              'upstream-servers',
+              'LNG_LAYOUT_MENU_ITEM_UPSTREAM_SERVERS_LABEL',
+              [
+                PERMISSION.UPSTREAM_SERVER_LIST
+              ],
+              '/system-config/upstream-servers'
+            ),
+            new ChildNavItem(
+              'client-applications',
+              'LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL',
+              [
+                PERMISSION.CLIENT_APPLICATION_LIST
+              ],
+              '/system-config/client-applications'
+            ),
+            new ChildNavItem(
+              'sync',
+              'LNG_LAYOUT_MENU_ITEM_SYNC_LABEL',
+              [
+                PERMISSION.SYNC_LOG_LIST
+              ],
+              '/system-config/sync-logs'
             )
           ]
         ),

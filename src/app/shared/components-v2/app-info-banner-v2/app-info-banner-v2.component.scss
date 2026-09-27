@@ -149,6 +149,142 @@
         }
       }
 
+      /* Accordions - animated by growing the grid row, like the details */
+      .gd-info-banner-accordion {
+        background: var(--gd-background);
+        border: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.3);
+        @include border-radius(0.8rem);
+        margin-top: 1.6rem;
+        overflow: hidden;
+
+        .gd-info-banner-accordion-header {
+          align-items: center;
+          background: transparent;
+          border: 0 none;
+          color: var(--gd-text);
+          cursor: pointer;
+          display: flex;
+          font-family: $gd-font-family;
+          font-size: 1.5rem;
+          font-weight: 500;
+          gap: 1.2rem;
+          padding: 1.2rem 1.6rem;
+          text-align: left;
+          width: 100%;
+
+          &:hover {
+            background: rgba(var(--gd-primary-rgb), 0.06);
+          }
+
+          &:focus-visible {
+            outline: 0.2rem solid var(--gd-primary);
+            outline-offset: -0.2rem;
+          }
+
+          .gd-info-banner-accordion-header-icon {
+            color: var(--gd-primary);
+            flex: 0 0 auto;
+          }
+
+          .gd-info-banner-accordion-header-title {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .gd-info-banner-accordion-header-arrow {
+            color: var(--gd-primary-alt);
+            flex: 0 0 auto;
+            @include transition(transform 0.24s ease-in-out 0s);
+          }
+        }
+
+        .gd-info-banner-accordion-body {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.24s ease-in-out 0s, visibility 0s linear 0.24s;
+          visibility: hidden;
+
+          .gd-info-banner-accordion-body-inner {
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 1.6rem;
+
+            > :first-child {
+              border-top: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.3);
+              padding-top: 1.6rem;
+            }
+
+            > :last-child {
+              margin-bottom: 1.6rem;
+            }
+          }
+
+          .gd-info-banner-accordion-list {
+            + .gd-info-banner-accordion-list {
+              margin-top: 1.6rem;
+            }
+
+            .gd-info-banner-accordion-list-items {
+              display: grid;
+              gap: 1.2rem 1.6rem;
+              grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+
+              .gd-info-banner-accordion-list-items-item {
+                align-items: flex-start;
+                display: flex;
+                gap: 0.8rem;
+                min-width: 0;
+
+                .mat-icon {
+                  color: var(--gd-primary);
+                  flex: 0 0 auto;
+                  font-size: 2rem;
+                  height: 2rem;
+                  width: 2rem;
+                }
+
+                .gd-info-banner-accordion-list-items-item-text {
+                  min-width: 0;
+
+                  .gd-info-banner-accordion-list-items-item-text-label {
+                    font-weight: 500;
+                  }
+
+                  .gd-info-banner-accordion-list-items-item-text-description {
+                    color: rgba(var(--gd-text-rgb), 0.8);
+                    font-size: 1.3rem;
+                  }
+                }
+              }
+            }
+
+            &.gd-info-banner-accordion-list-excluded {
+              .gd-info-banner-accordion-list-items-item {
+                .mat-icon {
+                  color: var(--gd-secondary);
+                }
+
+                .gd-info-banner-accordion-list-items-item-text-label {
+                  color: rgba(var(--gd-text-rgb), 0.8);
+                }
+              }
+            }
+          }
+        }
+
+        &.gd-info-banner-accordion-expanded {
+          .gd-info-banner-accordion-header .gd-info-banner-accordion-header-arrow {
+            @include rotate(180deg);
+          }
+
+          .gd-info-banner-accordion-body {
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.24s ease-in-out 0s, visibility 0s linear 0s;
+            visibility: visible;
+          }
+        }
+      }
+
       /* Notes */
       .gd-info-banner-notes {
         display: flex;

@@ -7,7 +7,6 @@ import * as _ from 'lodash';
 import { EMPTY, Observable, of, Subscription, throwError } from 'rxjs';
 import {
   CreateViewModifyV2ActionType,
-  CreateViewModifyV2TabInput,
   CreateViewModifyV2TabInputType,
   ICreateViewModifyV2Buttons,
   ICreateViewModifyV2CreateOrUpdate,
@@ -18,13 +17,21 @@ import { SystemSettingsDataService } from '../../../../core/services/data/system
 import { SystemSyncDataService } from '../../../../core/services/data/system-sync.data.service';
 import { UpstreamServerCheckHelperService } from '../../../../core/services/helper/upstream-server-check-helper.service';
 import { ISystemUpstreamServerCheckServer } from '../../../../core/models/system-upstream-server-check.model';
-import { IAppFormIconButtonV2 } from '../../../../shared/forms-v2/core/app-form-icon-button-v2';
 import { catchError, switchMap, takeUntil } from 'rxjs/operators';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
 import { OutbreakAndOutbreakTemplateHelperService } from '../../../../core/services/helper/outbreak-and-outbreak-template-helper.service';
 import { RedirectService } from '../../../../core/services/helper/redirect.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
+
+/**
+ * Result displayed next to a check button
+ */
+interface ICheckResult {
+  status: 'success' | 'error' | 'warning';
+  icon: string;
+  message: string;
+}
 
 /**
  * Component
@@ -42,19 +49,13 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   // when modifying, the servers don't have an id, so the url they had when the page was opened identifies them
   private _originalUrl: string;
 
-  // url input; its icons show if the server is online
-  private _urlInput: Extract<CreateViewModifyV2TabInput, { type: CreateViewModifyV2TabInputType.TEXT }>;
-
   // status of the server that has the url from the form
   private _serverStatus: 'idle' | 'checking' | 'online' | 'offline' = 'idle';
+  private _serverResult: ICheckResult;
 
-  // connection test
-  private _testingConnection: boolean = false;
-  private _checkResult: {
-    status: 'success' | 'error' | 'warning',
-    icon: string,
-    message: string
-  };
+  // credentials test
+  private _testingCredentials: boolean = false;
+  private _credentialsResult: ICheckResult;
   private _checkSubscription: Subscription;
 
   /**
@@ -249,34 +250,6 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
    * Initialize tabs - Details
    */
   private initializeTabsDetails(): ICreateViewModifyV2Tab {
-    // url input is kept to be able to refresh its icons
-    this._urlInput = {
-      type: CreateViewModifyV2TabInputType.TEXT,
-      name: 'url',
-      placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_URL',
-      description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_URL_DESCRIPTION',
-      exampleValue: () => 'http://localhost:3000/api',
-      cssClasses: 'gd-create-view-modify-bottom-section-content-input-wide',
-      value: {
-        get: () => this.itemData.url,
-        set: (value) => {
-          // set data
-          this.itemData.url = value;
-
-          // the previous checks don't apply to a different url
-          this.connectionFieldChanged(true);
-        }
-      },
-      validators: {
-        required: () => true,
-        notInObject: () => ({
-          values: this._upstreamServersMap,
-          err: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_URL_ALREADY_REGISTERED'
-        })
-      },
-      suffixIconButtons: this.buildUrlSuffixIconButtons()
-    };
-
     return {
       type: CreateViewModifyV2TabInputType.TAB,
       name: 'details',
@@ -322,7 +295,50 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
           type: CreateViewModifyV2TabInputType.SECTION,
           label: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_SECTION_CONNECTION',
           inputs: [
-            this._urlInput, {
+            {
+              type: CreateViewModifyV2TabInputType.TEXT,
+              name: 'url',
+              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_URL',
+              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_URL_DESCRIPTION',
+              exampleValue: () => 'http://localhost:3000/api',
+              cssClasses: 'gd-create-view-modify-bottom-section-content-input-wide',
+              value: {
+                get: () => this.itemData.url,
+                set: (value) => {
+                  // set data
+                  this.itemData.url = value;
+
+                  // the previous checks don't apply to a different url
+                  this.connectionFieldChanged(true);
+                }
+              },
+              validators: {
+                required: () => true,
+                notInObject: () => ({
+                  values: this._upstreamServersMap,
+                  err: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_URL_ALREADY_REGISTERED'
+                })
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.BUTTON,
+              name: 'checkServer',
+              label: () => 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_BUTTON',
+              icon: 'power',
+              cssClasses: 'gd-create-view-modify-bottom-section-content-input-button-inline',
+              loading: () => this._serverStatus === 'checking',
+              disabled: () => !this.itemData.url?.trim() ||
+                this._testingCredentials,
+              click: () => this.checkServer(),
+              result: () => this._serverResult
+            }, {
+              // the sync history is kept by url
+              type: CreateViewModifyV2TabInputType.LABEL,
+              value: {
+                get: () => 'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_URL_CHANGED_NOTE'
+              },
+              visible: () => this.isModify &&
+                this.itemData.url?.trim().toLowerCase() !== this._originalUrl?.toLowerCase()
+            }, {
               type: CreateViewModifyV2TabInputType.PASSWORD,
               name: 'credentials[clientId]',
               placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_CREDENTIALS_CLIENT_ID',
@@ -359,25 +375,18 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
                 required: () => true
               }
             }, {
-              // the sync history is kept by url
-              type: CreateViewModifyV2TabInputType.LABEL,
-              value: {
-                get: () => 'LNG_PAGE_MODIFY_SYSTEM_UPSTREAM_SERVER_URL_CHANGED_NOTE'
-              },
-              visible: () => this.isModify &&
-                this.itemData.url?.trim().toLowerCase() !== this._originalUrl?.toLowerCase()
-            }, {
               type: CreateViewModifyV2TabInputType.BUTTON,
-              name: 'testConnection',
-              label: () => 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TEST_CONNECTION_BUTTON',
-              icon: 'vpn_lock',
-              loading: () => this._testingConnection,
+              name: 'testCredentials',
+              label: () => 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_TEST_CREDENTIALS_BUTTON',
+              icon: 'vpn_key',
+              cssClasses: 'gd-create-view-modify-bottom-section-content-input-button-inline',
+              loading: () => this._testingCredentials,
               disabled: () => !this.itemData.url?.trim() ||
                 !this.itemData.credentials.clientId ||
                 !this.itemData.credentials.clientSecret ||
                 this._serverStatus === 'checking',
-              click: () => this.testConnection(),
-              result: () => this._checkResult
+              click: () => this.testCredentials(),
+              result: () => this._credentialsResult
             }
           ]
         },
@@ -449,80 +458,46 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   }
 
   /**
-   * Icons displayed at the right of the url input: check if the server is online + result of the last check
-   */
-  private buildUrlSuffixIconButtons(): IAppFormIconButtonV2[] {
-    const buttons: IAppFormIconButtonV2[] = [{
-      icon: 'power',
-      tooltip: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_BUTTON',
-      disabled: () => !this.itemData.url?.trim() ||
-        this._serverStatus === 'checking',
-      clickAction: () => this.checkServer()
-    }];
-
-    switch (this._serverStatus) {
-      case 'checking':
-        buttons.push({
-          icon: 'hourglass_empty',
-          tooltip: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_CHECKING',
-          disabled: () => true
-        });
-        break;
-
-      case 'online':
-        buttons.push({
-          icon: 'check_circle',
-          color: 'var(--gd-success)',
-          tooltip: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_ONLINE',
-          clickAction: () => this.checkServer()
-        });
-        break;
-
-      case 'offline':
-        buttons.push({
-          icon: 'error',
-          color: 'var(--gd-danger)',
-          tooltip: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_SERVER_OFFLINE',
-          clickAction: () => this.checkServer()
-        });
-        break;
-    }
-
-    return buttons;
-  }
-
-  /**
    * Redraw the form, since the inputs don't check for changes on their own
    */
   private refreshCheckUi(): void {
-    // new reference, otherwise the url input doesn't redraw its icons
-    this._urlInput.suffixIconButtons = this.buildUrlSuffixIconButtons();
     this.createViewModifyComponent?.detectChanges();
   }
 
   /**
-   * Url / credentials changed, so what we know about the server isn't valid anymore
+   * Url / credentials changed, so what we know about the server / credentials isn't valid anymore
    */
   private connectionFieldChanged(urlChanged: boolean): void {
     // nothing to reset ?
+    const serverStateChanged: boolean = urlChanged && (
+      this._serverStatus !== 'idle' ||
+      !!this._serverResult
+    );
     if (
-      !this._checkResult &&
-      !this._testingConnection &&
-      (!urlChanged || this._serverStatus === 'idle')
+      !this._credentialsResult &&
+      !this._testingCredentials &&
+      !serverStateChanged
     ) {
       return;
     }
 
     // ignore the pending response, it was made for other values
-    this._checkSubscription?.unsubscribe();
-    this._checkSubscription = undefined;
-    this._testingConnection = false;
-    this._checkResult = undefined;
     if (
-      urlChanged ||
-      this._serverStatus === 'checking'
+      this._testingCredentials ||
+      serverStateChanged
     ) {
+      this._checkSubscription?.unsubscribe();
+      this._checkSubscription = undefined;
+    }
+
+    // credentials test doesn't apply anymore
+    this._testingCredentials = false;
+    this._credentialsResult = undefined;
+
+    // server check doesn't apply to a different url
+    if (serverStateChanged) {
       this._serverStatus = 'idle';
+      this._serverResult = undefined;
     }
 
     // redraw
@@ -535,14 +510,14 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   private applyServerResult(server: ISystemUpstreamServerCheckServer): void {
     if (server.online) {
       this._serverStatus = 'online';
-      this._checkResult = {
+      this._serverResult = {
         status: 'success',
         icon: 'check_circle',
         message: this.upstreamServerCheckHelperService.getServerOnlineMessage(server.responseTimeMs)
       };
     } else {
       this._serverStatus = 'offline';
-      this._checkResult = {
+      this._serverResult = {
         status: 'error',
         icon: 'error',
         message: this.upstreamServerCheckHelperService.getErrorMessage(
@@ -556,20 +531,29 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   /**
    * The request failed before we got a result from the check
    */
-  private handleCheckRequestError(err: any): void {
+  private handleCheckRequestError(
+    err: any,
+    credentialsTest: boolean
+  ): void {
     this._serverStatus = 'idle';
-    this._testingConnection = false;
+    this._testingCredentials = false;
 
-    // invalid url is displayed with the check results
+    // invalid url is displayed next to the button that made the check
+    let result: ICheckResult;
     if (err?.code === 'REQUEST_VALIDATION_ERROR') {
-      this._checkResult = {
+      result = {
         status: 'error',
         icon: 'error',
         message: this.i18nService.instant('LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_CHECK_ERROR_INVALID_URL')
       };
     } else {
-      this._checkResult = undefined;
       this.toastV2Service.error(err);
+    }
+
+    if (credentialsTest) {
+      this._credentialsResult = result;
+    } else {
+      this._serverResult = result;
     }
 
     this.refreshCheckUi();
@@ -586,9 +570,9 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
     // only one check at a time
     this._checkSubscription?.unsubscribe();
-    this._testingConnection = false;
+    this._testingCredentials = false;
     this._serverStatus = 'checking';
-    this._checkResult = undefined;
+    this._serverResult = undefined;
     this.refreshCheckUi();
 
     this._checkSubscription = this.systemSyncDataService
@@ -600,14 +584,17 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
           this.applyServerResult(result.server);
           this.refreshCheckUi();
         },
-        error: (err) => this.handleCheckRequestError(err)
+        error: (err) => this.handleCheckRequestError(
+          err,
+          false
+        )
       });
   }
 
   /**
    * Check the server and if it accepts the credentials
    */
-  private testConnection(): void {
+  private testCredentials(): void {
     const url: string = this.itemData.url?.trim();
     const clientId: string = this.itemData.credentials.clientId;
     const clientSecret: string = this.itemData.credentials.clientSecret;
@@ -621,8 +608,8 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
     // only one check at a time
     this._checkSubscription?.unsubscribe();
-    this._testingConnection = true;
-    this._checkResult = undefined;
+    this._testingCredentials = true;
+    this._credentialsResult = undefined;
     this.refreshCheckUi();
 
     this._checkSubscription = this.systemSyncDataService
@@ -633,22 +620,21 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
       })
       .subscribe({
         next: (result) => {
-          this._testingConnection = false;
+          this._testingCredentials = false;
           this.applyServerResult(result.server);
 
-          // credentials are checked only if the server is online
-          if (
-            result.server.online &&
-            result.credentials
-          ) {
+          // credentials are checked only if the server is online, otherwise the reason is that the server can't be reached
+          if (!result.server.online) {
+            this._credentialsResult = this._serverResult;
+          } else if (result.credentials) {
             if (result.credentials.valid) {
-              this._checkResult = {
+              this._credentialsResult = {
                 status: 'success',
                 icon: 'check_circle',
                 message: this.upstreamServerCheckHelperService.getCredentialsAcceptedMessage(result.credentials.outbreakIDs)
               };
             } else {
-              this._checkResult = {
+              this._credentialsResult = {
                 status: 'error',
                 icon: 'error',
                 message: this.upstreamServerCheckHelperService.getErrorMessage(
@@ -661,7 +647,10 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
 
           this.refreshCheckUi();
         },
-        error: (err) => this.handleCheckRequestError(err)
+        error: (err) => this.handleCheckRequestError(
+          err,
+          true
+        )
       });
   }
 

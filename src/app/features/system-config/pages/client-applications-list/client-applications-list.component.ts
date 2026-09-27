@@ -13,7 +13,8 @@ import { ListHelperService } from '../../../../core/services/helper/list-helper.
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
-import { IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 import { V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
 import { IV2Column, IV2ColumnPinned, V2ColumnFormat } from '../../../../shared/components-v2/app-list-table-v2/models/column.model';
 import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
@@ -51,6 +52,11 @@ export class ClientApplicationsListComponent
   ];
   infoBannerNotes: string[] = [
     'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_NOTE_1'
+  ];
+
+  // which data is synchronized
+  infoBannerAccordions: IV2InfoBannerAccordion[] = [
+    SYNCED_DATA_INFO_BANNER_ACCORDION
   ];
 
   /**

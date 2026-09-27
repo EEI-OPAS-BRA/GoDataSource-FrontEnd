@@ -683,6 +683,7 @@ export interface ICreateViewModifyV2TabButton {
 
   // optional
   icon?: string;
+  cssClasses?: string;
   loading?: () => boolean;
   disabled?: () => boolean;
   visible?: () => boolean;

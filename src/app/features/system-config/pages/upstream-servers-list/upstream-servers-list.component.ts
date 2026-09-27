@@ -20,7 +20,8 @@ import { SystemUpstreamServerConnectionStatus } from '../../../../core/models/sy
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
-import { IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 import {
   IV2SideDialogConfigButtonType,
   IV2SideDialogConfigInputDate,
@@ -87,6 +88,11 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   ];
   infoBannerNotes: string[] = [
     'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_NOTE_1'
+  ];
+
+  // which data is synchronized
+  infoBannerAccordions: IV2InfoBannerAccordion[] = [
+    SYNCED_DATA_INFO_BANNER_ACCORDION
   ];
 
   /**
