@@ -9,4 +9,7 @@ export interface IAppFormIconButtonV2 {
   disabled?: (input?: AppFormBaseV2<any>) => boolean;
   visible?: (input?: AppFormBaseV2<any>) => boolean;
   tooltip?: string;
+
+  // css color of the icon, e.g. var(--gd-success)
+  color?: string;
 }

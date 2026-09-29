@@ -111,6 +111,24 @@ const routes: Routes = [
         resolve: {
           upstreamServers: UpstreamServersDataResolver
         }
+      },
+      {
+        // the server is identified by its url, sent as query param, since servers don't have an id
+        path: 'modify',
+        component: fromPages.UpstreamServersCreateViewModifyComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.UPSTREAM_SERVER_CREATE
+          ],
+          action: CreateViewModifyV2Action.MODIFY
+        },
+        resolve: {
+          upstreamServers: UpstreamServersDataResolver
+        },
+        canDeactivate: [
+          PageChangeConfirmationGuard
+        ]
       }
     ]
   },

@@ -1858,6 +1858,13 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
         }
       }
 
+      // an expanded info banner leaves little room for the table, so keep the data area usable and let the page scroll instead
+      if (top && top.querySelector('app-info-banner-v2')) {
+        // grid header with filters (~90px) + empty state illustration (250px) & its text (~60px)
+        const minDataHeight: number = 420;
+        table.style.height = `max(calc(100% - ${topHeight}px), ${tableHeaderHeight + tableBottomHeight + minDataHeight}px)`;
+      }
+
       // determine table data height
       const tableData = table.querySelector('.gd-list-table-data');
       if (tableData) {

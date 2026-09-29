@@ -519,6 +519,7 @@
                   [class.gd-create-view-modify-bottom-section-content-input-has-label]="input.type === CreateViewModifyV2TabInputType.LABEL"
                   [class.gd-create-view-modify-bottom-section-content-input-has-link-list]="input.type === CreateViewModifyV2TabInputType.LINK_LIST"
                   [class.gd-create-view-modify-bottom-section-content-input-has-label-list]="input.type === CreateViewModifyV2TabInputType.LABEL_LIST"
+                  [class.gd-create-view-modify-bottom-section-content-input-has-button]="input.type === CreateViewModifyV2TabInputType.BUTTON"
                   [ngSwitch]="input.type">
 
                   <!-- Edit questionnaire -->
@@ -587,6 +588,7 @@
                     [disabled]="!isView && input.disabled ? input.disabled(input) : undefined"
                     autocomplete="off"
                     [suffixIconButtons]="input.suffixIconButtons"
+                    [exampleValue]="input.exampleValue ? input.exampleValue() : undefined"
                     [required]="!isView && input.validators?.required ? input.validators?.required() : undefined"
                     app-regex-validator
                     [regexExpr]="!isView && input.validators?.regex ? input.validators?.regex().expression : undefined"
@@ -1550,6 +1552,43 @@
 
                       </ng-container>
                     </div>
+                  </div>
+
+                  <!-- Button -->
+                  <div
+                    *ngSwitchCase="CreateViewModifyV2TabInputType.BUTTON"
+                    class="gd-create-view-modify-bottom-section-content-input-button">
+                    <ng-container
+                      *ngIf="!isView">
+
+                      <!-- Action -->
+                      <button
+                        type="button"
+                        mat-flat-button color="secondary"
+                        [disabled]="(input.disabled && input.disabled()) || (input.loading && input.loading())"
+                        (click)="input.click()">
+                        <mat-progress-spinner
+                          *ngIf="input.loading && input.loading(); else buttonIcon"
+                          diameter="16"
+                          mode="indeterminate"
+                          color="primary"></mat-progress-spinner>
+                        <ng-template
+                          #buttonIcon>
+                          <mat-icon
+                            *ngIf="input.icon">{{input.icon}}</mat-icon>
+                        </ng-template>
+                        <span>{{input.label() | translate}}</span>
+                      </button>
+
+                      <!-- Result -->
+                      <div
+                        *ngIf="input.result && input.result() as result"
+                        class="gd-create-view-modify-bottom-section-content-input-button-result gd-create-view-modify-bottom-section-content-input-button-result-{{result.status}}">
+                        <mat-icon>{{result.icon}}</mat-icon>
+                        <span>{{result.message}}</span>
+                      </div>
+
+                    </ng-container>
                   </div>
 
                   <!-- List -->
