@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ViewChild } from '@angular/core';
 import * as _ from 'lodash';
 import { forkJoin, merge, Observable, of, Subject, throwError } from 'rxjs';
 import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
@@ -20,6 +20,7 @@ import { SystemUpstreamServerConnectionStatus } from '../../../../core/models/sy
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
+import { AppListTableV2Component } from '../../../../shared/components-v2/app-list-table-v2/app-list-table-v2.component';
 import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
 import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 import {
@@ -59,6 +60,9 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   private static readonly SYNC_MODE_SINCE_LAST: string = 'sinceLast';
   private static readonly SYNC_MODE_FROM_DATE: string = 'fromDate';
   private static readonly SYNC_MODE_ALL: string = 'all';
+
+  // table
+  @ViewChild('listTable', { static: true }) listTable: AppListTableV2Component;
 
   // stops the checks that are still running, when the list is refreshed or the page is closed
   private _stopConnectionChecks$: Subject<void> = new Subject<void>();
@@ -562,7 +566,7 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         }),
 
         // check if each server is online & accepts its credentials
-        switchMap((upstreamServers: SystemUpstreamServerModel[]) => this.withConnectionChecks(upstreamServers)),
+        tap((upstreamServers: SystemUpstreamServerModel[]) => this.startConnectionChecks(upstreamServers)),
 
         // set count
         tap((upstreamServers: SystemUpstreamServerModel[]) => {
@@ -575,14 +579,15 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   }
 
   /**
-   * Emit the servers right away, as being checked, and again each time the check of a server finishes
+   * Check the servers in background, updating only their connection cell when each check finishes
+   * Note: the list isn't emitted again, so the table isn't redrawn and keeps the selected rows
    */
-  private withConnectionChecks(upstreamServers: SystemUpstreamServerModel[]): Observable<SystemUpstreamServerModel[]> {
+  private startConnectionChecks(upstreamServers: SystemUpstreamServerModel[]): void {
     if (
       !upstreamServers.length ||
       !SystemUpstreamServerModel.canModify(this.authUser)
     ) {
-      return of(upstreamServers);
+      return;
     }
 
     upstreamServers.forEach((upstreamServer) => {
@@ -592,8 +597,7 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
       };
     });
 
-    return merge(
-      of(upstreamServers),
+    merge(
       ...upstreamServers.map((upstreamServer) => {
         return this.systemSyncDataService
           .checkUpstreamServer({
@@ -604,7 +608,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
           .pipe(
             map((check) => {
               upstreamServer.connection = this.upstreamServerCheckHelperService.summarize(check);
-              return upstreamServers;
             }),
 
             // one server that can't be checked must not affect the others
@@ -613,13 +616,21 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
                 status: 'unknown',
                 message: ''
               };
-              return of(upstreamServers);
+              return of(undefined);
             })
           );
       })
-    ).pipe(
-      takeUntil(this._stopConnectionChecks$)
-    );
+    )
+      .pipe(
+        takeUntil(this._stopConnectionChecks$)
+      )
+      .subscribe(() => {
+        // the row might not be rendered yet, in which case it is rendered with the updated connection
+        this.listTable?.agTable?.api.refreshCells({
+          columns: ['connection'],
+          force: true
+        });
+      });
   }
 
   /**

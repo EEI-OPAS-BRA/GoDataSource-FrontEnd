@@ -16,7 +16,7 @@ import { SystemUpstreamServerModel } from '../../../../core/models/system-upstre
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SystemSyncDataService } from '../../../../core/services/data/system-sync.data.service';
 import { UpstreamServerCheckHelperService } from '../../../../core/services/helper/upstream-server-check-helper.service';
-import { ISystemUpstreamServerCheckServer } from '../../../../core/models/system-upstream-server-check.model';
+import { ISystemUpstreamServerCheckServer, ISystemUpstreamServerConnection } from '../../../../core/models/system-upstream-server-check.model';
 import { catchError, switchMap, takeUntil } from 'rxjs/operators';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
 import { OutbreakAndOutbreakTemplateHelperService } from '../../../../core/services/helper/outbreak-and-outbreak-template-helper.service';
@@ -306,7 +306,10 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
                 get: () => this.itemData.url,
                 set: (value) => {
                   // set data
-                  this.itemData.url = value;
+                  // spaces are removed when saving, so they are removed here too, otherwise an url that is already registered passes the validation
+                  this.itemData.url = _.isString(value) ?
+                    value.trim() :
+                    value;
 
                   // the previous checks don't apply to a different url
                   this.connectionFieldChanged(true);
@@ -529,6 +532,34 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
   }
 
   /**
+   * Result displayed next to the credentials test button
+   */
+  private getCredentialsCheckResult(connection: ISystemUpstreamServerConnection): ICheckResult {
+    switch (connection.status) {
+      case 'online':
+        return {
+          status: 'success',
+          icon: 'check_circle',
+          message: connection.message
+        };
+
+      case 'unknown':
+        return {
+          status: 'warning',
+          icon: 'warning',
+          message: connection.message
+        };
+
+      default:
+        return {
+          status: 'error',
+          icon: 'error',
+          message: connection.message
+        };
+    }
+  }
+
+  /**
    * The request failed before we got a result from the check
    */
   private handleCheckRequestError(
@@ -623,27 +654,8 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
           this._testingCredentials = false;
           this.applyServerResult(result.server);
 
-          // credentials are checked only if the server is online, otherwise the reason is that the server can't be reached
-          if (!result.server.online) {
-            this._credentialsResult = this._serverResult;
-          } else if (result.credentials) {
-            if (result.credentials.valid) {
-              this._credentialsResult = {
-                status: 'success',
-                icon: 'check_circle',
-                message: this.upstreamServerCheckHelperService.getCredentialsAcceptedMessage(result.credentials.outbreakIDs)
-              };
-            } else {
-              this._credentialsResult = {
-                status: 'error',
-                icon: 'error',
-                message: this.upstreamServerCheckHelperService.getErrorMessage(
-                  result.credentials.errorCode,
-                  result.credentials.code
-                )
-              };
-            }
-          }
+          // same summary displayed in the servers list
+          this._credentialsResult = this.getCredentialsCheckResult(this.upstreamServerCheckHelperService.summarize(result));
 
           this.refreshCheckUi();
         },

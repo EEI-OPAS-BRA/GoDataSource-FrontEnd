@@ -18,7 +18,7 @@ export class SystemSyncLogHelperService {
 
   /**
    * The sync didn't really fail: there was no data changed since the last sync, so the server is already up to date
-   * The api saves this as a failed sync with the error {"code":"NO-DATA"}
+   * The api saves this case as a successful sync now, but older logs were saved as a failed sync with the error {"code":"NO-DATA"}
    */
   isNoDataToSync(syncLog: SystemSyncLogModel): boolean {
     return !!syncLog &&
@@ -90,9 +90,10 @@ export class SystemSyncLogHelperService {
           {
             type: V2SideDialogConfigInputType.HTML,
             name: 'error',
+            // the error might contain text received from other servers, so it must not be interpreted as html
             placeholder: errJson ?
-              `<code><pre>${JSON.stringify(errJson, null, 1)}</pre></code>` :
-              `<code>${error}</code>`
+              `<code><pre>${_.escape(JSON.stringify(errJson, null, 1))}</pre></code>` :
+              `<code>${_.escape(error)}</code>`
           }
         ],
 
