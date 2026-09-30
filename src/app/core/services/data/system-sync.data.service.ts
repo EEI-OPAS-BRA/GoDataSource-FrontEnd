@@ -20,13 +20,14 @@ export class SystemSyncDataService {
      * Start sync process
      * By default only what changed since the last successful sync is sent
      * @param upstreamServerURL
-     * @param options fromDate: also send what changed since this date (only has effect if it is older than the last successful sync); fullSync: send all the data
+     * @param options fromDate: also send what changed since this date (only has effect if it is older than the last successful sync); fullSync: send all the data; outbreakIDs: send only these outbreaks
      */
   sync(
     upstreamServerURL: string,
     options?: {
       fromDate?: string,
-      fullSync?: boolean
+      fullSync?: boolean,
+      outbreakIDs?: string[]
     }
   ): Observable<SystemSyncModel> {
     return this.modelHelper.mapObservableToModel(
