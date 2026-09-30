@@ -1,0 +1,117 @@
+/* Sync with upstream server dialog */
+
+/* Server that receives the data */
+.gd-sync-dialog-server {
+  @include flex_align_items(center);
+  @include flex(flex);
+  background: rgba(var(--gd-primary-rgb), 0.08);
+  @include border-radius(0.8rem);
+  border: 0.1rem solid rgba(var(--gd-primary-rgb), 0.24);
+  gap: 1.2rem;
+  padding: 1.2rem 1.6rem;
+
+  .gd-sync-dialog-server-icon {
+    background: rgba(var(--gd-primary-rgb), 0.16);
+    @include border-radius(50%);
+    color: var(--gd-primary);
+    flex-shrink: 0;
+    font-size: 2.4rem;
+    padding: 0.8rem;
+  }
+
+  .gd-sync-dialog-server-info {
+    min-width: 0;
+  }
+
+  .gd-sync-dialog-server-name {
+    color: var(--gd-text);
+    font-size: 1.6rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gd-sync-dialog-server-url {
+    color: var(--gd-secondary);
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Last sync */
+.gd-sync-dialog-last {
+  @include flex_align_items(center);
+  @include flex(flex);
+  color: var(--gd-text);
+  flex-wrap: wrap;
+  font-size: 1.3rem;
+  gap: 0.6rem;
+  padding: 1rem 0.4rem 0;
+
+  .material-icons {
+    color: var(--gd-secondary);
+    font-size: 1.8rem;
+  }
+}
+
+/* Status of the last sync */
+.gd-sync-dialog-status {
+  background: rgba(var(--gd-secondary-rgb), 0.18);
+  @include border-radius(1.2rem);
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 2.2rem;
+  padding: 0 1rem;
+  white-space: nowrap;
+
+  &.gd-sync-dialog-status-success {
+    background: rgba(var(--gd-success-rgb), 0.14);
+    color: var(--gd-success);
+  }
+
+  &.gd-sync-dialog-status-warning {
+    background: rgba(var(--gd-warning-rgb), 0.2);
+    color: var(--gd-text);
+  }
+
+  &.gd-sync-dialog-status-danger {
+    background: rgba(var(--gd-danger-rgb), 0.12);
+    color: var(--gd-danger);
+  }
+}
+
+/* Explanation of what is sent */
+.gd-sync-dialog-hint {
+  @include flex(flex);
+  @include border-radius(0.8rem);
+  border-left: 0.4rem solid;
+  color: var(--gd-text);
+  font-size: 1.3rem;
+  gap: 1rem;
+  line-height: 1.4;
+  padding: 1rem 1.2rem;
+
+  .material-icons {
+    flex-shrink: 0;
+    font-size: 2rem;
+  }
+
+  &.gd-sync-dialog-hint-info {
+    background: rgba(var(--gd-primary-rgb), 0.08);
+    border-color: var(--gd-primary);
+
+    .material-icons {
+      color: var(--gd-primary);
+    }
+  }
+
+  &.gd-sync-dialog-hint-warning {
+    background: rgba(var(--gd-warning-rgb), 0.16);
+    border-color: var(--gd-warning);
+
+    .material-icons {
+      color: var(--gd-warning);
+    }
+  }
+}
