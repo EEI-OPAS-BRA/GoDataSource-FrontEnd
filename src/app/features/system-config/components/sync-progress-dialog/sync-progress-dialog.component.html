@@ -1,0 +1,232 @@
+<div class="gd-sync-progress">
+
+  <!-- Header -->
+  <div class="gd-sync-progress-header">
+    <span class="material-icons gd-sync-progress-header-icon">sync</span>
+    <div class="gd-sync-progress-header-text">
+      <div class="gd-sync-progress-header-title">{{'LNG_SYNC_PROGRESS_DIALOG_TITLE' | translate}}</div>
+      <div class="gd-sync-progress-header-server">{{data.upstreamServer.name}} &middot; {{data.upstreamServer.url}}</div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <ol class="gd-sync-progress-steps">
+    <li
+      *ngFor="let step of steps"
+      class="gd-sync-progress-step gd-sync-progress-step-{{step.status}}">
+      <span class="gd-sync-progress-step-marker">
+        <ng-container [ngSwitch]="step.status">
+          <span *ngSwitchCase="'success'" class="material-icons">check</span>
+          <span *ngSwitchCase="'error'" class="material-icons">close</span>
+          <ng-container *ngSwitchDefault>{{step.number}}</ng-container>
+        </ng-container>
+      </span>
+      <span class="gd-sync-progress-step-label">
+        <span class="gd-sync-progress-step-number">{{'LNG_SYNC_PROGRESS_DIALOG_STEP' | translate}} {{step.number}}</span>
+        <span>{{step.label | translate}}</span>
+      </span>
+    </li>
+  </ol>
+
+  <!-- Illustration of the current step -->
+  <div class="gd-sync-progress-art gd-sync-progress-art-{{currentStep.status}}" [ngSwitch]="currentStep.key">
+
+    <!-- 01 - Connecting servers -->
+    <svg *ngSwitchCase="'connect'" viewBox="0 0 320 140" role="img" [attr.aria-label]="currentStep.label | translate">
+      <g transform="translate(30, 30)" class="art-server">
+        <rect width="60" height="80" rx="8" class="art-server-body"/>
+        <rect x="8" y="10" width="44" height="14" rx="3" class="art-server-slot"/>
+        <rect x="8" y="33" width="44" height="14" rx="3" class="art-server-slot"/>
+        <rect x="8" y="56" width="44" height="14" rx="3" class="art-server-slot"/>
+        <circle cx="44" cy="17" r="3" class="art-led art-led-blink"/>
+        <circle cx="44" cy="40" r="3" class="art-led"/>
+        <circle cx="44" cy="63" r="3" class="art-led art-led-blink art-led-delay"/>
+      </g>
+      <g transform="translate(230, 30)" class="art-server">
+        <rect width="60" height="80" rx="8" class="art-server-body"/>
+        <rect x="8" y="10" width="44" height="14" rx="3" class="art-server-slot"/>
+        <rect x="8" y="33" width="44" height="14" rx="3" class="art-server-slot"/>
+        <rect x="8" y="56" width="44" height="14" rx="3" class="art-server-slot"/>
+        <circle cx="44" cy="17" r="3" class="art-led"/>
+        <circle cx="44" cy="40" r="3" class="art-led art-led-blink"/>
+        <circle cx="44" cy="63" r="3" class="art-led"/>
+      </g>
+      <ng-container [ngSwitch]="currentStep.status">
+        <g *ngSwitchCase="'success'">
+          <line x1="95" y1="70" x2="225" y2="70" class="art-link art-link-success"/>
+          <circle cx="160" cy="70" r="18" class="art-badge art-badge-success"/>
+          <path d="M151 70 l6 6 l12 -12" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchCase="'error'" class="art-shake">
+          <line x1="95" y1="70" x2="145" y2="70" class="art-link art-link-error"/>
+          <line x1="175" y1="70" x2="225" y2="70" class="art-link art-link-error"/>
+          <path d="M145 70 l6 -8 l4 10 l6 -9" class="art-spark"/>
+          <circle cx="160" cy="70" r="18" class="art-badge art-badge-error"/>
+          <path d="M153 63 l14 14 M167 63 l-14 14" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchDefault>
+          <line x1="95" y1="70" x2="225" y2="70" class="art-link art-link-running"/>
+          <circle r="5" class="art-packet">
+            <animateMotion dur="1.4s" repeatCount="indefinite" path="M95 70 L225 70"/>
+          </circle>
+          <circle r="5" class="art-packet">
+            <animateMotion dur="1.4s" begin="0.7s" repeatCount="indefinite" path="M225 70 L95 70"/>
+          </circle>
+        </g>
+      </ng-container>
+    </svg>
+
+    <!-- 02 - Validating credentials -->
+    <svg *ngSwitchCase="'credentials'" viewBox="0 0 320 140" role="img" [attr.aria-label]="currentStep.label | translate">
+      <path d="M200 18 l50 18 v34 c0 30 -22 48 -50 58 c-28 -10 -50 -28 -50 -58 v-34 z" class="art-shield"/>
+      <ng-container [ngSwitch]="currentStep.status">
+        <g *ngSwitchCase="'success'">
+          <circle cx="200" cy="72" r="20" class="art-badge art-badge-success"/>
+          <path d="M190 72 l7 7 l13 -14" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchCase="'error'" class="art-shake">
+          <circle cx="200" cy="72" r="20" class="art-badge art-badge-error"/>
+          <path d="M192 64 l16 16 M208 64 l-16 16" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchDefault>
+          <circle cx="200" cy="64" r="9" class="art-keyhole"/>
+          <path d="M196 70 h8 l3 20 h-14 z" class="art-keyhole"/>
+        </g>
+      </ng-container>
+      <g
+        class="art-key"
+        [class.art-key-moving]="currentStep.status === 'running'"
+        [class.art-key-in]="currentStep.status === 'success'"
+        [class.art-key-out]="currentStep.status === 'error'">
+        <circle cx="62" cy="72" r="18" class="art-key-body"/>
+        <circle cx="62" cy="72" r="7" class="art-key-hole"/>
+        <rect x="78" y="68" width="56" height="8" rx="3" class="art-key-body"/>
+        <rect x="112" y="76" width="7" height="12" rx="2" class="art-key-body"/>
+        <rect x="124" y="76" width="7" height="9" rx="2" class="art-key-body"/>
+      </g>
+    </svg>
+
+    <!-- 03 - Synchronizing data -->
+    <svg *ngSwitchCase="'sync'" viewBox="0 0 320 140" role="img" [attr.aria-label]="currentStep.label | translate">
+      <g transform="translate(30, 40)" class="art-server">
+        <rect width="54" height="72" rx="8" class="art-server-body"/>
+        <rect x="7" y="9" width="40" height="12" rx="3" class="art-server-slot"/>
+        <rect x="7" y="30" width="40" height="12" rx="3" class="art-server-slot"/>
+        <rect x="7" y="51" width="40" height="12" rx="3" class="art-server-slot"/>
+        <circle cx="40" cy="15" r="2.5" class="art-led art-led-blink"/>
+        <circle cx="40" cy="36" r="2.5" class="art-led art-led-blink art-led-delay"/>
+        <circle cx="40" cy="57" r="2.5" class="art-led art-led-blink"/>
+      </g>
+      <g transform="translate(236, 40)" class="art-server">
+        <rect width="54" height="72" rx="8" class="art-server-body"/>
+        <rect x="7" y="9" width="40" height="12" rx="3" class="art-server-slot"/>
+        <rect x="7" y="30" width="40" height="12" rx="3" class="art-server-slot"/>
+        <rect x="7" y="51" width="40" height="12" rx="3" class="art-server-slot"/>
+        <circle cx="40" cy="15" r="2.5" class="art-led"/>
+        <circle cx="40" cy="36" r="2.5" class="art-led art-led-blink"/>
+        <circle cx="40" cy="57" r="2.5" class="art-led"/>
+      </g>
+      <path d="M90 70 C 130 10, 190 10, 230 70" class="art-arc"/>
+      <ng-container [ngSwitch]="currentStep.status">
+        <g *ngSwitchCase="'success'">
+          <circle cx="160" cy="34" r="18" class="art-badge art-badge-success"/>
+          <path d="M151 34 l6 6 l12 -12" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchCase="'error'" class="art-shake">
+          <circle cx="160" cy="34" r="18" class="art-badge art-badge-error"/>
+          <path d="M153 27 l14 14 M167 27 l-14 14" class="art-badge-mark"/>
+        </g>
+        <g *ngSwitchDefault>
+          <g *ngFor="let delay of ['0s', '0.6s', '1.2s']">
+            <g class="art-doc">
+              <rect x="-8" y="-10" width="16" height="20" rx="2" class="art-doc-body"/>
+              <path d="M-4 -4 h8 M-4 0 h8 M-4 4 h5" class="art-doc-lines"/>
+              <animateMotion dur="1.8s" [attr.begin]="delay" repeatCount="indefinite" path="M90 70 C 130 10, 190 10, 230 70"/>
+            </g>
+          </g>
+        </g>
+      </ng-container>
+    </svg>
+
+    <!-- 04 - Final status -->
+    <svg *ngSwitchCase="'final'" viewBox="0 0 320 140" role="img" [attr.aria-label]="currentStep.label | translate">
+      <ng-container [ngSwitch]="result">
+        <g *ngSwitchCase="'warning'" class="art-pop">
+          <path d="M160 18 l52 92 h-104 z" class="art-final art-final-warning"/>
+          <path d="M160 52 v28 M160 92 v2" class="art-final-mark"/>
+        </g>
+        <g *ngSwitchCase="'error'" class="art-pop">
+          <circle cx="160" cy="70" r="48" class="art-final art-final-error"/>
+          <path d="M142 52 l36 36 M178 52 l-36 36" class="art-final-mark art-draw"/>
+        </g>
+        <g *ngSwitchCase="'upToDate'" class="art-pop">
+          <circle cx="160" cy="70" r="48" class="art-final art-final-info"/>
+          <path d="M140 70 l14 14 l28 -28" class="art-final-mark art-draw"/>
+        </g>
+        <g *ngSwitchDefault class="art-pop">
+          <circle cx="160" cy="70" r="48" class="art-final art-final-success"/>
+          <path d="M140 70 l14 14 l28 -28" class="art-final-mark art-draw"/>
+        </g>
+      </ng-container>
+    </svg>
+  </div>
+
+  <!-- What is happening / result -->
+  <div class="gd-sync-progress-status">
+    <ng-container *ngIf="!finished; else resultTemplate">
+      <div class="gd-sync-progress-status-title">{{currentStep.label | translate}}</div>
+      <div class="gd-sync-progress-status-message">{{phaseMessage | translate}}</div>
+    </ng-container>
+    <ng-template #resultTemplate>
+      <ng-container [ngSwitch]="result">
+        <div *ngSwitchCase="'success'" class="gd-sync-progress-status-title gd-sync-progress-status-title-success">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_SUCCESS' | translate}}</div>
+        <div *ngSwitchCase="'warning'" class="gd-sync-progress-status-title gd-sync-progress-status-title-warning">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WARNING' | translate}}</div>
+        <div *ngSwitchCase="'upToDate'" class="gd-sync-progress-status-title gd-sync-progress-status-title-success">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_UP_TO_DATE' | translate}}</div>
+        <div *ngSwitchDefault class="gd-sync-progress-status-title gd-sync-progress-status-title-error">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_ERROR' | translate}}</div>
+      </ng-container>
+      <div *ngIf="result === 'success'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_SUCCESS_MESSAGE' | translate}}</div>
+      <div *ngIf="result === 'warning'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WARNING_MESSAGE' | translate}}</div>
+      <div *ngIf="result === 'upToDate'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_UP_TO_DATE_MESSAGE' | translate}}</div>
+    </ng-template>
+  </div>
+
+  <!-- Progress -->
+  <div class="gd-sync-progress-bar gd-sync-progress-bar-{{finished ? result : 'running'}}">
+    <mat-progress-bar
+      mode="determinate"
+      [value]="percent"></mat-progress-bar>
+    <span class="gd-sync-progress-bar-percent">{{percentDisplayed}}%</span>
+  </div>
+
+  <!-- Error log -->
+  <div *ngIf="finished && result === 'error'" class="gd-sync-progress-log">
+    <div class="gd-sync-progress-log-title">
+      <span class="material-icons">error_outline</span>
+      <span>{{'LNG_SYNC_PROGRESS_DIALOG_LOG_TITLE' | translate}}</span>
+    </div>
+    <div class="gd-sync-progress-log-message">{{errorMessage}}</div>
+    <div *ngIf="errorDetails" class="gd-sync-progress-log-details">{{errorDetails}}</div>
+    <div class="gd-sync-progress-log-help">{{'LNG_SYNC_PROGRESS_DIALOG_LOG_HELP' | translate}}</div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="gd-sync-progress-buttons">
+    <button
+      *ngIf="finished && result === 'error' && hasErrorDetails"
+      type="button"
+      mat-button
+      color="text"
+      (click)="viewError()">
+      <span class="material-icons">description</span>
+      {{'LNG_SYNC_PROGRESS_DIALOG_VIEW_ERROR_BUTTON' | translate}}
+    </button>
+    <button
+      type="button"
+      mat-flat-button
+      [color]="finished ? 'primary' : 'text'"
+      (click)="close()">
+      {{(finished ? 'LNG_SYNC_PROGRESS_DIALOG_CLOSE_BUTTON' : 'LNG_SYNC_PROGRESS_DIALOG_BACKGROUND_BUTTON') | translate}}
+    </button>
+  </div>
+
+</div>

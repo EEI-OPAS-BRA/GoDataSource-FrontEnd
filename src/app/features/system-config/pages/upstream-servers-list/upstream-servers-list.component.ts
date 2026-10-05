@@ -1,5 +1,7 @@
 import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { ISyncProgressDialogData, SyncProgressDialogComponent } from '../../components/sync-progress-dialog/sync-progress-dialog.component';
 import * as _ from 'lodash';
 import { forkJoin, merge, Observable, of, Subject, throwError } from 'rxjs';
 import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
@@ -73,9 +75,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   // stops the checks that are still running, when the list is refreshed or the page is closed
   private _stopConnectionChecks$: Subject<void> = new Subject<void>();
 
-  // timers
-  private _syncCheckIfDoneTimer: number;
-
   // info banner
   infoBannerSteps: IV2InfoBannerStep[] = [
     {
@@ -118,7 +117,8 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
     private i18nService: I18nService,
     private systemSyncLogHelperService: SystemSyncLogHelperService,
     private upstreamServerCheckHelperService: UpstreamServerCheckHelperService,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private matDialog: MatDialog
   ) {
     super(
       listHelperService, {
@@ -148,9 +148,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
     // stop connection checks
     this._stopConnectionChecks$.next();
     this._stopConnectionChecks$.complete();
-
-    // stop timers
-    this.stopSyncCheckIfDoneTimer();
   }
 
   /**
@@ -722,16 +719,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   }
 
   /**
-   * Stop timer
-   */
-  private stopSyncCheckIfDoneTimer(): void {
-    if (this._syncCheckIfDoneTimer) {
-      clearTimeout(this._syncCheckIfDoneTimer);
-      this._syncCheckIfDoneTimer = undefined;
-    }
-  }
-
-  /**
    * Which data was chosen in the sync dialog
    */
   private getSyncMode(data: IV2SideDialogData): string {
@@ -1010,98 +997,25 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
       // close dialog
       response.handler.hide();
 
-      // show loading
-      const loading = this.dialogV2Service.showLoadingDialog();
-
-      // check if sync is done
-      const syncCheckIfDone = (syncLogId: string) => {
-        // stop previous
-        this.stopSyncCheckIfDoneTimer();
-
-        // call
-        this._syncCheckIfDoneTimer = setTimeout(
-          () => {
-            // reset
-            this._syncCheckIfDoneTimer = undefined;
-
-            // check if backup is ready
-            this.systemSyncLogDataService
-              .getSyncLog(syncLogId)
-              .pipe(
-                catchError((err) => {
-                  // show error
-                  this.toastV2Service.error(err);
-
-                  // hide loading
-                  loading.close();
-
-                  // send error down the road
-                  return throwError(err);
-                })
-              )
-              .subscribe((systemSyncLogModel: SystemSyncLogModel) => {
-                switch (systemSyncLogModel.status) {
-                  // sync ready ?
-                  case Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS.value:
-                  case Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS_WITH_WARNINGS.value:
-                    // display success message
-                    this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_SUCCESS_MESSAGE');
-
-                    // hide loading
-                    loading.close();
-
-                    // reload data
-                    this.needsRefreshList(true);
-                    break;
-
-                  // sync error ?
-                  case Constants.SYSTEM_SYNC_LOG_STATUS.FAILED.value:
-                    // nothing changed since the last sync, so it isn't a failure
-                    if (this.systemSyncLogHelperService.isNoDataToSync(systemSyncLogModel)) {
-                      this.toastV2Service.notice('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_UP_TO_DATE_MESSAGE');
-                    } else {
-                      this.toastV2Service.error('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_FAILED_MESSAGE');
-                    }
-
-                    // hide loading
-                    loading.close();
-
-                    // reload data
-                    this.needsRefreshList(true);
-                    break;
-
-                  // sync isn't ready ?
-                  // Constants.SYSTEM_SYNC_LOG_STATUS.IN_PROGRESS.value
-                  default:
-                    syncCheckIfDone(syncLogId);
-                    break;
-                }
-              });
+      // display the progress of each step; the list is refreshed when the dialog is closed, even if the sync continues in background
+      this.matDialog
+        .open<SyncProgressDialogComponent, ISyncProgressDialogData, boolean>(
+        SyncProgressDialogComponent, {
+          data: {
+            upstreamServer,
+            syncOptions
           },
-          Constants.DEFAULT_FILTER_POOLING_MS_CHECK_AGAIN
-        );
-      };
-
-      // start sync
-      this.systemSyncDataService
-        .sync(
-          upstreamServer.url,
-          syncOptions
-        )
-        .pipe(
-          catchError((err) => {
-          // show error
-            this.toastV2Service.error(err);
-
-            // hide loading
-            loading.close();
-
-            // send error down the road
-            return throwError(err);
-          })
-        )
-        .subscribe((systemSync) => {
-          syncCheckIfDone(systemSync.syncLogId);
+          width: '64rem',
+          maxWidth: '95vw',
+          disableClose: true,
+          autoFocus: false,
+          restoreFocus: false,
+          panelClass: 'gd-sync-progress-dialog-panel'
+        }
+      )
+        .afterClosed()
+        .subscribe(() => {
+          this.needsRefreshList(true);
         });
     });
   }
