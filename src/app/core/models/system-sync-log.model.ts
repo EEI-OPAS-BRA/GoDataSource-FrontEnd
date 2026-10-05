@@ -18,6 +18,11 @@ implements
   informationStartDate: string;
   error: string;
 
+  // step of a sync with an upstream server; when it failed, the step that failed
+  syncStep: string;
+  syncStepErrorCode: string;
+  syncStepErrorDetail: string;
+
   outbreakIDs: string[];
   outbreaks: OutbreakModel[];
 
@@ -59,6 +64,9 @@ implements
     this.outbreakIDs = _.get(data, 'outbreakIDs', []);
     this.informationStartDate = _.get(data, 'informationStartDate');
     this.error = _.get(data, 'error');
+    this.syncStep = _.get(data, 'syncStep');
+    this.syncStepErrorCode = _.get(data, 'syncStepErrorCode');
+    this.syncStepErrorDetail = _.get(data, 'syncStepErrorDetail');
   }
 
   /**

@@ -23,6 +23,8 @@ import { OutbreakAndOutbreakTemplateHelperService } from '../../../../core/servi
 import { RedirectService } from '../../../../core/services/helper/redirect.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
+import { OutbreakModel } from '../../../../core/models/outbreak.model';
 
 /**
  * Result displayed next to a check button
@@ -424,6 +426,21 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
                 }
               }
             }, {
+              type: CreateViewModifyV2TabInputType.SELECT_MULTIPLE,
+              name: 'outbreakIDs',
+              placeholder: () => this.itemData.outbreakIDs?.length > 0 ?
+                'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC' :
+                'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC_ALL',
+              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC_DESCRIPTION',
+              value: {
+                get: () => this.itemData.outbreakIDs,
+                set: (value) => {
+                  // set data
+                  this.itemData.outbreakIDs = value || [];
+                }
+              },
+              options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options
+            }, {
               type: CreateViewModifyV2TabInputType.NUMBER,
               name: 'syncInterval',
               placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL',
@@ -733,7 +750,15 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
               return;
             }
 
-            settings.upstreamServers[index] = _.merge({}, settings.upstreamServers[index], data);
+            // lists are replaced, otherwise outbreaks that were removed would be kept
+            settings.upstreamServers[index] = _.mergeWith(
+              {},
+              settings.upstreamServers[index],
+              data,
+              (_objValue, srcValue) => Array.isArray(srcValue) ?
+                srcValue :
+                undefined
+            );
           }
 
           // save upstream servers

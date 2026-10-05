@@ -20,6 +20,9 @@ implements
   syncOnEveryChange: boolean;
   syncEnabled: boolean;
 
+  // outbreaks synced with this server; empty means all of them
+  outbreakIDs: string[];
+
   // not displayed anywhere, but it must be sent back on save, otherwise the api resets it to its default
   autoEncrypt: boolean;
 
@@ -59,6 +62,7 @@ implements
     this.syncOnEveryChange = _.get(data, 'syncOnEveryChange', false);
     this.syncEnabled = _.get(data, 'syncEnabled', true);
     this.autoEncrypt = _.get(data, 'autoEncrypt');
+    this.outbreakIDs = _.get(data, 'outbreakIDs', []);
   }
 
   /**

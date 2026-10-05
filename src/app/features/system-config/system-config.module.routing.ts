@@ -95,7 +95,8 @@ const routes: Routes = [
           ]
         },
         resolve: {
-          yesNoAll: YesNoAllDataResolver
+          yesNoAll: YesNoAllDataResolver,
+          outbreak: OutbreakDataResolver
         }
       },
       {
@@ -109,7 +110,8 @@ const routes: Routes = [
           action: CreateViewModifyV2Action.CREATE
         },
         resolve: {
-          upstreamServers: UpstreamServersDataResolver
+          upstreamServers: UpstreamServersDataResolver,
+          outbreak: OutbreakDataResolver
         }
       },
       {
@@ -124,7 +126,8 @@ const routes: Routes = [
           action: CreateViewModifyV2Action.MODIFY
         },
         resolve: {
-          upstreamServers: UpstreamServersDataResolver
+          upstreamServers: UpstreamServersDataResolver,
+          outbreak: OutbreakDataResolver
         },
         canDeactivate: [
           PageChangeConfirmationGuard
