@@ -1,4 +1,7 @@
 .gd-sync-progress {
+  background: var(--gd-background);
+  border-radius: 1.6rem;
+  box-shadow: 0 1.2rem 4rem rgba(0, 0, 0, 0.35);
   color: var(--gd-text);
   display: flex;
   flex-direction: column;

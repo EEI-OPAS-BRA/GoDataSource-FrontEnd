@@ -115,3 +115,8 @@
     }
   }
 }
+
+/* Sync progress dialog: the content draws its own card, so the container doesn't add space around it */
+.cdk-overlay-container .gd-sync-progress-dialog-panel .mat-dialog-container {
+  padding: 0;
+}

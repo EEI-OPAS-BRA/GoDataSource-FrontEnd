@@ -733,6 +733,15 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   }
 
   /**
+   * Sync dialog - label of the outbreaks field; nothing chosen means all the outbreaks
+   */
+  private getSyncOutbreaksPlaceholder(outbreakIDs: string[]): string {
+    return outbreakIDs?.length > 0 ?
+      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS' :
+      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_ALL';
+  }
+
+  /**
    * The chosen outbreaks don't include all the ones configured for the server
    */
   private isPartialSync(
@@ -891,11 +900,15 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         }, {
           type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
           name: UpstreamServersListComponent.SYNC_DIALOG_OUTBREAKS_INPUT,
-          placeholder: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS',
+          // nothing chosen means all the outbreaks
+          placeholder: this.getSyncOutbreaksPlaceholder(upstreamServer.outbreakIDs),
           tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_TOOLTIP',
           options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options,
           // outbreaks configured for the server
-          values: [...(upstreamServer.outbreakIDs || [])]
+          values: [...(upstreamServer.outbreakIDs || [])],
+          change: (_data, _handler, item) => {
+            item.placeholder = this.getSyncOutbreaksPlaceholder((item as IV2SideDialogConfigInputMultiDropdown).values);
+          }
         },
 
         // what is sent with the chosen option
