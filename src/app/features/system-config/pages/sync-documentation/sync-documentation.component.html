@@ -1,0 +1,122 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  pageTitle="LNG_LAYOUT_MENU_ITEM_SYNC_DOCUMENTATION_LABEL">
+
+  <div class="gd-sync-doc">
+
+    <!-- Introduction -->
+    <section class="gd-sync-doc-hero">
+      <div class="gd-sync-doc-hero-text">
+        <h2>{{'LNG_PAGE_SYNC_DOCUMENTATION_INTRO_TITLE' | translate}}</h2>
+        <p>{{'LNG_PAGE_SYNC_DOCUMENTATION_INTRO_DESCRIPTION' | translate}}</p>
+      </div>
+
+      <!-- How the instances are connected -->
+      <div class="gd-sync-doc-flow" aria-hidden="true">
+        <div class="gd-sync-doc-flow-node">
+          <span class="material-icons">dns</span>
+          <strong>{{'LNG_PAGE_SYNC_DOCUMENTATION_FLOW_SENDER' | translate}}</strong>
+          <small>{{'LNG_PAGE_SYNC_DOCUMENTATION_FLOW_SENDER_EXAMPLE' | translate}}</small>
+        </div>
+        <div class="gd-sync-doc-flow-arrow">
+          <span class="gd-sync-doc-flow-arrow-line"></span>
+          <span class="material-icons">arrow_forward</span>
+          <small>{{'LNG_PAGE_SYNC_DOCUMENTATION_FLOW_DATA' | translate}}</small>
+        </div>
+        <div class="gd-sync-doc-flow-node gd-sync-doc-flow-node-receiver">
+          <span class="material-icons">storage</span>
+          <strong>{{'LNG_PAGE_SYNC_DOCUMENTATION_FLOW_RECEIVER' | translate}}</strong>
+          <small>{{'LNG_PAGE_SYNC_DOCUMENTATION_FLOW_RECEIVER_EXAMPLE' | translate}}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- First thing to do -->
+    <section class="gd-sync-doc-callout">
+      <span class="material-icons">priority_high</span>
+      <div>
+        <strong>{{'LNG_PAGE_SYNC_DOCUMENTATION_CALLOUT_TITLE' | translate}}</strong>
+        <p>{{'LNG_PAGE_SYNC_DOCUMENTATION_CALLOUT_DESCRIPTION' | translate}}</p>
+        <a
+          *ngIf="receiveLink.visible"
+          mat-flat-button
+          color="primary"
+          [routerLink]="receiveLink.link">
+          <span class="material-icons">vpn_key</span>
+          {{'LNG_PAGE_SYNC_DOCUMENTATION_CALLOUT_BUTTON' | translate}}
+        </a>
+      </div>
+    </section>
+
+    <!-- Setup -->
+    <section>
+      <h3 class="gd-sync-doc-section-title">{{'LNG_PAGE_SYNC_DOCUMENTATION_STEPS_TITLE' | translate}}</h3>
+      <ol class="gd-sync-doc-steps">
+        <li *ngFor="let step of steps; let index = index" class="gd-sync-doc-step">
+          <div class="gd-sync-doc-step-marker">
+            <span>{{index + 1}}</span>
+          </div>
+          <div class="gd-sync-doc-step-card">
+            <div class="gd-sync-doc-step-header">
+              <span class="material-icons">{{step.icon}}</span>
+              <div>
+                <span class="gd-sync-doc-step-where">{{step.where | translate}}</span>
+                <h4>{{step.title | translate}}</h4>
+              </div>
+            </div>
+            <p>{{step.description | translate}}</p>
+            <a
+              *ngIf="step.link?.visible"
+              class="gd-sync-doc-link"
+              [routerLink]="step.link.link">
+              {{'LNG_PAGE_SYNC_DOCUMENTATION_GO_TO' | translate}} "{{step.link.label | translate}}"
+              <span class="material-icons">arrow_forward</span>
+            </a>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Features -->
+    <section>
+      <h3 class="gd-sync-doc-section-title">{{'LNG_PAGE_SYNC_DOCUMENTATION_FEATURES_TITLE' | translate}}</h3>
+      <div class="gd-sync-doc-features">
+        <div *ngFor="let feature of features" class="gd-sync-doc-feature">
+          <div class="gd-sync-doc-feature-header">
+            <span class="material-icons">{{feature.icon}}</span>
+            <h4>{{feature.title | translate}}</h4>
+          </div>
+          <p>{{feature.description | translate}}</p>
+          <ul>
+            <li *ngFor="let item of feature.items">
+              <span class="material-icons">check</span>
+              <span>{{item | translate}}</span>
+            </li>
+          </ul>
+          <a
+            *ngIf="feature.link.visible"
+            mat-stroked-button
+            color="primary"
+            class="gd-sync-doc-feature-button"
+            [routerLink]="feature.link.link">
+            {{'LNG_PAGE_SYNC_DOCUMENTATION_OPEN' | translate}} "{{feature.link.label | translate}}"
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Questions -->
+    <section>
+      <h3 class="gd-sync-doc-section-title">{{'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_TITLE' | translate}}</h3>
+      <mat-accordion class="gd-sync-doc-faq" multi>
+        <mat-expansion-panel *ngFor="let item of questions">
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{item.question | translate}}</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>{{item.answer | translate}}</p>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </section>
+
+  </div>
+</app-basic-page-v2>
