@@ -3,6 +3,7 @@ import { Routes, RouterModule, Route } from '@angular/router';
 import * as fromPages from './pages';
 import { AuthGuard } from '../../core/services/guards/auth-guard.service';
 import { PERMISSION } from '../../core/models/permission.model';
+import { PermissionExpression } from '../../core/models/user.model';
 import { PageChangeConfirmationGuard } from '../../core/services/guards/page-change-confirmation-guard.service';
 import { YesNoAllDataResolver } from '../../core/services/resolvers/data/yes-no-all.resolver';
 import { UserDataResolver } from '../../core/services/resolvers/data/user.resolver';
@@ -252,6 +253,21 @@ const routes: Routes = [
   },
 
   // Sync
+  // Sync documentation
+  {
+    path: 'sync-documentation',
+    component: fromPages.SyncDocumentationComponent,
+    canActivate: [AuthGuard],
+    data: {
+      permissions: new PermissionExpression({
+        or: [
+          PERMISSION.UPSTREAM_SERVER_LIST,
+          PERMISSION.CLIENT_APPLICATION_LIST,
+          PERMISSION.SYNC_LOG_LIST
+        ]
+      })
+    }
+  },
   {
     path: 'sync-logs',
     component: fromPages.SystemSyncLogsComponent,

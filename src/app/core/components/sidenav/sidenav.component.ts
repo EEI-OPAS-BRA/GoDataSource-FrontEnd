@@ -436,6 +436,18 @@ export class SidenavComponent implements OnInit, OnDestroy {
                 PERMISSION.SYNC_LOG_LIST
               ],
               '/system-config/sync-logs'
+            ),
+            new ChildNavItem(
+              'sync-documentation',
+              'LNG_LAYOUT_MENU_ITEM_SYNC_DOCUMENTATION_LABEL',
+              new PermissionExpression({
+                or: [
+                  PERMISSION.UPSTREAM_SERVER_LIST,
+                  PERMISSION.CLIENT_APPLICATION_LIST,
+                  PERMISSION.SYNC_LOG_LIST
+                ]
+              }),
+              '/system-config/sync-documentation'
             )
           ]
         ),
