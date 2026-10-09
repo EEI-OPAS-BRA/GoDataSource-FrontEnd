@@ -121,7 +121,7 @@ export class RelationshipsCreateViewModifyComponent extends CreateViewModifyComp
       if (this._createRelationships.length < 1) {
         const loading = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
         loading.message({
-          message: 'Something went wrong...'
+          message: 'LNG_PAGE_CREATE_ENTITY_RELATIONSHIP_ERROR_SOMETHING_WENT_WRONG'
         });
       }
     }

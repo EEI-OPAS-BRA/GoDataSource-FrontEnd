@@ -2381,10 +2381,10 @@ export class ContactsListComponent
           }
         },
 
-        // Consulta via API (abre o endpoint contacts-with-relationships/filter direto no /explorer)
+        // API query (opens the contacts-with-relationships/filter endpoint straight in /explorer)
         {
           label: {
-            get: () => 'Consulta via API'
+            get: () => 'LNG_PAGE_LIST_CONTACTS_ACTION_API_QUERY'
           },
           action: {
             click: () => {
@@ -2417,35 +2417,32 @@ export class ContactsListComponent
     // quote character here can collide with either of those two outer delimiters.
     const copyIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'9\' y=\'9\' width=\'13\' height=\'13\' rx=\'2\'></rect><path d=\'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\'></path></svg>';
     const checkIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'#2e7d32\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'20 6 9 17 4 12\'></polyline></svg>';
+    const i18nService = this.personAndRelatedHelperService.i18nService;
 
     this.personAndRelatedHelperService.dialogV2Service
       .showBottomDialog({
         config: {
           title: {
-            get: () => 'Consulta via API'
+            get: () => 'LNG_PAGE_LIST_CONTACTS_ACTION_API_QUERY'
           },
           message: {
             get: () => `
               <div style="display: flex; flex-direction: column; gap: 1.2rem;">
                 <p style="margin: 0;">
-                  Esse endpoint devolve os contatos do outbreak já com seus relacionamentos e os
-                  dados da pessoa relacionada (caso, contato ou evento) resolvidos, em uma única
-                  chamada.
+                  ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_DESCRIPTION')}
                 </p>
                 <p style="margin: 0;">
-                  Clique em <b>Ir para documentação</b> para abrir a documentação (Swagger) já
-                  focada nesse endpoint, em uma nova aba.
+                  ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_OPEN_DOCUMENTATION_HINT', { button: i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_GO_TO_DOCUMENTATION_BUTTON') })}
                 </p>
                 <div>
                   <p style="margin: 0 0 0.4rem;">
-                    Lá, você vai precisar informar o <b>id do outbreak</b> selecionado no campo
-                    <code>id</code> do formulário. Copie o valor abaixo antes de continuar:
+                    ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_OUTBREAK_ID_HINT')}
                   </p>
                   <div style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1rem; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 6px;">
                     <code style="flex: 1; font-size: 1.3rem; word-break: break-all;">${outbreakId}</code>
                     <button
                       type="button"
-                      title="Copiar id do outbreak"
+                      title="${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_COPY_OUTBREAK_ID')}"
                       onclick="navigator.clipboard.writeText(&quot;${outbreakId}&quot;).then(() => { this.innerHTML = &quot;${checkIconSvg}&quot;; setTimeout(() => { this.innerHTML = &quot;${copyIconSvg}&quot;; }, 1500); });"
                       style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 4px; background: transparent; color: inherit; cursor: pointer;"
                     >${copyIconSvg}</button>
@@ -2458,13 +2455,13 @@ export class ContactsListComponent
         bottomButtons: [
           {
             type: IV2BottomDialogConfigButtonType.OTHER,
-            label: 'Ir para documentação',
+            label: 'LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_GO_TO_DOCUMENTATION_BUTTON',
             key: 'goToDocs',
             color: 'primary'
           },
           {
             type: IV2BottomDialogConfigButtonType.CANCEL,
-            label: 'Fechar',
+            label: 'LNG_COMMON_BUTTON_CLOSE',
             color: 'text'
           }
         ]
