@@ -16,6 +16,9 @@ import { AppContactsKpiDashletComponent } from './app-contacts-kpi-dashlet/app-c
 import { AppCotKpiDashletComponent } from './app-cot-kpi-dashlet/app-cot-kpi-dashlet.component';
 import { CaseProfileDashletComponent } from './case-profile-dashlet/case-profile-dashlet.component';
 import { BbDonutChartComponent } from './bb-donut-chart/bb-donut-chart.component';
+import { BbBarChartComponent } from './bb-bar-chart/bb-bar-chart.component';
+import { BoxplotChartComponent } from './boxplot-chart/boxplot-chart.component';
+import { OutbreakOverviewDashletComponent } from './outbreak-overview-dashlet/outbreak-overview-dashlet.component';
 
 // export the list of all page components
 export const components: any[] = [
@@ -36,6 +39,9 @@ export const components: any[] = [
   BbStackedBarChartComponent,
   BbCombinationStackedBarChartComponent,
   CaseProfileDashletComponent,
-  BbDonutChartComponent
+  BbDonutChartComponent,
+  BbBarChartComponent,
+  BoxplotChartComponent,
+  OutbreakOverviewDashletComponent
 ];
 

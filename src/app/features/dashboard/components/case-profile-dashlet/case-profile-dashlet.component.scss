@@ -87,6 +87,86 @@
     }
   }
 
+    /* Case Profile Dashlet - Descriptive statistics */
+  .gd-dashlet-case-profile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    padding-bottom: 1.6rem;
+
+    .gd-dashlet-case-profile-stat {
+      border: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.25);
+      @include border-radius(0.4rem);
+      flex: 1 1 14rem;
+      padding: 0.8rem 1.2rem;
+
+      .gd-dashlet-case-profile-stat-label {
+        color: var(--gd-secondary);
+        font-size: 1.2rem;
+      }
+
+      .gd-dashlet-case-profile-stat-value {
+        color: var(--gd-primary);
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .gd-dashlet-case-profile-stat-sub {
+        color: var(--gd-secondary);
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  /* Case Profile Dashlet - Legend */
+  .gd-dashlet-case-profile-legend {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 1.2rem;
+    gap: 1.6rem;
+    justify-content: center;
+    padding-top: 0.8rem;
+
+    .gd-dashlet-case-profile-legend-item {
+      align-items: center;
+      display: inline-flex;
+      gap: 0.6rem;
+    }
+
+    .gd-dashlet-case-profile-legend-box {
+      border: 0.15rem solid;
+      height: 1rem;
+      opacity: 0.6;
+      width: 1.4rem;
+    }
+
+    .gd-dashlet-case-profile-legend-line {
+      height: 0.3rem;
+      width: 1.4rem;
+    }
+
+    .gd-dashlet-case-profile-legend-whisker {
+      border-bottom: 0.1rem solid var(--gd-text);
+      border-top: 0.1rem solid var(--gd-text);
+      height: 1rem;
+      width: 0.8rem;
+    }
+
+    .gd-dashlet-case-profile-legend-outlier {
+      border: 0.15rem solid;
+      @include border-radius(50%);
+      height: 0.8rem;
+      width: 0.8rem;
+    }
+
+    .gd-dashlet-case-profile-legend-mean {
+      background-color: #F57C00;
+      @include border-radius(50%);
+      height: 0.8rem;
+      width: 0.8rem;
+    }
+  }
+
   /* Case Profile Dashlet - Note */
   .gd-dashlet-case-profile-note {
     color: var(--gd-secondary);

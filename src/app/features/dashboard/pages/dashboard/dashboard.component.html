@@ -160,6 +160,15 @@
     class="gd-dashboard-bottom"
     fxLayout="column" fxLayoutGap="1.6rem">
 
+    <!-- Outbreak overview (quick indicators) -->
+    <app-outbreak-overview-dashlet
+      *ngIf="visibleDashlets.Overview"
+      [globalFilterDate]="globalFilterDate"
+      [globalFilterLocationId]="globalFilterLocationId"
+      [globalFilterClassificationId]="globalFilterClassificationId"
+      (detectChanges)="detectChanges()">
+    </app-outbreak-overview-dashlet>
+
     <div
       class="gd-dashboard-bottom-row"
       fxLayout="row" fxLayout.lt-lg="column" fxLayoutAlign="start stretch" fxLayoutAlign.lt-lg="start start" fxLayoutGap="1.6rem">

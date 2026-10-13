@@ -140,8 +140,50 @@
           [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_GROUP' | translate">
           <ng-template matTabContent>
             <div
-              class="gd-dashlet-case-profile-no-data">
-              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+              class="gd-dashlet-case-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else ageGroupDataLoaded"
+                class="gd-dashlet-case-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #ageGroupDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="!ageGroupHasData; else ageGroupHasDataTemplate"
+                  class="gd-dashlet-case-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #ageGroupHasDataTemplate>
+                  <app-bb-bar-chart
+                    [categories]="ageGroupCategories"
+                    [series]="ageGroupSeries"
+                    [valueFormatter]="ageGroupValueFormatter"
+                    [xLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_GROUP_AXIS_LABEL' | translate"
+                    [yLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_CASES_AXIS_LABEL' | translate">
+                  </app-bb-bar-chart>
+
+                  <!-- Notes -->
+                  <div
+                    *ngIf="unknownAgeCount > 0"
+                    class="gd-dashlet-case-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_UNKNOWN_AGE_LABEL' | translate:{ count: unknownAgeCount, percentage: unknownAgePercentage } }}
+                  </div>
+                  <div
+                    class="gd-dashlet-case-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PERCENTAGE_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
             </div>
           </ng-template>
         </mat-tab>
@@ -151,8 +193,64 @@
           [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_PYRAMID' | translate">
           <ng-template matTabContent>
             <div
-              class="gd-dashlet-case-profile-no-data">
-              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+              class="gd-dashlet-case-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else pyramidDataLoaded"
+                class="gd-dashlet-case-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #pyramidDataLoaded>
+                <!-- Not available for this outbreak -->
+                <div
+                  *ngIf="!pyramidAvailable; else pyramidAvailableTemplate"
+                  class="gd-dashlet-case-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PYRAMID_UNAVAILABLE_LABEL' | translate }}
+                </div>
+
+                <ng-template
+                  #pyramidAvailableTemplate>
+                  <!-- No data -->
+                  <div
+                    *ngIf="!pyramidHasData; else pyramidHasDataTemplate"
+                    class="gd-dashlet-case-profile-no-data">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_NO_DATA_LABEL' | translate }}
+                  </div>
+
+                  <!-- Data -->
+                  <ng-template
+                    #pyramidHasDataTemplate>
+                    <app-bb-bar-chart
+                      [categories]="pyramidCategories"
+                      [series]="pyramidSeries"
+                      [rotated]="true"
+                      [stacked]="true"
+                      [absoluteValues]="true"
+                      [showLegend]="true"
+                      [valueFormatter]="ageGroupValueFormatter"
+                      [xLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_GROUP_AXIS_LABEL' | translate"
+                      [yLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_CASES_AXIS_LABEL' | translate">
+                    </app-bb-bar-chart>
+
+                    <!-- Notes -->
+                    <div
+                      *ngIf="pyramidExcludedCount > 0"
+                      class="gd-dashlet-case-profile-note">
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PYRAMID_EXCLUDED_LABEL' | translate:{ count: pyramidExcludedCount, percentage: pyramidExcludedPercentage } }}
+                    </div>
+                    <div
+                      class="gd-dashlet-case-profile-note">
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PERCENTAGE_NOTE' | translate }}
+                    </div>
+                  </ng-template>
+                </ng-template>
+              </ng-template>
             </div>
           </ng-template>
         </mat-tab>
@@ -162,12 +260,159 @@
           [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE' | translate">
           <ng-template matTabContent>
             <div
-              class="gd-dashlet-case-profile-no-data">
-              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+              class="gd-dashlet-case-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else ageDataLoaded"
+                class="gd-dashlet-case-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #ageDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="!ageStats; else ageHasDataTemplate"
+                  class="gd-dashlet-case-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #ageHasDataTemplate>
+                  <!-- Descriptive statistics -->
+                  <div
+                    class="gd-dashlet-case-profile-stats">
+                    <!-- n (valid age) -->
+                    <div
+                      class="gd-dashlet-case-profile-stat">
+                      <div
+                        class="gd-dashlet-case-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_N_VALID_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_N_VALID_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-value">{{ ageStats.n }}</div>
+                      <div class="gd-dashlet-case-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_N_VALID_PERCENT_LABEL' | translate:{ percentage: ageValidPercentage } }}</div>
+                    </div>
+
+                    <!-- Mean -->
+                    <div
+                      class="gd-dashlet-case-profile-stat">
+                      <div
+                        class="gd-dashlet-case-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEAN_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEAN_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-value">{{ ageStats.mean | number:'1.1-1' }}</div>
+                      <div class="gd-dashlet-case-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- 95% CI of the mean -->
+                    <div
+                      class="gd-dashlet-case-profile-stat">
+                      <div
+                        class="gd-dashlet-case-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-value">
+                        <ng-container *ngIf="ageStats.ciLow !== null; else noCi">{{ ageStats.ciLow | number:'1.1-1' }} - {{ ageStats.ciHigh | number:'1.1-1' }}</ng-container>
+                        <ng-template #noCi>-</ng-template>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- Median -->
+                    <div
+                      class="gd-dashlet-case-profile-stat">
+                      <div
+                        class="gd-dashlet-case-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEDIAN_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEDIAN_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-value">{{ ageStats.median | number:'1.0-1' }}</div>
+                      <div class="gd-dashlet-case-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- Q1 - Q3 -->
+                    <div
+                      class="gd-dashlet-case-profile-stat">
+                      <div
+                        class="gd-dashlet-case-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_IQR_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_IQR_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-case-profile-stat-value">{{ ageStats.q1 | number:'1.0-1' }} - {{ ageStats.q3 | number:'1.0-1' }}</div>
+                      <div class="gd-dashlet-case-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Boxplot per year -->
+                  <app-boxplot-chart
+                    *ngIf="ageBoxes.length > 0"
+                    [boxes]="ageBoxes"
+                    [labels]="ageBoxLabels"
+                    [boxColor]="ageBoxColor"
+                    [yLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_AXIS_LABEL' | translate">
+                  </app-boxplot-chart>
+
+                  <!-- Legend -->
+                  <div
+                    *ngIf="ageBoxes.length > 0"
+                    class="gd-dashlet-case-profile-legend">
+                    <span class="gd-dashlet-case-profile-legend-item">
+                      <span class="gd-dashlet-case-profile-legend-box" [style.borderColor]="ageBoxColor" [style.backgroundColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_IQR_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-case-profile-legend-item">
+                      <span class="gd-dashlet-case-profile-legend-line" [style.backgroundColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_MEDIAN_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-case-profile-legend-item">
+                      <span class="gd-dashlet-case-profile-legend-whisker"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_WHISKERS_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-case-profile-legend-item">
+                      <span class="gd-dashlet-case-profile-legend-outlier" [style.borderColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_OUTLIERS_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-case-profile-legend-item">
+                      <span class="gd-dashlet-case-profile-legend-mean"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEAN_LABEL' | translate }} / {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_LABEL' | translate }}
+                    </span>
+                  </div>
+
+                  <!-- Notes -->
+                  <div
+                    *ngIf="ageWithoutOnsetCount > 0"
+                    class="gd-dashlet-case-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_NO_ONSET_LABEL' | translate:{ count: ageWithoutOnsetCount } }}
+                  </div>
+                  <div
+                    class="gd-dashlet-case-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOXPLOT_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
             </div>
           </ng-template>
         </mat-tab>
-      </mat-tab-group>
-    </div>
-  </ng-container>
-</div>

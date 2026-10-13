@@ -10,6 +10,7 @@ import { SavedFilterData, SavedFilterDataAppliedFilter } from '../../../../core/
 import * as _ from 'lodash';
 import { RequestFilterOperator, RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
+import { CaseModel } from '../../../../core/models/case.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
 import { UserModel } from '../../../../core/models/user.model';
 import { ExportDataExtension, ExportDataMethod } from '../../../../core/services/helper/models/dialog-v2.model';
@@ -230,6 +231,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // visible dashlets
   visibleDashlets: {
+    Overview: boolean,
     CaseSummary: boolean,
     CaseProfile: boolean,
     CasesPerLocation: boolean,
@@ -244,6 +246,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     KPIContacts: boolean,
     KPICOT: boolean
   } = {
+      Overview: false,
       CaseSummary: false,
       CaseProfile: false,
       CasesPerLocation: false,
@@ -282,6 +285,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // determine visible dashlets
     this.visibleDashlets = {
       // Old Dashlets
+      Overview: CaseModel.canList(this._authUser),
       CaseSummary: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
       CaseProfile: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
       CasesPerLocation: DashboardModel.canViewCasePerLocationLevelDashlet(this._authUser),
