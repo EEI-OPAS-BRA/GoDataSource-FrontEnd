@@ -1,0 +1,173 @@
+<div
+  class="gd-dashlet-case-profile"
+  [class.gd-dashlet-case-profile-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-case-profile-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-case-profile-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-case-profile-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+    <div
+      class="gd-dashlet-case-profile-bottom">
+
+      <mat-tab-group
+        animationDuration="0ms"
+        [(selectedIndex)]="selectedTabIndex">
+
+        <!-- Sex -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_SEX' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-case-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else sexDataLoaded"
+                class="gd-dashlet-case-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #sexDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="total < 1; else sexHasData"
+                  class="gd-dashlet-case-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #sexHasData>
+                  <div
+                    fxLayout="row" fxLayout.lt-md="column" fxLayoutAlign="start center" fxLayoutGap="2.4rem">
+
+                    <!-- Chart -->
+                    <div
+                      class="gd-dashlet-case-profile-sex-chart"
+                      fxFlex="40" fxFlex.lt-md="100">
+                      <app-bb-donut-chart
+                        [items]="sexChartItems"
+                        [centerTitle]="sexChartCenterTitle">
+                      </app-bb-donut-chart>
+                    </div>
+
+                    <!-- Table -->
+                    <div
+                      fxFlex fxFlex.lt-md="100">
+                      <table
+                        class="gd-dashlet-case-profile-table">
+                        <thead>
+                          <tr>
+                            <th>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_SEX' | translate }}</th>
+                            <th class="gd-dashlet-case-profile-table-number">n</th>
+                            <th class="gd-dashlet-case-profile-table-number">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            *ngFor="let row of sexRows">
+                            <td>
+                              <span
+                                class="gd-dashlet-case-profile-table-color"
+                                [style.backgroundColor]="row.color"></span>
+                              {{ row.label }}
+                            </td>
+                            <td class="gd-dashlet-case-profile-table-number">{{ row.count }}</td>
+                            <td class="gd-dashlet-case-profile-table-number">{{ row.percentage | number:'1.1-1' }}</td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_TOTAL_LABEL' | translate }}</td>
+                            <td class="gd-dashlet-case-profile-table-number">{{ total }}</td>
+                            <td class="gd-dashlet-case-profile-table-number">{{ 100 | number:'1.1-1' }}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Note -->
+                  <div
+                    class="gd-dashlet-case-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PERCENTAGE_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age group -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_GROUP' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-case-profile-no-data">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age pyramid -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_PYRAMID' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-case-profile-no-data">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-case-profile-no-data">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_IN_PROGRESS_LABEL' | translate }}
+            </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </ng-container>
+</div>

@@ -14,6 +14,8 @@ import { AppCasesKpiDashletComponent } from './app-cases-kpi-dashlet/app-cases-k
 import { AppKpiDashletComponent } from './app-kpi-dashlet/app-kpi-dashlet.component';
 import { AppContactsKpiDashletComponent } from './app-contacts-kpi-dashlet/app-contacts-kpi-dashlet.component';
 import { AppCotKpiDashletComponent } from './app-cot-kpi-dashlet/app-cot-kpi-dashlet.component';
+import { CaseProfileDashletComponent } from './case-profile-dashlet/case-profile-dashlet.component';
+import { BbDonutChartComponent } from './bb-donut-chart/bb-donut-chart.component';
 
 // export the list of all page components
 export const components: any[] = [
@@ -32,6 +34,8 @@ export const components: any[] = [
   ContactFollowUpOverviewDashletComponent,
   CasesBasedOnContactStatusDashletComponent,
   BbStackedBarChartComponent,
-  BbCombinationStackedBarChartComponent
+  BbCombinationStackedBarChartComponent,
+  CaseProfileDashletComponent,
+  BbDonutChartComponent
 ];
 

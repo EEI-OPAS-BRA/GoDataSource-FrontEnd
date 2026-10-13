@@ -12,6 +12,7 @@ import { MetricCasesDelayBetweenOnsetLabTestModel } from '../../models/metrics/m
 import { VisualIdErrorModel, VisualIdErrorModelCode } from '../../models/visual-id-error.model';
 import * as _ from 'lodash';
 import { MetricCasesDelayBetweenOnsetHospitalizationModel } from '../../models/metrics/metric-cases-delay-between-onset-hospitalization.model';
+import { ICasesDemographicsCount } from '../../models/cases-demographics-count.interface';
 import { Constants } from '../../models/constants';
 import { MetricCasesCountStratifiedOutcome } from '../../models/metrics/metric-cases-count-stratified-outcome.model';
 import { MetricCasesBasedOnContactStatusModel } from '../../models/metrics/metric-cases-based-on-contact-status.model';
@@ -155,6 +156,14 @@ export class CaseDataService {
   getCasesHospitalized(outbreakId: string, queryBuilder: RequestQueryBuilder = new RequestQueryBuilder()): Observable<ICasesHospitalizedCount> {
     const filter = queryBuilder.buildQuery();
     return this.http.get<ICasesHospitalizedCount>(`outbreaks/${outbreakId}/cases/hospitalized/count?filter=${filter}`);
+  }
+
+  /**
+   * Count Cases grouped by gender, age and year of symptom onset (dashboard - case profile)
+   */
+  getCasesDemographics(outbreakId: string, queryBuilder: RequestQueryBuilder = new RequestQueryBuilder()): Observable<ICasesDemographicsCount> {
+    const filter = queryBuilder.buildQuery();
+    return this.http.get<ICasesDemographicsCount>(`outbreaks/${outbreakId}/cases/demographics/count?filter=${filter}`);
   }
 
   /**

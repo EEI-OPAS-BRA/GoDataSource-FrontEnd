@@ -194,6 +194,17 @@
       </app-cases-hospitalized-pie-chart-dashlet>
     </div>
 
+  
+    <!-- Case profile (sex, age group, age pyramid, age) -->
+    <app-case-profile-dashlet
+      *ngIf="visibleDashlets.CaseProfile"
+      #caseProfile
+      [globalFilterDate]="globalFilterDate"
+      [globalFilterLocationId]="globalFilterLocationId"
+      [globalFilterClassificationId]="globalFilterClassificationId"
+      (detectChanges)="detectChanges()">
+    </app-case-profile-dashlet>
+
     <!-- Histogram - chains of transmission size -->
     <app-histogram-transmission-chains-size-dashlet
       *ngIf="visibleDashlets.COTHistogram"
