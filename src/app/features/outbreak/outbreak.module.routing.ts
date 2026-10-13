@@ -26,6 +26,7 @@ import {
 import { IconDataResolver } from '../../core/services/resolvers/data/icon.resolver';
 import { CreatedOnResolver } from '../../core/services/resolvers/data/created-on.resolver';
 import { DeletedUserDataResolver } from '../../core/services/resolvers/data/deleted-user.resolver';
+import { TeamDataResolver } from '../../core/services/resolvers/data/team.resolver';
 
 // common base - create / view / modify
 const createViewModifyFoundation: Route = {
@@ -47,7 +48,8 @@ const createViewModifyFoundation: Route = {
     questionnaireQuestionCategory: QuestionnaireQuestionCategoryDataResolver,
     questionnaireAnswerDisplay: QuestionnaireAnswerDisplayDataResolver,
     diseaseSpecificCategories: ReferenceDataDiseaseSpecificCategoriesResolver,
-    icon: IconDataResolver
+    icon: IconDataResolver,
+    team: TeamDataResolver
   }
 };
 

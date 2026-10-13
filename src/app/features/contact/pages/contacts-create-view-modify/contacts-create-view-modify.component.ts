@@ -30,6 +30,7 @@ import { EntityDuplicatesModel } from '../../../../core/models/entity-duplicates
 import { AppMessages } from '../../../../core/enums/app-messages.enum';
 import { Location } from '@angular/common';
 import { TeamModel } from '../../../../core/models/team.model';
+import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
 import { CaseModel } from '../../../../core/models/case.model';
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import { ClusterModel } from '../../../../core/models/cluster.model';
@@ -72,6 +73,10 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
     mask: string
   };
 
+  // notify team - transient UI state, not persisted on the contact model
+  private _notifyTeam: boolean = false;
+  private _notifyTeamId: string;
+
   // check for duplicate
   private _duplicateCheckingTimeout: number;
   private _duplicateCheckingSubscription: Subscription;
@@ -109,7 +114,8 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
     protected domSanitizer: DomSanitizer,
     protected referenceDataHelperService: ReferenceDataHelperService,
     private clusterDataService: ClusterDataService,
-    private personAndRelatedHelperService: PersonAndRelatedHelperService
+    private personAndRelatedHelperService: PersonAndRelatedHelperService,
+    private teamNotificationDataService: TeamNotificationDataService
   ) {
     // parent
     super(
@@ -429,6 +435,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
         // Personal
         this.initializeTabsPersonal(),
 
+        // Notify team
+        this.initializeTabsNotifyTeam(),
+
         // Epidemiology
         this.initializeTabsEpidemiology(),
 
@@ -477,6 +486,53 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
           }
         );
       }
+    };
+  }
+
+  /**
+   * Initialize tabs - Notify team
+   * NOTE: notifyTeam / notifyTeamId are transient UI state only - never persisted on the contact model
+   */
+  private initializeTabsNotifyTeam(): ICreateViewModifyV2Tab {
+    return {
+      type: CreateViewModifyV2TabInputType.TAB,
+      name: 'notify_team',
+      label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
+      visible: () => this.isCreate,
+      sections: [{
+        type: CreateViewModifyV2TabInputType.SECTION,
+        label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
+        inputs: [
+          {
+            type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+            name: 'notifyTeam',
+            placeholder: () => 'LNG_PAGE_CREATE_CONTACT_LABEL_NOTIFY_TEAM',
+            description: () => 'LNG_PAGE_CREATE_CONTACT_LABEL_NOTIFY_TEAM_DESCRIPTION',
+            value: {
+              get: () => this._notifyTeam,
+              set: (value) => {
+                this._notifyTeam = value;
+              }
+            }
+          }, {
+            type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
+            name: 'notifyTeamId',
+            placeholder: () => 'LNG_PAGE_CREATE_CONTACT_LABEL_NOTIFY_TEAM_ID',
+            description: () => 'LNG_PAGE_CREATE_CONTACT_LABEL_NOTIFY_TEAM_ID_DESCRIPTION',
+            options: (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).options,
+            value: {
+              get: () => this._notifyTeamId,
+              set: (value) => {
+                this._notifyTeamId = value;
+              }
+            },
+            validators: {
+              required: () => this._notifyTeam
+            },
+            disabled: () => !this._notifyTeam
+          }
+        ]
+      }]
     };
   }
 
@@ -1595,6 +1651,30 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
           // should be the last pipe
           takeUntil(this.destroyed$)
         ).subscribe((item: ContactModel) => {
+          // notify team - fire and forget, non-blocking, doesn't affect the contact create flow
+          if (
+            type === CreateViewModifyV2ActionType.CREATE &&
+            this._notifyTeam &&
+            this._notifyTeamId
+          ) {
+            this.teamNotificationDataService
+              .createTeamNotification({
+                teamId: this._notifyTeamId,
+                title: 'LNG_PAGE_CREATE_CONTACT_NOTIFY_TEAM_DEFAULT_TITLE',
+                message: item.name,
+                severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
+                recurring: false,
+                active: true
+              })
+              .pipe(
+                catchError((err) => {
+                  this.toastV2Service.error(err);
+                  return throwError(err);
+                })
+              )
+              .subscribe();
+          }
+
           // finished
           const finishedProcessingData = () => {
             // success creating / updating

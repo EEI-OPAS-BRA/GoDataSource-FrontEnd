@@ -997,8 +997,10 @@ export abstract class ListComponent<T, U extends (IV2Column | IV2ColumnToVisible
           break;
 
         case V2FilterType.ADDRESS_FIELD:
-          // get value
-          value = column.filter.address[column.filter.addressField];
+          // get value ( per address type when the column targets a specific type )
+          value = column.filter.addressType ?
+            (column.filter.address.filterFieldsByType || {})[`${column.filter.addressType}::${column.filter.addressField}`] :
+            column.filter.address[column.filter.addressField];
 
           // finished
           break;
@@ -1175,8 +1177,15 @@ export abstract class ListComponent<T, U extends (IV2Column | IV2ColumnToVisible
           break;
 
         case V2FilterType.ADDRESS_FIELD:
-          // get value
-          column.filter.address[column.filter.addressField] = value;
+          // set value ( per address type when the column targets a specific type )
+          if (column.filter.addressType) {
+            if (!column.filter.address.filterFieldsByType) {
+              column.filter.address.filterFieldsByType = {};
+            }
+            column.filter.address.filterFieldsByType[`${column.filter.addressType}::${column.filter.addressField}`] = value;
+          } else {
+            column.filter.address[column.filter.addressField] = value;
+          }
 
           // finished
           break;

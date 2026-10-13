@@ -7,6 +7,7 @@ import { AddressModel, AddressType } from '../../../models/address.model';
 import { LocationModel } from '../../../models/location.model';
 import { UserModel } from '../../../models/user.model';
 import { V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
+import { I18nService } from '../i18n.service';
 
 export class ListHelperModel {
   /**
@@ -85,6 +86,48 @@ export class ListHelperModel {
         filter: filterAddressModel ? {
           type: V2FilterType.ADDRESS_MULTIPLE_LOCATION,
           address: filterAddressModel,
+          field: 'addresses',
+          fieldIsArray: true,
+          addressType: option.value
+        } : undefined
+      }));
+  }
+
+  /**
+   * Build one text field column per address type (except the current / usual place of residence,
+   * which already has its own dedicated column). Each column shows / filters that field for the
+   * address(es) matching its type (e.g. logradouro / numero / complemento / bairro for the
+   * notification address, previous address, etc).
+   */
+  retrieveAddressFieldColumnsPerType(
+    addressTypeOptions: ILabelValuePairModel[],
+    field: string,
+    fieldLabel: string,
+    i18nService: I18nService,
+    addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses,
+    filterAddressModel?: AddressModel
+  ): IV2ColumnToVisibleMandatoryConf[] {
+    return (addressTypeOptions || [])
+      // the current address already has its own dedicated (filterable) column
+      .filter((option) => option.value !== AddressType.CURRENT_ADDRESS)
+      .map((option): IV2ColumnToVisibleMandatoryConf => ({
+        field: `address_${field}_${option.value}`,
+        label: `${i18nService.instant(fieldLabel)} - ${i18nService.instant(option.label)}`,
+        visibleMandatoryIf: () => true,
+        notVisible: true,
+        format: {
+          type: (item: any) => {
+            const address: any = (addressesGetter(item) || [])
+              .find((addr) => addr.typeId === option.value);
+            return address?.[field] || '';
+          }
+        },
+        // filter by this field for this specific address type (uses the shared address filter model,
+        // so it combines with the current-address filter instead of overwriting it)
+        filter: filterAddressModel ? {
+          type: V2FilterType.ADDRESS_FIELD,
+          address: filterAddressModel,
+          addressField: field,
           field: 'addresses',
           fieldIsArray: true,
           addressType: option.value

@@ -478,6 +478,25 @@ const routes: Routes = [
           })
         }
       },
+      // Team Notifications Module routes
+      {
+        path: ModulePath.TeamNotificationModule,
+        loadChildren: () => import('./features/team-notification/team-notification.module').then((m) => m.TeamNotificationModule),
+        canActivate: [
+          AuthGuard,
+          PasswordChangeGuard
+        ],
+        data: {
+          permissions: new PermissionExpression({
+            or: [
+              PERMISSION.TEAM_NOTIFICATION_LIST,
+              PERMISSION.TEAM_NOTIFICATION_CREATE,
+              PERMISSION.TEAM_NOTIFICATION_VIEW,
+              PERMISSION.TEAM_NOTIFICATION_MODIFY
+            ]
+          })
+        }
+      },
       // Dashboard Module routes
       {
         path: ModulePath.DashboardModule,

@@ -43,6 +43,8 @@ import { RedirectService } from '../../../../core/services/helper/redirect.servi
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { Constants } from '../../../../core/models/constants';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
+import { TeamModel } from '../../../../core/models/team.model';
+import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
 
 /**
  * Component
@@ -63,6 +65,10 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
   // per disease
   private _diseaseSpecificReferenceData: ITreeEditorDataCategory[];
 
+  // notify team - transient UI state, not persisted on the outbreak model
+  private _notifyTeam: boolean = false;
+  private _notifyTeamId: string;
+
   /**
    * Constructor
    */
@@ -77,7 +83,8 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
     protected outbreakDataService: OutbreakDataService,
     protected dialogV2Service: DialogV2Service,
     protected router: Router,
-    protected referenceDataHelperService: ReferenceDataHelperService
+    protected referenceDataHelperService: ReferenceDataHelperService,
+    protected teamNotificationDataService: TeamNotificationDataService
   ) {
     super(
       authDataService,
@@ -356,6 +363,34 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                     });
                 })
               }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'notifyTeam',
+              placeholder: () => 'LNG_PAGE_CREATE_OUTBREAK_LABEL_NOTIFY_TEAM',
+              description: () => 'LNG_PAGE_CREATE_OUTBREAK_LABEL_NOTIFY_TEAM_DESCRIPTION',
+              value: {
+                get: () => this._notifyTeam,
+                set: (value) => {
+                  this._notifyTeam = value;
+                }
+              },
+              visible: () => this.isCreate
+            }, {
+              type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
+              name: 'notifyTeamId',
+              placeholder: () => 'LNG_PAGE_CREATE_OUTBREAK_LABEL_NOTIFY_TEAM_ID',
+              description: () => 'LNG_PAGE_CREATE_OUTBREAK_LABEL_NOTIFY_TEAM_ID_DESCRIPTION',
+              options: (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).options,
+              value: {
+                get: () => this._notifyTeamId,
+                set: (value) => {
+                  this._notifyTeamId = value;
+                }
+              },
+              validators: {
+                required: () => this._notifyTeam
+              },
+              disabled: () => !this._notifyTeam
             }, {
               type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
               name: 'disease',
@@ -1583,6 +1618,30 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
           return throwError(err);
         })
       ).subscribe((outbreak) => {
+        // notify team - fire and forget, non-blocking, doesn't affect the outbreak create flow
+        if (
+          type === CreateViewModifyV2ActionType.CREATE &&
+          this._notifyTeam &&
+          this._notifyTeamId
+        ) {
+          this.teamNotificationDataService
+            .createTeamNotification({
+              teamId: this._notifyTeamId,
+              title: 'LNG_PAGE_CREATE_OUTBREAK_NOTIFY_TEAM_DEFAULT_TITLE',
+              message: outbreak.name,
+              severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
+              recurring: false,
+              active: true
+            })
+            .pipe(
+              catchError((err) => {
+                this.toastV2Service.error(err);
+                return throwError(err);
+              })
+            )
+            .subscribe();
+        }
+
         // refresh list of top nav outbreaks
         TopnavComponent.REFRESH_OUTBREAK_LIST();
 

@@ -148,15 +148,29 @@
     </ng-container>
 
     <!-- Address field -->
-    <app-form-input-v2
-      *ngSwitchCase="V2FilterType.ADDRESS_FIELD"
-      class="gd-list-table-column-filter-input"
-      [(ngModel)]="extendedColDef.columnDefinition.filter.address[extendedColDef.columnDefinition.filter.addressField]"
-      [name]="'filterBy' + extendedColDef.field"
-      placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
-      neverFloatLabel="true"
-      (ngModelChange)="component.columnFilterBy(extendedColDef)">
-    </app-form-input-v2>
+    <ng-container *ngSwitchCase="V2FilterType.ADDRESS_FIELD">
+      <!-- current address field -->
+      <app-form-input-v2
+        *ngIf="!extendedColDef.columnDefinition.filter.addressType"
+        class="gd-list-table-column-filter-input"
+        [(ngModel)]="extendedColDef.columnDefinition.filter.address[extendedColDef.columnDefinition.filter.addressField]"
+        [name]="'filterBy' + extendedColDef.field"
+        placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
+        neverFloatLabel="true"
+        (ngModelChange)="component.columnFilterBy(extendedColDef)">
+      </app-form-input-v2>
+
+      <!-- field of a specific address type -->
+      <app-form-input-v2
+        *ngIf="extendedColDef.columnDefinition.filter.addressType"
+        class="gd-list-table-column-filter-input"
+        [(ngModel)]="extendedColDef.columnDefinition.filter.address.filterFieldsByType[extendedColDef.columnDefinition.filter.addressType + '::' + extendedColDef.columnDefinition.filter.addressField]"
+        [name]="'filterBy' + extendedColDef.field"
+        placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
+        neverFloatLabel="true"
+        (ngModelChange)="component.columnFilterBy(extendedColDef)">
+      </app-form-input-v2>
+    </ng-container>
 
     <!-- Address accurate geo location -->
     <app-form-select-single-v2

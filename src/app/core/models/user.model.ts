@@ -46,6 +46,7 @@ export enum UserSettings {
   ENTITY_NOT_DUPLICATES_FIELDS = 'entityNotDuplicatesFields',
   USER_FIELDS = 'userFields',
   TEAM_FIELDS = 'teamFields',
+  TEAM_NOTIFICATION_FIELDS = 'teamNotificationFields',
   COT_SNAPSHOT_FIELDS = 'cotSnapshotFields',
   SEARCH_RESULTS_FIELDS = 'searchResultsFields',
   HELP_CATEGORIES_LIST = 'helpCategoriesList',
