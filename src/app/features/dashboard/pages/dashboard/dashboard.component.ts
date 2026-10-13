@@ -26,6 +26,7 @@ import { AppCotKpiDashletComponent } from '../../components/app-cot-kpi-dashlet/
 import { IV2SideDialogConfigButtonType, IV2SideDialogConfigInputToggle, V2SideDialogConfigInputType } from '../../../../shared/components-v2/app-side-dialog-v2/models/side-dialog-config.model';
 import { determineIfSmallScreenMode } from '../../../../core/methods/small-screen-mode';
 import { CaseSummaryDashletComponent } from '../../components/case-summary-dashlet/case-summary-dashlet.component';
+import { CaseProfileDashletComponent } from '../../components/case-profile-dashlet/case-profile-dashlet.component';
 import { CasesByGeographicLocationDashletComponent } from '../../components/case-by-geographic-location-dashlet/case-by-geographic-location-dashlet.component';
 import { CasesHospitalizedPieChartDashletComponent } from '../../components/cases-hospitalized-pie-chart-dashlet/cases-hospitalized-pie-chart-dashlet.component';
 import { HistogramTransmissionChainsSizeDashletComponent } from '../../components/histogram-transmission-chains-size-dashlet/histogram-transmission-chains-size-dashlet.component';
@@ -47,6 +48,7 @@ import { LocalizationHelper, Moment } from '../../../../core/helperClasses/local
 export class DashboardComponent implements OnInit, OnDestroy {
   // children dashlets
   @ViewChild('caseSummary', { static: false }) private _caseSummary: CaseSummaryDashletComponent;
+    @ViewChild('caseProfile', { static: false }) private _caseProfile: CaseProfileDashletComponent;
   @ViewChild('casesPerLocation', { static: false }) private _casesPerLocation: CasesByGeographicLocationDashletComponent;
   @ViewChild('hospitalized', { static: false }) private _hospitalized: CasesHospitalizedPieChartDashletComponent;
   @ViewChild('cotHistogram', { static: false }) private _cotHistogram: HistogramTransmissionChainsSizeDashletComponent;
@@ -68,6 +70,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // expand / collapse - caseSummary
     if (this._caseSummary?.dashlet) {
       this._caseSummary.dashlet.expanded = expanded;
+    }
+
+        // expand / collapse - caseProfile
+    if (this._caseProfile) {
+      this._caseProfile.expanded = expanded;
     }
 
     // expand / collapse - casesPerLocation
@@ -129,6 +136,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return (
       !this._caseSummary?.dashlet ||
       this._caseSummary.dashlet.expanded
+    ) && (
+      !this._caseProfile ||
+      this._caseProfile.expanded
     ) && (
       !this._casesPerLocation?.dashlet ||
       this._casesPerLocation.dashlet.expanded
@@ -221,6 +231,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // visible dashlets
   visibleDashlets: {
     CaseSummary: boolean,
+    CaseProfile: boolean,
     CasesPerLocation: boolean,
     Hospitalized: boolean,
     COTHistogram: boolean,
@@ -234,6 +245,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     KPICOT: boolean
   } = {
       CaseSummary: false,
+      CaseProfile: false,
       CasesPerLocation: false,
       Hospitalized: false,
       COTHistogram: false,
@@ -271,6 +283,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.visibleDashlets = {
       // Old Dashlets
       CaseSummary: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
+      CaseProfile: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
       CasesPerLocation: DashboardModel.canViewCasePerLocationLevelDashlet(this._authUser),
       Hospitalized: DashboardModel.canViewCaseHospitalizedPieChartDashlet(this._authUser),
       COTHistogram: DashboardModel.canViewCotSizeHistogramDashlet(this._authUser),

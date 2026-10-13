@@ -1,0 +1,121 @@
+@import 'mixins';
+
+/* Case Profile Dashlet */
+.gd-dashlet-case-profile {
+  background-color: var(--gd-background);
+  @include border-radius(0.4rem);
+  @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                      0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                      0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+
+  /* Case Profile Dashlet - Top */
+  .gd-dashlet-case-profile-top {
+    padding: 0.8rem 1.6rem;
+
+    /* Case Profile Dashlet - Top - Title */
+    .gd-dashlet-case-profile-top-title {
+      color: var(--gd-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    /* Case Profile Dashlet - Top - Actions */
+    .gd-dashlet-case-profile-top-actions {
+      .mat-icon-button {
+        font-size: 2rem;
+        height: 2.4rem;
+        min-width: 2.4rem;
+        padding: 0.4rem;
+        width: 2.4rem;
+
+        .mat-icon {
+          font-size: 1.6rem;
+          @include transition(all 0.24s ease-in-out 0s);
+        }
+      }
+    }
+  }
+
+  /* Case Profile Dashlet - Bottom */
+  .gd-dashlet-case-profile-bottom {
+    padding: 0 1.6rem 1.6rem;
+  }
+
+  /* Case Profile Dashlet - Tab content */
+  .gd-dashlet-case-profile-tab {
+    padding-top: 1.6rem;
+  }
+
+  /* Case Profile Dashlet - Sex chart */
+  .gd-dashlet-case-profile-sex-chart {
+    min-width: 0;
+  }
+
+  /* Case Profile Dashlet - Table */
+  .gd-dashlet-case-profile-table {
+    border-collapse: collapse;
+    width: 100%;
+
+    th,
+    td {
+      border-bottom: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.2);
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+    }
+
+    th {
+      color: var(--gd-secondary);
+      font-weight: 700;
+    }
+
+    tfoot td {
+      border-bottom: none;
+      font-weight: 700;
+    }
+
+    .gd-dashlet-case-profile-table-number {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .gd-dashlet-case-profile-table-color {
+      @include border-radius(50%);
+      display: inline-block;
+      height: 1rem;
+      margin-right: 0.6rem;
+      width: 1rem;
+    }
+  }
+
+  /* Case Profile Dashlet - Note */
+  .gd-dashlet-case-profile-note {
+    color: var(--gd-secondary);
+    font-size: 1.2rem;
+    font-style: italic;
+    padding-top: 1.2rem;
+  }
+
+  /* Case Profile Dashlet - Expanded */
+  &.gd-dashlet-case-profile-expanded {
+    .gd-dashlet-case-profile-top {
+      .gd-dashlet-case-profile-top-actions {
+        .mat-icon-button {
+          .mat-icon {
+            @include rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+
+  .gd-dashlet-case-profile-loading {
+    padding: 0.8rem 0;
+  }
+
+  .gd-dashlet-case-profile-no-data {
+    color: var(--gd-secondary);
+    font-style: italic;
+    padding: 1.6rem 0 0.8rem;
+    text-align: center;
+  }
+}
