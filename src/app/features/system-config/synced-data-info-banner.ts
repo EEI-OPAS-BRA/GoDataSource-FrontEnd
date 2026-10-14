@@ -33,10 +33,6 @@ export const SYNCED_DATA_INFO_BANNER_ACCORDION: IV2InfoBannerAccordion = {
           label: 'LNG_INFO_BANNER_SYNCED_DATA_RELATIONSHIPS',
           description: 'LNG_INFO_BANNER_SYNCED_DATA_RELATIONSHIPS_DESCRIPTION'
         }, {
-          icon: 'account_tree',
-          label: 'LNG_INFO_BANNER_SYNCED_DATA_TRANSMISSION_CHAINS',
-          description: 'LNG_INFO_BANNER_SYNCED_DATA_TRANSMISSION_CHAINS_DESCRIPTION'
-        }, {
           icon: 'attach_file',
           label: 'LNG_INFO_BANNER_SYNCED_DATA_FILES',
           description: 'LNG_INFO_BANNER_SYNCED_DATA_FILES_DESCRIPTION'
@@ -46,16 +42,12 @@ export const SYNCED_DATA_INFO_BANNER_ACCORDION: IV2InfoBannerAccordion = {
           description: 'LNG_INFO_BANNER_SYNCED_DATA_REFERENCE_DATA_DESCRIPTION'
         }, {
           icon: 'translate',
-          label: 'LNG_INFO_BANNER_SYNCED_DATA_LANGUAGES',
-          description: 'LNG_INFO_BANNER_SYNCED_DATA_LANGUAGES_DESCRIPTION'
+          label: 'LNG_INFO_BANNER_SYNCED_DATA_DATA_TEXTS',
+          description: 'LNG_INFO_BANNER_SYNCED_DATA_DATA_TEXTS_DESCRIPTION'
         }, {
           icon: 'supervised_user_circle',
           label: 'LNG_INFO_BANNER_SYNCED_DATA_USERS',
           description: 'LNG_INFO_BANNER_SYNCED_DATA_USERS_DESCRIPTION'
-        }, {
-          icon: 'description',
-          label: 'LNG_INFO_BANNER_SYNCED_DATA_TEMPLATES',
-          description: 'LNG_INFO_BANNER_SYNCED_DATA_TEMPLATES_DESCRIPTION'
         }
       ]
     }, {
@@ -77,6 +69,15 @@ export const SYNCED_DATA_INFO_BANNER_ACCORDION: IV2InfoBannerAccordion = {
         }, {
           icon: 'help',
           label: 'LNG_INFO_BANNER_SYNCED_DATA_EXCLUDED_HELP'
+        }, {
+          icon: 'translate',
+          label: 'LNG_INFO_BANNER_SYNCED_DATA_EXCLUDED_LANGUAGES'
+        }, {
+          icon: 'account_tree',
+          label: 'LNG_INFO_BANNER_SYNCED_DATA_EXCLUDED_TRANSMISSION_CHAINS'
+        }, {
+          icon: 'description',
+          label: 'LNG_INFO_BANNER_SYNCED_DATA_EXCLUDED_TEMPLATES'
         }
       ]
     }

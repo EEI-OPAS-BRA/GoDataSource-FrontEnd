@@ -10,6 +10,7 @@ import { SystemDevicesCreateViewModifyComponent } from './system-devices-create-
 import { SystemDevicesComponent } from './system-devices-list/system-devices.component';
 import { BackupsRestoresComponent } from './backups-restores/backups-restores.component';
 import { NotificationSettingsComponent } from './notification-settings/notification-settings.component';
+import { SyncDocumentationComponent } from './sync-documentation/sync-documentation.component';
 
 // export each page component individually
 export * from './upstream-servers-create-view-modify/upstream-servers-create-view-modify.component';
@@ -23,6 +24,7 @@ export * from './system-devices-create-view-modify/system-devices-create-view-mo
 export * from './system-devices-list/system-devices.component';
 export * from './view-history-system-device/view-history-system-device.component';
 export * from './system-sync-logs/system-sync-logs.component';
+export * from './sync-documentation/sync-documentation.component';
 
 // export the list of all page components
 export const pageComponents: any[] = [
@@ -34,6 +36,7 @@ export const pageComponents: any[] = [
   SystemDevicesCreateViewModifyComponent,
   SystemDevicesComponent,
   SystemSyncLogsComponent,
+  SyncDocumentationComponent,
   UpstreamServersCreateViewModifyComponent,
   UpstreamServersListComponent,
   ViewHistorySystemDeviceComponent
