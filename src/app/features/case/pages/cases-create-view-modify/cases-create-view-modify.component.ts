@@ -482,7 +482,7 @@ export class CasesCreateViewModifyComponent extends CreateViewModifyComponent<Ca
       type: CreateViewModifyV2TabInputType.TAB,
       name: 'notify_team',
       label: 'LNG_PAGE_CREATE_CASE_TAB_NOTIFY_TEAM',
-      visible: () => this.isCreate,
+      visible: () => this.isCreate && !!this.selectedOutbreak?.allowCaseNotifyTeam,
       sections: [{
         type: CreateViewModifyV2TabInputType.SECTION,
         label: 'LNG_PAGE_CREATE_CASE_TAB_NOTIFY_TEAM',

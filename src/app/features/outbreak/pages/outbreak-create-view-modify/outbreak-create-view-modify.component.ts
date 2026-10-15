@@ -657,6 +657,28 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
               },
               visible: () => !!this.itemData.applyGeographicRestrictions
             }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowCaseNotifyTeam',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_NOTIFY_TEAM',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_NOTIFY_TEAM_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowCaseNotifyTeam,
+                set: (value) => {
+                  this.itemData.allowCaseNotifyTeam = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowContactNotifyTeam',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CONTACT_NOTIFY_TEAM',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CONTACT_NOTIFY_TEAM_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowContactNotifyTeam,
+                set: (value) => {
+                  this.itemData.allowContactNotifyTeam = value;
+                }
+              }
+            }, {
               type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
               name: 'reportingGeographicalLevelId',
               placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_LOCATION_GEOGRAPHICAL_LEVEL',

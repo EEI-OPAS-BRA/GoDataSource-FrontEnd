@@ -157,37 +157,92 @@
       /* Team notifications button */
       &.gd-top-right-notifications {
         position: relative;
+        transition: transform 0.15s ease-in-out;
+
+        &:hover {
+          transform: scale(1.08);
+        }
 
         .gd-top-right-notifications-badge {
           background: var(--gd-danger);
           @include border-radius(50%);
+          box-shadow: 0 0 0 0.15rem var(--gd-background);
           color: var(--gd-background);
           font-size: 1rem;
-          font-weight: 600;
-          line-height: 1.6rem;
-          min-width: 1.6rem;
+          font-weight: 700;
+          line-height: 1.7rem;
+          min-width: 1.7rem;
           padding: 0 0.2rem;
           position: absolute;
-          right: 0.4rem;
+          right: 0.2rem;
           text-align: center;
-          top: 0.4rem;
+          top: 0.2rem;
+          animation: gd-notifications-badge-pop 0.2s ease-out;
         }
       }
     }
   }
 }
 
+@keyframes gd-notifications-badge-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* Team notification severity indicators ( used inside the notifications history side dialog ) */
+$gd-team-notification-severity-green: #2E7D32;
+$gd-team-notification-severity-yellow: #F9A825;
+$gd-team-notification-severity-red: #C62828;
+
+.gd-team-notification-severity-green,
+.gd-team-notification-severity-yellow,
+.gd-team-notification-severity-red {
+  .mat-expansion-panel-header {
+    border-left-style: solid;
+    border-left-width: 0.5rem;
+    @include border-radius(0 0.4rem 0.4rem 0);
+    position: relative;
+    transition: background-color 0.15s ease-in-out;
+
+    &::before {
+      @include border-radius(50%);
+      content: '';
+      display: inline-block;
+      flex: none;
+      height: 1rem;
+      margin-right: 0.8rem;
+      width: 1rem;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+  }
+}
+
 .gd-team-notification-severity-green .mat-expansion-panel-header {
-  border-left: 0.4rem solid #2E7D32;
+  border-left-color: $gd-team-notification-severity-green;
+
+  &::before {
+    background: $gd-team-notification-severity-green;
+  }
 }
 
 .gd-team-notification-severity-yellow .mat-expansion-panel-header {
-  border-left: 0.4rem solid #F9A825;
+  border-left-color: $gd-team-notification-severity-yellow;
+
+  &::before {
+    background: $gd-team-notification-severity-yellow;
+  }
 }
 
 .gd-team-notification-severity-red .mat-expansion-panel-header {
-  border-left: 0.4rem solid #C62828;
+  border-left-color: $gd-team-notification-severity-red;
+  background-color: rgba($gd-team-notification-severity-red, 0.05);
+
+  &::before {
+    background: $gd-team-notification-severity-red;
+  }
 }
 
 .gd-body-content-right-expanded {

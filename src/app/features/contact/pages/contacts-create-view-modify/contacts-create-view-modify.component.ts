@@ -498,7 +498,7 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
       type: CreateViewModifyV2TabInputType.TAB,
       name: 'notify_team',
       label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
-      visible: () => this.isCreate,
+      visible: () => this.isCreate && !!this.selectedOutbreak?.allowContactNotifyTeam,
       sections: [{
         type: CreateViewModifyV2TabInputType.SECTION,
         label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',

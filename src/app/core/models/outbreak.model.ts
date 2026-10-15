@@ -80,6 +80,8 @@ export class OutbreakModel
   allowCaseCrossLocationCreation: boolean;
   allowNotificationLocationAccess: boolean;
   allowResidenceChainAccess: boolean;
+  allowCaseNotifyTeam: boolean;
+  allowContactNotifyTeam: boolean;
   checkLastContactDateAgainstDateOnSet: boolean;
   disableModifyingLegacyQuestionnaire: boolean;
   allowQuestionnaireInBulkModify: boolean;
@@ -184,6 +186,8 @@ export class OutbreakModel
     this.allowCaseCrossLocationCreation = _.get(data, 'allowCaseCrossLocationCreation', false);
     this.allowNotificationLocationAccess = _.get(data, 'allowNotificationLocationAccess', false);
     this.allowResidenceChainAccess = _.get(data, 'allowResidenceChainAccess', false);
+    this.allowCaseNotifyTeam = _.get(data, 'allowCaseNotifyTeam', false);
+    this.allowContactNotifyTeam = _.get(data, 'allowContactNotifyTeam', false);
     this.checkLastContactDateAgainstDateOnSet = _.get(data, 'checkLastContactDateAgainstDateOnSet', false);
     this.disableModifyingLegacyQuestionnaire = _.get(data, 'disableModifyingLegacyQuestionnaire', false);
     this.allowQuestionnaireInBulkModify = _.get(data, 'allowQuestionnaireInBulkModify', false);
