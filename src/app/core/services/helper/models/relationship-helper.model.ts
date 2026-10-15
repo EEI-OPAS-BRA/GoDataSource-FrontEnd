@@ -697,19 +697,32 @@ export class RelationshipHelperModel {
     const relationshipConfig = config as {
       showResourceViewPageLink: boolean
     };
+    let relationshipLink: string;
     if (
       entity instanceof RelationshipModel &&
       relationshipConfig?.showResourceViewPageLink &&
       entity.sourcePerson
     ) {
-      // determine relationship link
+      const sourcePeople = (entity.people || []).find((people) => people.model.id === entity.sourcePerson.id);
+      if (!sourcePeople?.model.masked) {
+        relationshipLink = `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`;
+      } else {
+        const targetPerson = (entity.persons || []).find((person) => person.target);
+        const targetPeople = (entity.people || []).find((people) => people.model.id === targetPerson?.id);
+        if (
+          targetPerson &&
+          !targetPeople?.model.masked
+        ) {
+          relationshipLink = `/relationships/${targetPerson.type}/${targetPerson.id}/exposures/${entity.id}/view`;
+        }
+      }
+    }
+    if (relationshipLink) {
       inputs.push({
         type: V2SideDialogConfigInputType.LINK,
         name: uuid(),
         placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
-        link: () => [
-          `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`
-        ]
+        link: () => [relationshipLink]
       });
     }
 
@@ -1046,10 +1059,10 @@ export class RelationshipHelperModel {
     // create list of fields to display
     const lightObject: ILabelValuePairModel[] = [{
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_SOURCE',
-      value: sourcePeople.model.name
+      value: sourcePeople.model.masked ? (sourcePeople.model.visualId || '') : sourcePeople.model.name
     }, {
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_TARGET',
-      value: destinationPeople.model.name
+      value: destinationPeople.model.masked ? (destinationPeople.model.visualId || '') : destinationPeople.model.name
     }];
 
     // contactDate
