@@ -34,6 +34,9 @@ export class AppFormInputV2Component
   // float label
   @Input() neverFloatLabel: boolean = false;
 
+  // example of a value, displayed inside the input while it is empty (the label stays floated to not overlap it)
+  @Input() exampleValue: string;
+
   // autocomplete
   @Input() autocomplete: string | 'on' | 'off';
 

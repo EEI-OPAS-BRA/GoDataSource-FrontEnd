@@ -13,6 +13,7 @@ import { SystemSettingsDataService } from '../../../../core/services/data/system
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { SystemSyncLogHelperService } from '../../../../core/services/helper/system-sync-log-helper.service';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ExportDataExtension, ExportDataMethod } from '../../../../core/services/helper/models/dialog-v2.model';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
@@ -26,6 +27,8 @@ import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-val
 import { Constants } from '../../../../core/models/constants';
 import { ExportSyncErrorModel, ExportSyncErrorModelCode } from '../../../../core/models/export-sync-error.model';
 import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
+import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
+import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 
 @Component({
   selector: 'app-system-sync-logs-list',
@@ -34,6 +37,53 @@ import { LocalizationHelper } from '../../../../core/helperClasses/localization-
 export class SystemSyncLogsComponent
   extends ListComponent<SystemSyncLogModel, IV2Column>
   implements OnDestroy {
+  // sync direction - logs with the server url were sent by this instance, logs with the client id were received
+  private static readonly DIRECTION_SENT: string = 'sent';
+  private static readonly DIRECTION_RECEIVED: string = 'received';
+  private static readonly DIRECTION_CONDITIONS: {
+    [direction: string]: any
+  } = {
+      [SystemSyncLogsComponent.DIRECTION_SENT]: {
+        syncServerUrl: {
+          neq: null
+        }
+      },
+      [SystemSyncLogsComponent.DIRECTION_RECEIVED]: {
+        syncClientId: {
+          neq: null
+        }
+      }
+    };
+
+  // info banner
+  infoBannerSteps: IV2InfoBannerStep[] = [
+    {
+      icon: 'swap_horiz',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_1_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_1_DESCRIPTION'
+    }, {
+      icon: 'done_all',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_2_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_2_DESCRIPTION'
+    }, {
+      icon: 'visibility',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_3_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_3_DESCRIPTION'
+    }, {
+      icon: 'tune',
+      title: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_4_TITLE',
+      description: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_STEP_4_DESCRIPTION'
+    }
+  ];
+  infoBannerNotes: string[] = [
+    'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_INFO_NOTE_1'
+  ];
+
+  // which data is synchronized
+  infoBannerAccordions: IV2InfoBannerAccordion[] = [
+    SYNCED_DATA_INFO_BANNER_ACCORDION
+  ];
+
   /**
   * Constructor
   */
@@ -44,7 +94,8 @@ export class SystemSyncLogsComponent
     private systemSettingsDataService: SystemSettingsDataService,
     private i18nService: I18nService,
     private activatedRoute: ActivatedRoute,
-    private dialogV2Service: DialogV2Service
+    private dialogV2Service: DialogV2Service,
+    private systemSyncLogHelperService: SystemSyncLogHelperService
   ) {
     super(
       listHelperService, {
@@ -175,6 +226,49 @@ export class SystemSyncLogsComponent
     // default table columns
     this.tableColumns = [
       {
+        field: 'direction',
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_DIRECTION',
+        width: 150,
+        format: {
+          type: V2ColumnFormat.HTML
+        },
+        html: (item: SystemSyncLogModel) => this.getDirectionHtml(item),
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: [
+            {
+              label: 'LNG_SYNC_DIRECTION_SENT',
+              value: SystemSyncLogsComponent.DIRECTION_SENT
+            }, {
+              label: 'LNG_SYNC_DIRECTION_RECEIVED',
+              value: SystemSyncLogsComponent.DIRECTION_RECEIVED
+            }
+          ],
+          search: (column: IV2Column) => {
+            // remove existing filters
+            Object.values(SystemSyncLogsComponent.DIRECTION_CONDITIONS).forEach((condition) => {
+              this.queryBuilder.filter.removeExactCondition(
+                condition,
+                false
+              );
+            });
+
+            // both directions selected means no filter
+            const values: string[] = (column.filter as IV2FilterMultipleSelect).value;
+            if (values?.length === 1) {
+              this.queryBuilder.filter.where(
+                SystemSyncLogsComponent.DIRECTION_CONDITIONS[values[0]],
+                false,
+                false
+              );
+            }
+
+            // refresh list
+            this.needsRefreshList();
+          }
+        }
+      },
+      {
         field: 'syncServerUrl',
         label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SERVER_URL',
         sortable: true,
@@ -289,6 +383,33 @@ export class SystemSyncLogsComponent
         }
       }
     ];
+  }
+
+  /**
+   * Badge with the sync direction
+   */
+  private getDirectionHtml(item: SystemSyncLogModel): string {
+    // determine direction
+    let direction: string;
+    let icon: string;
+    let label: string;
+    if (item.syncServerUrl) {
+      direction = SystemSyncLogsComponent.DIRECTION_SENT;
+      icon = 'arrow_upward';
+      label = 'LNG_SYNC_DIRECTION_SENT';
+    } else if (item.syncClientId) {
+      direction = SystemSyncLogsComponent.DIRECTION_RECEIVED;
+      icon = 'arrow_downward';
+      label = 'LNG_SYNC_DIRECTION_RECEIVED';
+    } else {
+      return '';
+    }
+
+    // render
+    return `<span class="gd-list-table-sync-direction gd-list-table-sync-direction-${direction}" title="${_.escape(item.syncServerUrl || item.syncClientId)}">` +
+      `<span class="material-icons">${icon}</span>` +
+      `<span>${_.escape(this.i18nService.instant(label))}</span>` +
+      '</span>';
   }
 
   /**
@@ -587,64 +708,7 @@ export class SystemSyncLogsComponent
   * @param systemSyncLogModel
   */
   viewError(systemSyncLogModel: SystemSyncLogModel) {
-    // if not string, then there is no point in continuing
-    if (
-      !systemSyncLogModel.error ||
-      !_.isString(systemSyncLogModel.error)
-    ) {
-      return;
-    }
-
-    // fix api issue
-    let error: string = systemSyncLogModel.error.trim();
-    let errJson: any;
-    const detailsString: string = '"details":{';
-    const detailsIndex: number = error.indexOf(detailsString);
-    if (detailsIndex > -1) {
-      // split error object & details object
-      const detailsText: string = error.substr(detailsIndex, error.length - (detailsIndex + 2));
-      const detailsObjectText: string = detailsText.substr(detailsString.length - 1);
-      error = error.substr(0, detailsIndex - 1) + '}';
-
-      // convert to json
-      errJson = JSON.parse(error);
-      errJson.details = JSON.parse(detailsObjectText);
-    }
-
-    this.dialogV2Service
-      .showSideDialog({
-        // title
-        title: {
-          get: () => 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_ERROR_DETAILS_TITLE',
-          data: () => {
-            return { count: '?' };
-          }
-        },
-
-        // hide search bar
-        hideInputFilter: true,
-
-        // inputs
-        width: '65rem',
-        inputs: [
-          {
-            type: V2SideDialogConfigInputType.HTML,
-            name: 'error',
-            placeholder: errJson ?
-              `<code><pre>${JSON.stringify(errJson, null, 1)}</pre></code>` :
-              `<code>${error}</code>`
-          }
-        ],
-
-        // buttons
-        bottomButtons: [
-          {
-            type: IV2SideDialogConfigButtonType.CANCEL,
-            label: 'LNG_COMMON_BUTTON_CANCEL',
-            color: 'text'
-          }
-        ]
-      }).subscribe();
+    this.systemSyncLogHelperService.viewError(systemSyncLogModel);
   }
 
   /**

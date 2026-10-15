@@ -4,7 +4,8 @@
   <!-- Input data -->
   <mat-form-field
     *ngIf="!viewOnly; else viewOnlyTemplate"
-    appearance="outline">
+    appearance="outline"
+    [floatLabel]="exampleValue ? 'always' : undefined">
 
     <!-- Place holder -->
     <mat-label
@@ -41,7 +42,7 @@
       [errorStateMatcher]="errMatcher"
       [disabled]="disabled"
       [required]="required"
-      [placeholder]="neverFloatLabel ? (placeholder | translate) : undefined"
+      [placeholder]="exampleValue ? exampleValue : (neverFloatLabel ? (placeholder | translate) : undefined)"
       [autocomplete]="autocomplete"
       name="{{name}}">
 
@@ -66,6 +67,7 @@
           type="button"
           mat-icon-button
           [matTooltip]="iconB.tooltip | translate"
+          [style.color]="iconB.color"
           [disabled]="iconB.disabled && iconB.disabled(this)"
           (click)="iconB.clickAction ? iconB.clickAction(this) : undefined"><mat-icon>{{iconB.icon}}</mat-icon></button>
       </span>
