@@ -34,6 +34,7 @@ import { TimerCache } from '../../../../core/helperClasses/timer-cache';
 import { ClusterDataService } from '../../../../core/services/data/cluster.data.service';
 import { RequestQueryBuilder, RequestSortDirection } from '../../../../core/helperClasses/request-query-builder';
 import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
+import { AddressType } from '../../../../core/models/address.model';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
 
 enum NodeAction {
@@ -624,6 +625,7 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
 
     // contact fields
     const contactFields = fields.contact;
+    this.applyQuickCurrentAddress(contactFields);
     // relationship fields
     const relationshipFields = fields.relationship;
     // get source person
@@ -707,6 +709,7 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
 
     // contact of contact fields
     const contactOfContactFields = fields.contact;
+    this.applyQuickCurrentAddress(contactOfContactFields);
     // relationship fields
     const relationshipFields = fields.relationship;
     // get source person
@@ -1301,6 +1304,54 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
   /**
    * Update quick editor definitions - contact
    */
+  /**
+   * Current address location input, asked for when the outbreak doesn't allow saving a contact without an address
+   */
+  private retrieveQuickInputCurrentAddressLocation(
+    visibleMandatoryKey: string,
+    useOutbreakLocations: boolean
+  ): QuickEditorV2InputToVisibleMandatoryConf[] {
+    if (this.selectedOutbreak?.optionalCaseContactAddressFields) {
+      return [];
+    }
+
+    return [{
+      type: QuickEditorV2InputType.LOCATION_SINGLE,
+      name: 'currentAddressLocationId',
+      placeholder: 'LNG_ADDRESS_FIELD_LABEL_LOCATION',
+      visibleMandatory: {
+        key: visibleMandatoryKey,
+        field: 'addresses.locationId',
+        keepRequired: true
+      },
+      useOutbreakLocations,
+      value: {
+        get: () => undefined,
+        set: () => {}
+      },
+      validators: {
+        required: () => true
+      }
+    }];
+  }
+
+  /**
+   * Turn the quick current address location into the person's current address
+   */
+  private applyQuickCurrentAddress(personFields: any): void {
+    const locationId: string = personFields.currentAddressLocationId;
+    delete personFields.currentAddressLocationId;
+    if (!locationId) {
+      return;
+    }
+
+    personFields.addresses = [{
+      typeId: AddressType.CURRENT_ADDRESS,
+      locationId,
+      date: LocalizationHelper.now().toISOString()
+    }];
+  }
+
   private retrieveQuickInputContactDefinition(contactModel: ContactModel): IQuickEditorV2Section<QuickEditorV2InputToVisibleMandatoryConf>[] {
     // init
     const today = LocalizationHelper.today();
@@ -1434,7 +1485,14 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
                 });
               })
             }
-          }
+          },
+          ...this.retrieveQuickInputCurrentAddressLocation(
+            this.personAndRelatedHelperService.contact.visibleMandatoryKey,
+            !(
+              this.selectedOutbreak?.applyGeographicRestrictions === true &&
+              this.selectedOutbreak?.allowCrossLocationCreation === true
+            )
+          )
         ]
       }, {
         label: 'LNG_PAGE_MODIFY_CONTACT_TAB_INFECTION_TITLE',
@@ -1796,7 +1854,11 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
                 });
               })
             }
-          }
+          },
+          ...this.retrieveQuickInputCurrentAddressLocation(
+            this.personAndRelatedHelperService.contactOfContact.visibleMandatoryKey,
+            false
+          )
         ]
       }, {
         label: 'LNG_PAGE_MODIFY_CONTACT_OF_CONTACT_TAB_INFECTION_TITLE',
