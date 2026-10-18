@@ -1942,7 +1942,8 @@ export class RelationshipHelperModel {
           definitions.options.addressType,
           this.parent.authUser,
           (item) => item?.model?.addresses || (item?.model?.address ? [item.model.address] : []),
-          filterAddressModel
+          filterAddressModel,
+          'address'
         )
       );
     }
