@@ -384,6 +384,15 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
 
           this.selectedRelationship = relationshipData;
 
+          // an open modify form must not carry over to a relationship whose people are all masked
+          if (
+            this.currentNodeAction === NodeAction.MODIFY_EDGE &&
+            relationshipData.people?.length > 0 &&
+            relationshipData.people.every((people) => people.model?.masked)
+          ) {
+            this.currentNodeAction = null;
+          }
+
           // stop previous
           this.stopScrollToRelatioshipDetailsTimer();
 
