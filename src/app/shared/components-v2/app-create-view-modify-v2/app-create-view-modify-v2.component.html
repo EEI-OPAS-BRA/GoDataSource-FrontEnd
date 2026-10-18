@@ -1604,7 +1604,7 @@
 
                     <!-- Required list with no items -->
                     <mat-error
-                      *ngIf="input.required && input.items.length < 1">
+                      *ngIf="!isView && input.required && input.items.length < 1">
                       {{'LNG_FORM_VALIDATION_ERROR_AT_LEAST_ONE_ITEM_REQUIRED' | translate}}
                     </mat-error>
 
