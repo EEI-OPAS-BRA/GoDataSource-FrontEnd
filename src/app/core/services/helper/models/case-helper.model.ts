@@ -60,6 +60,9 @@ export class CaseHelperModel {
       }
     }
   ): ICreateViewModifyV2Tab {
+    // addresses the outbreak can forbid deleting: the ones already saved or, on create, the block the form starts with
+    const lockedAddresses: Set<AddressModel> = new Set(data.isCreate ? [] : (data.itemData.addresses || []));
+
     // create tab
     const tab: ICreateViewModifyV2Tab = this.parent.createViewModify.tabFilter(
       {
@@ -396,7 +399,10 @@ export class CaseHelperModel {
                   label: 'LNG_COMMON_BUTTON_DELETE',
                   confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS',
                   // the outbreak can forbid removing addresses
-                  visible: () => !data.selectedOutbreak?.preventAddressDeletion
+                  visible: AddressModel.removeVisibleWithDeletionLock(
+                    data.selectedOutbreak?.preventAddressDeletion,
+                    lockedAddresses
+                  )
                 },
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
@@ -428,6 +434,11 @@ export class CaseHelperModel {
       this.visibleMandatoryKey,
       useToFilterOutbreak
     );
+
+    // on create the form may start with a pre-filled address block
+    if (data.isCreate) {
+      (data.itemData.addresses || []).forEach((address) => lockedAddresses.add(address));
+    }
 
     // finished
     return tab;
