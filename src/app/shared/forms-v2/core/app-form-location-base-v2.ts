@@ -238,13 +238,19 @@ export abstract class AppFormLocationBaseV2<T>
             outbreak.id !== this.outbreakId
           ) {
             // select outbreak
+            const isSwitch: boolean = !!this.outbreakId;
             this.outbreakId = outbreak.id;
 
-            // load full locations hierarchy (including sub-locations) right away
-            this.addLocationCondition();
+            // switching drops the previous outbreak's locations and reapplies the typed text, if any
+            if (isSwitch) {
+              this.search();
+            } else {
+              // load full locations hierarchy (including sub-locations) right away
+              this.addLocationCondition();
 
-            // retrieve data
-            this.refreshLocationList();
+              // retrieve data
+              this.refreshLocationList();
+            }
           }
         });
     }
