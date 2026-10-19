@@ -45,6 +45,7 @@ import { Constants } from '../../../../core/models/constants';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { AppFormLocationBaseV2 } from '../../../../shared/forms-v2/core/app-form-location-base-v2';
 
 /**
  * Component
@@ -1644,6 +1645,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
 
         // refresh list of top nav outbreaks
         TopnavComponent.REFRESH_OUTBREAK_LIST();
+
+        // outbreak locations may have changed
+        AppFormLocationBaseV2.CACHE = {};
 
         // no need to update language ?
         if (
