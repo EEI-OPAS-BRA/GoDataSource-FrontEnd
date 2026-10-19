@@ -478,7 +478,11 @@ export interface ICreateViewModifyV2TabInputList {
     },
     remove: {
       label: string,
-      confirmLabel: string
+      confirmLabel: string,
+      visible?: (
+        input: ICreateViewModifyV2TabInputList,
+        index?: number
+      ) => boolean
     }
   };
   itemsChanged: (list: ICreateViewModifyV2TabInputList) => void;
@@ -486,6 +490,7 @@ export interface ICreateViewModifyV2TabInputList {
   // optional
   sortable?: boolean;
   readonly?: boolean;
+  required?: boolean;
   cssClasses?: string;
   actionIconButtons?: ICreateViewModifyV2TabInputActionButton[];
   optionalMandatoryChildFields?: string[]; // child fields (e.g. typeId, locationId) forced to be NOT mandatory regardless of outbreak visible/mandatory config
