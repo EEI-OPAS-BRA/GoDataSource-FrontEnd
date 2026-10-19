@@ -4,7 +4,7 @@ export const PortuguesePtLang = {
     /**
      * User
      */
-    'LNG_USER_FIELD_LABEL_VIEW_MULTIPLE_LOCATIONS': 'Visualiza múltiplas localidades',
-    'LNG_USER_FIELD_LABEL_VIEW_MULTIPLE_LOCATIONS_DESCRIPTION': 'Permite ao utilizador visualizar múltiplas localidades simultaneamente'
+    'LNG_USER_FIELD_LABEL_VIEW_MULTIPLE_LOCATIONS': 'Ver vários locais',
+    'LNG_USER_FIELD_LABEL_VIEW_MULTIPLE_LOCATIONS_DESCRIPTION': 'Permite que o usuário veja vários locais ao mesmo tempo'
   }
 };
