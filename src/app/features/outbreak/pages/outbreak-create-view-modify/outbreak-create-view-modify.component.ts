@@ -43,6 +43,7 @@ import { RedirectService } from '../../../../core/services/helper/redirect.servi
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { Constants } from '../../../../core/models/constants';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
+import { AppFormLocationBaseV2 } from '../../../../shared/forms-v2/core/app-form-location-base-v2';
 
 /**
  * Component
@@ -1585,6 +1586,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
       ).subscribe((outbreak) => {
         // refresh list of top nav outbreaks
         TopnavComponent.REFRESH_OUTBREAK_LIST();
+
+        // outbreak locations may have changed
+        AppFormLocationBaseV2.CACHE = {};
 
         // no need to update language ?
         if (
