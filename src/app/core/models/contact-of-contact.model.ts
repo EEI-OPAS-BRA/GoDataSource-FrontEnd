@@ -60,6 +60,7 @@ export class ContactOfContactModel
   isDateOfReportingApproximate: boolean;
   outbreakId: string;
   visualId: string;
+  masked: boolean;
   wasCase: boolean;
   dateBecomeCase: string | Moment;
   wasContact: boolean;
@@ -250,6 +251,7 @@ export class ContactOfContactModel
     this.dateOfLastContact = _.get(data, 'dateOfLastContact');
     this.isDateOfReportingApproximate = _.get(data, 'isDateOfReportingApproximate');
     this.visualId = _.get(data, 'visualId', '');
+    this.masked = _.get(data, 'masked', false);
 
     this.wasCase = _.get(data, 'wasCase');
     this.dateBecomeCase = _.get(data, 'dateBecomeCase');

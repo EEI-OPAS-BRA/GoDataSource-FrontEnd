@@ -45,6 +45,7 @@ import { Constants } from '../../../../core/models/constants';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { AppFormLocationBaseV2 } from '../../../../shared/forms-v2/core/app-form-location-base-v2';
 
 /**
  * Component
@@ -747,6 +748,17 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.optionalCaseContactAddressFields,
                 set: (value) => {
                   this.itemData.optionalCaseContactAddressFields = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'preventAddressDeletion',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_PREVENT_ADDRESS_DELETION',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_PREVENT_ADDRESS_DELETION_DESCRIPTION',
+              value: {
+                get: () => this.itemData.preventAddressDeletion,
+                set: (value) => {
+                  this.itemData.preventAddressDeletion = value;
                 }
               }
             }
@@ -1644,6 +1656,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
 
         // refresh list of top nav outbreaks
         TopnavComponent.REFRESH_OUTBREAK_LIST();
+
+        // outbreak locations may have changed
+        AppFormLocationBaseV2.CACHE = {};
 
         // no need to update language ?
         if (
