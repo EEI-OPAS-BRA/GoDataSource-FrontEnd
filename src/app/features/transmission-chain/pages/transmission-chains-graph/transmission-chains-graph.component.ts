@@ -226,6 +226,11 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // masked nodes carry no link or action that would open the person
+    if (entity.masked) {
+      return;
+    }
+
     // retrieve entity info
     const loadingDialog = this.personAndRelatedHelperService.dialogV2Service.showLoadingDialog();
     this.entityDataService
@@ -378,6 +383,15 @@ export class TransmissionChainsGraphComponent implements OnInit, OnDestroy {
           this.resetNodes();
 
           this.selectedRelationship = relationshipData;
+
+          // an open modify form must not carry over to a relationship whose people are all masked
+          if (
+            this.currentNodeAction === NodeAction.MODIFY_EDGE &&
+            relationshipData.people?.length > 0 &&
+            relationshipData.people.every((people) => people.model?.masked)
+          ) {
+            this.currentNodeAction = null;
+          }
 
           // stop previous
           this.stopScrollToRelatioshipDetailsTimer();
