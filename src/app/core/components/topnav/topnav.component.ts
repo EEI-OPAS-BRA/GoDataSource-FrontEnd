@@ -13,9 +13,12 @@ import { DialogV2Service } from '../../services/helper/dialog-v2.service';
 import {
   IV2SideDialogConfigButtonType,
   IV2SideDialogConfigInputAccordion,
+  IV2SideDialogConfigInputGroup,
   IV2SideDialogConfigInputRow,
   IV2SideDialogConfigInputSingleDropdown,
   IV2SideDialogConfigInputText,
+  IV2SideDialogData,
+  IV2SideDialogHandler,
   V2SideDialogConfigInputType
 } from '../../../shared/components-v2/app-side-dialog-v2/models/side-dialog-config.model';
 import { v4 as uuid } from 'uuid';
@@ -54,7 +57,8 @@ export class TopnavComponent implements OnInit, OnDestroy {
   private static _REFRESH_CALLBACK: () => void;
   private static _UPDATE_CALLBACK: () => void;
   private static _SELECTED_OUTBREAK_DROPDOWN_DISABLED: boolean = false;
-  private static readonly NOTIFICATIONS_POLLING_INTERVAL_MS: number = 60000;
+  private static _REFRESH_NOTIFICATIONS_CALLBACK: () => void;
+  private static readonly NOTIFICATIONS_POLLING_INTERVAL_MS: number = 15000;
   static set SELECTED_OUTBREAK_DROPDOWN_DISABLED(disabled: boolean) {
     // set value
     TopnavComponent._SELECTED_OUTBREAK_DROPDOWN_DISABLED = disabled;
@@ -171,6 +175,15 @@ export class TopnavComponent implements OnInit, OnDestroy {
 
   // show main menu
   @Output() showHoverMenu = new EventEmitter<void>();
+
+  /**
+   * Refresh team notifications ( bell badge / history ) right away
+   */
+  static REFRESH_NOTIFICATIONS() {
+    if (TopnavComponent._REFRESH_NOTIFICATIONS_CALLBACK) {
+      TopnavComponent._REFRESH_NOTIFICATIONS_CALLBACK();
+    }
+  }
 
   /**
    * Refresh outbreak list
@@ -317,10 +330,32 @@ export class TopnavComponent implements OnInit, OnDestroy {
       this.refreshNotificationsOccurrences();
       this._notificationsPollingHandle = setInterval(
         () => {
-          this.refreshNotificationsOccurrences();
+          // no point in polling while the tab is hidden - we refresh as soon as it becomes visible again
+          if (document.visibilityState === 'visible') {
+            this.refreshNotificationsOccurrences();
+          }
         },
         TopnavComponent.NOTIFICATIONS_POLLING_INTERVAL_MS
       );
+
+      // allow other pages to request an immediate refresh ( e.g. right after creating a notification )
+      TopnavComponent._REFRESH_NOTIFICATIONS_CALLBACK = () => {
+        this.refreshNotificationsOccurrences();
+      };
+    }
+  }
+
+  /**
+   * Refresh notifications when the user comes back to the tab / window
+   */
+  @HostListener('document:visibilitychange')
+  @HostListener('window:focus')
+  onNotificationsVisibilityChange(): void {
+    if (
+      document.visibilityState === 'visible' &&
+      this._notificationsPollingHandle
+    ) {
+      this.refreshNotificationsOccurrences();
     }
   }
 
@@ -363,6 +398,7 @@ export class TopnavComponent implements OnInit, OnDestroy {
       clearInterval(this._notificationsPollingHandle);
       this._notificationsPollingHandle = undefined;
     }
+    TopnavComponent._REFRESH_NOTIFICATIONS_CALLBACK = undefined;
   }
 
   /**
@@ -626,6 +662,19 @@ export class TopnavComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Escape text before embedding it into a raw HTML template string
+   */
+  private escapeHtml(text: string): string {
+    return (text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\n/g, '<br>');
+  }
+
+  /**
    * Retrieve severity css class suffix for a team notification occurrence
    */
   private getNotificationSeverityCssClass(severity: string): string {
@@ -646,58 +695,73 @@ export class TopnavComponent implements OnInit, OnDestroy {
     // current user
     const currentUserId: string = this.authUser?.id;
 
-    // construct list of notification history items
-    const parent: IV2SideDialogConfigInputAccordion = {
-      type: V2SideDialogConfigInputType.ACCORDION,
-      placeholder: '',
-      name: 'notifications',
-      panels: []
-    };
-    this._notificationsHistory.forEach((item: TeamNotificationOccurrenceModel) => {
-      // is it already read by current user ?
-      const isRead: boolean = item.isReadByUser(currentUserId);
+    // construct list of notification cards ( no need to expand - everything is visible right away )
+    const cards: IV2SideDialogConfigInputGroup[] = this._notificationsHistory.map((item: TeamNotificationOccurrenceModel) => {
+      // card css classes depend on the read state, which can change while the panel is open
+      const baseCssClasses: string = `gd-team-notification-card ${this.getNotificationSeverityCssClass(item.severity)}`;
+      const cardCssClasses = (): string => item.isReadByUser(currentUserId) ?
+        baseCssClasses :
+        `${baseCssClasses} gd-team-notification-unread`;
 
-      // attach accordion panel
-      parent.panels.push({
-        type: V2SideDialogConfigInputType.ACCORDION_PANEL,
+      // card
+      const card: IV2SideDialogConfigInputGroup = {
+        type: V2SideDialogConfigInputType.GROUP,
         name: `notification-${item.id}`,
-        placeholder: `${item.title} - ${LocalizationHelper.displayDateTime(item.triggeredAt)}`,
-        cssClasses: this.getNotificationSeverityCssClass(item.severity),
-        iconButton: isRead ?
-          undefined :
-          {
-            icon: 'done',
-            color: 'primary',
-            data: item,
-            click: (_dialogData, handler, iconButton) => {
-              // mark as read
-              this.teamNotificationDataService
-                .markOccurrenceRead(iconButton.data.id)
-                .subscribe(() => {
-                  // update badge count
-                  this.refreshNotificationsOccurrences();
+        cssClasses: cardCssClasses(),
+        inputs: []
+      };
 
-                  // hide the mark as read button
-                  iconButton.data.readBy = [
-                    ...(iconButton.data.readBy || []),
-                    currentUserId
-                  ];
+      // mark as read
+      const markAsRead = (
+        _dialogData: IV2SideDialogData,
+        handler: IV2SideDialogHandler
+      ) => {
+        this.teamNotificationDataService
+          .markOccurrenceRead(item.id)
+          .subscribe(() => {
+            // update badge count
+            this.refreshNotificationsOccurrences();
 
-                  // update ui
-                  handler.detectChanges();
-                });
-            }
-          },
-        inputs: [{
-          type: V2SideDialogConfigInputType.HTML,
-          name: `notification-message-${item.id}`,
-          placeholder: item.message
-        }]
-      });
+            // mark as read locally too, so the button & unread highlight go away without reopening the panel
+            item.readBy = [
+              ...(item.readBy || []),
+              currentUserId
+            ];
+            card.cssClasses = cardCssClasses();
+
+            // update ui
+            handler.detectChanges();
+          });
+      };
+
+      // card content
+      card.inputs = [{
+        type: V2SideDialogConfigInputType.HTML,
+        name: `notification-content-${item.id}`,
+        placeholder: `
+            <div class="gd-team-notification-card-header">
+              <span class="gd-team-notification-card-dot"></span>
+              <span class="gd-team-notification-card-title">${this.escapeHtml(item.title)}</span>
+            </div>
+            <p class="gd-team-notification-card-message">${this.escapeHtml(item.message)}</p>
+            <span class="gd-team-notification-card-time">${LocalizationHelper.displayDateTime(item.triggeredAt)}</span>
+          `
+      }, {
+        type: V2SideDialogConfigInputType.BUTTON,
+        name: `notification-mark-read-${item.id}`,
+        placeholder: 'LNG_COMMON_BUTTON_MARK_AS_READ',
+        color: 'primary',
+        cssClasses: 'gd-team-notification-card-mark-read',
+        click: markAsRead,
+        visible: (): boolean => !item.isReadByUser(currentUserId)
+      }];
+
+      // finished
+      return card;
     });
 
     // nothing to display ?
-    if (parent.panels.length < 1) {
+    if (cards.length < 1) {
       this.toastV2Service.notice('LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_NO_DATA_LABEL');
       return;
     }
@@ -709,6 +773,7 @@ export class TopnavComponent implements OnInit, OnDestroy {
           get: () => 'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_LABEL'
         },
         width: '60rem',
+        hideInputFilter: true,
         bottomButtons: [{
           type: IV2SideDialogConfigButtonType.OTHER,
           label: 'LNG_COMMON_BUTTON_MARK_ALL_AS_READ',
@@ -720,7 +785,7 @@ export class TopnavComponent implements OnInit, OnDestroy {
           label: 'LNG_COMMON_BUTTON_CLOSE',
           color: 'text'
         }],
-        inputs: [parent]
+        inputs: cards
       })
       .subscribe((response) => {
         // cancelled ?

@@ -31,6 +31,7 @@ import { AppMessages } from '../../../../core/enums/app-messages.enum';
 import { Location } from '@angular/common';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
 import { CaseModel } from '../../../../core/models/case.model';
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import { ClusterModel } from '../../../../core/models/cluster.model';
@@ -1672,7 +1673,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
                   return throwError(err);
                 })
               )
-              .subscribe();
+              .subscribe(() => {
+                TopnavComponent.REFRESH_NOTIFICATIONS();
+              });
           }
 
           // finished

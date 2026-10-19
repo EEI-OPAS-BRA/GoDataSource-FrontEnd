@@ -65,6 +65,15 @@
               <span
                 *ngIf="item.data.required && item.data.answerType === Constants.ANSWER_TYPES.FILE_UPLOAD.value"
                 class="gd-form-fill-questionnaire-v2-list-item-question-content-required">*</span>
+
+              <!-- Alert rule satisfied ? -->
+              <span
+                *ngIf="isAlertRuleSatisfied(item.data)"
+                class="gd-form-fill-questionnaire-v2-list-item-question-content-alert-rule"
+                [matTooltip]="alertRuleMessage(item.data)">
+                <mat-icon>warning</mat-icon>
+                <span>{{alertRuleMessage(item.data)}}</span>
+              </span>
             </div>
 
             <!-- Buttons -->
@@ -199,6 +208,7 @@
                 autocomplete="off"
                 [viewOnly]="viewOnly"
                 [required]="item.parent.data.required"
+                [maxLength]="item.parent.data.maxLength"
                 (ngModelChange)="onChangeValue(item)"></app-form-input-v2>
 
               <!-- Number -->
@@ -210,6 +220,8 @@
                 autocomplete="off"
                 [viewOnly]="viewOnly"
                 [required]="item.parent.data.required"
+                [min]="item.parent.data.minValue"
+                [max]="item.parent.data.maxValue"
                 (ngModelChange)="onChangeValue(item)"></app-form-number-v2>
 
               <!-- Date -->
@@ -222,6 +234,8 @@
                 app-date-validator
                 [viewOnly]="viewOnly"
                 [required]="item.parent.data.required"
+                [minDate]="item.definition.minDate"
+                [maxDate]="item.definition.maxDate"
                 (ngModelChange)="onChangeValue(item)"></app-form-date-v2>
 
               <!-- File -->

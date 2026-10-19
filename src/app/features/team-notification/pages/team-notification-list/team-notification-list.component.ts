@@ -9,6 +9,7 @@ import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationModel } from '../../../../core/models/team-notification.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
@@ -564,6 +565,9 @@ export class TeamNotificationListComponent
             );
             response.handler.hide();
             this.needsRefreshList(true);
+
+            // new notifications fire right away - update the bell without waiting for the next poll
+            TopnavComponent.REFRESH_NOTIFICATIONS();
           });
       });
   }

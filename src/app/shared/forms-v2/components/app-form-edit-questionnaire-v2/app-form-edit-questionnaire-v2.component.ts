@@ -13,6 +13,7 @@ import {
   IV2SideDialogConfigInputSingleDropdown,
   IV2SideDialogConfigInputText,
   IV2SideDialogConfigInputTextarea,
+  IV2SideDialogConfigInputToggleCheckbox,
   V2SideDialogConfigInput,
   V2SideDialogConfigInputType
 } from '../../../components-v2/app-side-dialog-v2/models/side-dialog-config.model';
@@ -28,6 +29,7 @@ import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ReferenceDataHelperService } from '../../../../core/services/helper/reference-data-helper.service';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { OutbreakTemplateModel } from '../../../../core/models/outbreak-template.model';
+import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
 
 /**
  * Flatten type
@@ -696,7 +698,10 @@ export class AppFormEditQuestionnaireV2Component
             'LNG_COMMON_LABEL_YES' :
             'LNG_COMMON_LABEL_NO',
           visible: () => !parent && modifyQuestion.answerType !== Constants.ANSWER_TYPES.MARKUP.value
-        }
+        },
+
+        // answer limits
+        ...this.answerLimitsViewInputs(modifyQuestion)
       );
     } else {
       // inputs
@@ -840,7 +845,10 @@ export class AppFormEditQuestionnaireV2Component
               visible: (data) => !parent && (data.map.answerType as IV2SideDialogConfigInputSingleDropdown).value !== Constants.ANSWER_TYPES.MARKUP.value
             }
           ]
-        }
+        },
+
+        // answer limits
+        ...this.answerLimitsEditInputs(modifyQuestion)
       );
     }
 
@@ -907,6 +915,7 @@ export class AppFormEditQuestionnaireV2Component
         if (add) {
           // create question
           const question: QuestionModel = new QuestionModel(formData);
+          this.applyAnswerLimits(question, formData);
 
           // to value ?
           if (!parent) {
@@ -939,6 +948,7 @@ export class AppFormEditQuestionnaireV2Component
           modifyQuestion.inactive = formData.inactive;
           modifyQuestion.required = formData.required;
           modifyQuestion.multiAnswer = formData.multiAnswer;
+          this.applyAnswerLimits(modifyQuestion, formData);
         }
 
         // close popup
@@ -956,6 +966,322 @@ export class AppFormEditQuestionnaireV2Component
         // update ui
         this.detectChanges();
       });
+  }
+
+  /**
+   * Answer limits - editable inputs ( shown accordingly to the selected answer type )
+   */
+  private answerLimitsEditInputs(modifyQuestion: QuestionModel): V2SideDialogConfigInput[] {
+    // helper to check selected answer type
+    const isAnswerType = (data, answerType: string): boolean => (data.map.answerType as IV2SideDialogConfigInputSingleDropdown).value === answerType;
+    const nonNegative = () => ({
+      min: 0,
+      max: undefined
+    });
+
+    // inputs
+    return [
+      // section title
+      {
+        type: V2SideDialogConfigInputType.DIVIDER,
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ANSWER_LIMITS',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.NUMERIC.value) ||
+          isAnswerType(data, Constants.ANSWER_TYPES.FREE_TEXT.value) ||
+          isAnswerType(data, Constants.ANSWER_TYPES.DATE_TIME.value) ||
+          isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value)
+      },
+
+      // numeric - min / max value
+      {
+        type: V2SideDialogConfigInputType.ROW,
+        name: 'limits_numeric',
+        cssClasses: 'gd-app-side-dialog-v2-content-middle-item-input-row-flex',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.NUMERIC.value),
+        inputs: [{
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'minValue',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_VALUE',
+          value: modifyQuestion?.minValue
+        }, {
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'maxValue',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_VALUE',
+          value: modifyQuestion?.maxValue
+        }]
+      },
+
+      // free text - min / max length
+      {
+        type: V2SideDialogConfigInputType.ROW,
+        name: 'limits_text',
+        cssClasses: 'gd-app-side-dialog-v2-content-middle-item-input-row-flex',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.FREE_TEXT.value),
+        inputs: [{
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'minLength',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_LENGTH',
+          value: modifyQuestion?.minLength,
+          validators: {
+            minMax: nonNegative
+          }
+        }, {
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'maxLength',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_LENGTH',
+          value: modifyQuestion?.maxLength,
+          validators: {
+            minMax: nonNegative
+          }
+        }]
+      },
+
+      // date - min / max date
+      {
+        type: V2SideDialogConfigInputType.ROW,
+        name: 'limits_date',
+        cssClasses: 'gd-app-side-dialog-v2-content-middle-item-input-row-flex',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.DATE_TIME.value),
+        inputs: [{
+          type: V2SideDialogConfigInputType.DATE,
+          name: 'minDate',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_DATE',
+          value: modifyQuestion?.minDate
+        }, {
+          type: V2SideDialogConfigInputType.DATE,
+          name: 'maxDate',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_DATE',
+          value: modifyQuestion?.maxDate
+        }]
+      },
+      {
+        type: V2SideDialogConfigInputType.TOGGLE_CHECKBOX,
+        name: 'disallowFutureDates',
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_DISALLOW_FUTURE_DATES',
+        value: modifyQuestion ?
+          modifyQuestion.disallowFutureDates :
+          false,
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.DATE_TIME.value)
+      },
+
+      // multiple answers - min / max selected options
+      {
+        type: V2SideDialogConfigInputType.ROW,
+        name: 'limits_selections',
+        cssClasses: 'gd-app-side-dialog-v2-content-middle-item-input-row-flex',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value),
+        inputs: [{
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'minSelections',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_SELECTIONS',
+          value: modifyQuestion?.minSelections,
+          validators: {
+            minMax: nonNegative
+          }
+        }, {
+          type: V2SideDialogConfigInputType.NUMBER,
+          name: 'maxSelections',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_SELECTIONS',
+          value: modifyQuestion?.maxSelections,
+          validators: {
+            minMax: nonNegative
+          }
+        }]
+      },
+
+      // multiple answers - alert rule
+      {
+        type: V2SideDialogConfigInputType.DIVIDER,
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE',
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value)
+      },
+      {
+        type: V2SideDialogConfigInputType.TOGGLE_CHECKBOX,
+        name: 'alertRuleEnabled',
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_ENABLED',
+        tooltip: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_ENABLED_DESCRIPTION',
+        value: modifyQuestion ?
+          modifyQuestion.alertRuleEnabled :
+          false,
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value)
+      },
+      {
+        type: V2SideDialogConfigInputType.NUMBER,
+        name: 'alertRuleMinAnswers',
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MIN_ANSWERS',
+        value: modifyQuestion?.alertRuleMinAnswers,
+        validators: {
+          minMax: () => ({
+            min: 1,
+            max: undefined
+          })
+        },
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value) &&
+          !!(data.map.alertRuleEnabled as IV2SideDialogConfigInputToggleCheckbox)?.value
+      },
+      {
+        type: V2SideDialogConfigInputType.TEXTAREA,
+        name: 'alertRuleMessage',
+        placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MESSAGE',
+        value: modifyQuestion?.alertRuleMessage,
+        visible: (data) => isAnswerType(data, Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value) &&
+          !!(data.map.alertRuleEnabled as IV2SideDialogConfigInputToggleCheckbox)?.value
+      }
+    ];
+  }
+
+  /**
+   * Answer limits - view only
+   */
+  private answerLimitsViewInputs(question: QuestionModel): V2SideDialogConfigInput[] {
+    // nothing to show ?
+    if (!question) {
+      return [];
+    }
+
+    // format
+    const limit = (value: any): string => value === undefined || value === null || value === '' ?
+      '—' :
+      `${value}`;
+    const dateLimit = (value: any): string => value ?
+      LocalizationHelper.displayDate(value) :
+      '—';
+
+    // inputs
+    const inputs: V2SideDialogConfigInput[] = [];
+    switch (question.answerType) {
+      case Constants.ANSWER_TYPES.NUMERIC.value:
+        inputs.push({
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'minValue',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_VALUE',
+          value: limit(question.minValue)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'maxValue',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_VALUE',
+          value: limit(question.maxValue)
+        });
+        break;
+      case Constants.ANSWER_TYPES.FREE_TEXT.value:
+        inputs.push({
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'minLength',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_LENGTH',
+          value: limit(question.minLength)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'maxLength',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_LENGTH',
+          value: limit(question.maxLength)
+        });
+        break;
+      case Constants.ANSWER_TYPES.DATE_TIME.value:
+        inputs.push({
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'minDate',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_DATE',
+          value: dateLimit(question.minDate)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'maxDate',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_DATE',
+          value: dateLimit(question.maxDate)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'disallowFutureDates',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_DISALLOW_FUTURE_DATES',
+          value: question.disallowFutureDates ?
+            'LNG_COMMON_LABEL_YES' :
+            'LNG_COMMON_LABEL_NO'
+        });
+        break;
+      case Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value:
+        inputs.push({
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'minSelections',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_SELECTIONS',
+          value: limit(question.minSelections)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'maxSelections',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_SELECTIONS',
+          value: limit(question.maxSelections)
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'alertRuleEnabled',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_ENABLED',
+          value: question.alertRuleEnabled ?
+            'LNG_COMMON_LABEL_YES' :
+            'LNG_COMMON_LABEL_NO'
+        });
+
+        // alert rule details
+        if (question.alertRuleEnabled) {
+          inputs.push({
+            type: V2SideDialogConfigInputType.KEY_VALUE,
+            name: 'alertRuleMinAnswers',
+            placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MIN_ANSWERS',
+            value: limit(question.alertRuleMinAnswers)
+          }, {
+            type: V2SideDialogConfigInputType.KEY_VALUE,
+            name: 'alertRuleMessage',
+            placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MESSAGE',
+            value: question.alertRuleMessage || '—'
+          });
+        }
+        break;
+    }
+
+    // finished
+    return inputs;
+  }
+
+  /**
+   * Copy answer limits from form data into a question, keeping only the ones that apply to its answer type
+   */
+  private applyAnswerLimits(
+    question: QuestionModel,
+    formData: any
+  ): void {
+    // reset everything
+    question.minValue = undefined;
+    question.maxValue = undefined;
+    question.minLength = undefined;
+    question.maxLength = undefined;
+    question.minDate = undefined;
+    question.maxDate = undefined;
+    question.disallowFutureDates = false;
+    question.minSelections = undefined;
+    question.maxSelections = undefined;
+    question.alertRuleEnabled = false;
+    question.alertRuleMinAnswers = undefined;
+    question.alertRuleMessage = undefined;
+
+    // set only what applies
+    switch (question.answerType) {
+      case Constants.ANSWER_TYPES.NUMERIC.value:
+        question.minValue = QuestionModel.limitNumber(formData.minValue);
+        question.maxValue = QuestionModel.limitNumber(formData.maxValue);
+        break;
+      case Constants.ANSWER_TYPES.FREE_TEXT.value:
+        question.minLength = QuestionModel.limitNumber(formData.minLength);
+        question.maxLength = QuestionModel.limitNumber(formData.maxLength);
+        break;
+      case Constants.ANSWER_TYPES.DATE_TIME.value:
+        question.minDate = formData.minDate || undefined;
+        question.maxDate = formData.maxDate || undefined;
+        question.disallowFutureDates = !!formData.disallowFutureDates;
+        break;
+      case Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value:
+        question.minSelections = QuestionModel.limitNumber(formData.minSelections);
+        question.maxSelections = QuestionModel.limitNumber(formData.maxSelections);
+        question.alertRuleEnabled = !!formData.alertRuleEnabled;
+        if (question.alertRuleEnabled) {
+          question.alertRuleMinAnswers = QuestionModel.limitNumber(formData.alertRuleMinAnswers);
+          question.alertRuleMessage = formData.alertRuleMessage?.trim() || undefined;
+        }
+        break;
+    }
   }
 
   /**
@@ -1098,6 +1424,9 @@ export class AppFormEditQuestionnaireV2Component
       });
     }
 
+    // alert rule applies only to multiple answers questions
+    const isMultipleAnswers: boolean = parent?.answerType === Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value;
+
     // on view only we should display data differently
     if (this.viewOnly) {
       // inputs
@@ -1128,6 +1457,28 @@ export class AppFormEditQuestionnaireV2Component
             'LNG_COMMON_LABEL_NO'
         }
       );
+
+      // alert rule
+      if (
+        isMultipleAnswers &&
+        parent.alertRuleEnabled
+      ) {
+        inputs.push({
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'alertRuleCounts',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS',
+          value: modifyAnswer.alertRuleCounts ?
+            'LNG_COMMON_LABEL_YES' :
+            'LNG_COMMON_LABEL_NO'
+        }, {
+          type: V2SideDialogConfigInputType.KEY_VALUE,
+          name: 'alertRuleRequired',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED',
+          value: modifyAnswer.alertRuleRequired ?
+            'LNG_COMMON_LABEL_YES' :
+            'LNG_COMMON_LABEL_NO'
+        });
+      }
     } else {
       // inputs
       inputs.push(
@@ -1171,6 +1522,27 @@ export class AppFormEditQuestionnaireV2Component
             false
         }
       );
+
+      // alert rule
+      if (isMultipleAnswers) {
+        inputs.push({
+          type: V2SideDialogConfigInputType.TOGGLE_CHECKBOX,
+          name: 'alertRuleCounts',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS',
+          tooltip: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS_DESCRIPTION',
+          value: modifyAnswer ?
+            modifyAnswer.alertRuleCounts :
+            false
+        }, {
+          type: V2SideDialogConfigInputType.TOGGLE_CHECKBOX,
+          name: 'alertRuleRequired',
+          placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED',
+          tooltip: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED_DESCRIPTION',
+          value: modifyAnswer ?
+            modifyAnswer.alertRuleRequired :
+            false
+        });
+      }
     }
 
     // buttons
@@ -1244,6 +1616,8 @@ export class AppFormEditQuestionnaireV2Component
           modifyAnswer.label = formData.label;
           modifyAnswer.value = formData.value;
           modifyAnswer.alert = formData.alert;
+          modifyAnswer.alertRuleCounts = !!formData.alertRuleCounts;
+          modifyAnswer.alertRuleRequired = !!formData.alertRuleRequired;
         }
 
         // close popup
@@ -1630,6 +2004,8 @@ export class AppFormEditQuestionnaireV2Component
               clonedQuestion.multiAnswer = question.multiAnswer;
               clonedQuestion.answerType = question.answerType;
               clonedQuestion.answersDisplay = question.answersDisplay;
+              QuestionModel.copyAnswerLimits(question, clonedQuestion);
+              QuestionModel.copyAlertRule(question, clonedQuestion);
               clonedQuestion.order = accumulator.length;
 
               // attach
@@ -1643,6 +2019,8 @@ export class AppFormEditQuestionnaireV2Component
                   clonedAnswer.label = answer.label;
                   clonedAnswer.value = answer.value;
                   clonedAnswer.alert = answer.alert;
+                  clonedAnswer.alertRuleCounts = answer.alertRuleCounts;
+                  clonedAnswer.alertRuleRequired = answer.alertRuleRequired;
                   clonedAnswer.order = answer.order;
 
                   // attach
@@ -1668,6 +2046,8 @@ export class AppFormEditQuestionnaireV2Component
             answer.label = (response.data.map['answer[label]'] as IV2SideDialogConfigInputText).value;
             answer.value = (response.data.map['answer[value]'] as IV2SideDialogConfigInputText).value;
             answer.alert = item.data.alert;
+            answer.alertRuleCounts = item.data.alertRuleCounts;
+            answer.alertRuleRequired = item.data.alertRuleRequired;
             answer.order = (item.parent.data as QuestionModel).answers.length;
 
             // add answer
@@ -1697,6 +2077,8 @@ export class AppFormEditQuestionnaireV2Component
             clonedQuestion.multiAnswer = item.data.multiAnswer;
             clonedQuestion.answerType = item.data.answerType;
             clonedQuestion.answersDisplay = item.data.answersDisplay;
+            QuestionModel.copyAnswerLimits(item.data, clonedQuestion);
+            QuestionModel.copyAlertRule(item.data, clonedQuestion);
             clonedQuestion.order = acc.length;
 
             // attach
@@ -1710,6 +2092,8 @@ export class AppFormEditQuestionnaireV2Component
                 clonedAnswer.label = answer.label;
                 clonedAnswer.value = answer.value;
                 clonedAnswer.alert = answer.alert;
+                clonedAnswer.alertRuleCounts = answer.alertRuleCounts;
+                clonedAnswer.alertRuleRequired = answer.alertRuleRequired;
                 clonedAnswer.order = answer.order;
 
                 // attach

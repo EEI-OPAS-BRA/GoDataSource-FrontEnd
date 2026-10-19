@@ -34,7 +34,7 @@ import { catchError, takeUntil } from 'rxjs/operators';
 import * as FileSaver from 'file-saver';
 import { v4 as uuid } from 'uuid';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
-import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
+import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 
 /**
  * Flatten type
@@ -93,6 +93,8 @@ interface IFlattenNodeAnswerDrawNumber {
  */
 interface IFlattenNodeAnswerDrawDate {
   type: FlattenAnswerDrawType.DATE;
+  minDate?: Moment;
+  maxDate?: Moment;
 }
 
 /**
@@ -442,6 +444,83 @@ export class AppFormFillQuestionnaireV2Component
   }
 
   /**
+   * Date limits configured on a question ( min / max, with future dates excluded if requested )
+   */
+  private answerDateLimits(question: QuestionModel): {
+    minDate?: Moment,
+    maxDate?: Moment
+  } {
+    // min
+    const minDate: Moment = question.minDate ?
+      LocalizationHelper.toMoment(question.minDate).startOf('day') :
+      undefined;
+
+    // max - the earliest between the configured max date and today ( if future dates aren't allowed )
+    let maxDate: Moment = question.maxDate ?
+      LocalizationHelper.toMoment(question.maxDate).endOf('day') :
+      undefined;
+    if (question.disallowFutureDates) {
+      const today: Moment = LocalizationHelper.today().endOf('day');
+      if (
+        !maxDate ||
+        today.isBefore(maxDate)
+      ) {
+        maxDate = today;
+      }
+    }
+
+    // finished
+    return {
+      minDate,
+      maxDate
+    };
+  }
+
+  /**
+   * Check if an answer value breaks the limits configured on its question ( empty values are handled by "required" )
+   */
+  private breaksAnswerLimits(
+    question: QuestionModel,
+    value: any
+  ): boolean {
+    // nothing to check ?
+    if (!this.hasAnsweredValue(value)) {
+      return false;
+    }
+
+    // check accordingly to answer type
+    switch (question.answerType) {
+      case Constants.ANSWER_TYPES.NUMERIC.value: {
+        const numberValue: number = Number(value);
+        return isNaN(numberValue) ||
+          (question.minValue !== undefined && question.minValue !== null && numberValue < question.minValue) ||
+          (question.maxValue !== undefined && question.maxValue !== null && numberValue > question.maxValue);
+      }
+      case Constants.ANSWER_TYPES.FREE_TEXT.value: {
+        const length: number = `${value}`.length;
+        return (question.minLength > 0 && length < question.minLength) ||
+          (question.maxLength > 0 && length > question.maxLength);
+      }
+      case Constants.ANSWER_TYPES.DATE_TIME.value: {
+        const limits = this.answerDateLimits(question);
+        const dateValue: Moment = LocalizationHelper.toMoment(value);
+        return !!dateValue && (
+          (limits.minDate && dateValue.isBefore(limits.minDate)) ||
+          (limits.maxDate && dateValue.isAfter(limits.maxDate))
+        );
+      }
+      case Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value: {
+        const selected: number = Array.isArray(value) ? value.length : 1;
+        return (question.minSelections > 0 && selected < question.minSelections) ||
+          (question.maxSelections > 0 && selected > question.maxSelections);
+      }
+    }
+
+    // valid
+    return false;
+  }
+
+  /**
    * Check if a question-level answer has a value (used to determine if sub-questions attached directly to a question should be shown)
    */
   private hasAnsweredValue(value: any): boolean {
@@ -735,7 +814,8 @@ export class AppFormFillQuestionnaireV2Component
             };
           } else if (question.answerType === Constants.ANSWER_TYPES.DATE_TIME.value) {
             definition = {
-              type: FlattenAnswerDrawType.DATE
+              type: FlattenAnswerDrawType.DATE,
+              ...this.answerDateLimits(question)
             };
           } else if (question.answerType === Constants.ANSWER_TYPES.FILE_UPLOAD.value) {
             // define
@@ -991,6 +1071,9 @@ export class AppFormFillQuestionnaireV2Component
    * Update questionnaire
    */
   answersWithChildrenQuestionsChanged(): void {
+    // alert rules satisfied before the change
+    const alertedBefore = this.alertRuleSatisfiedQuestions();
+
     // update questionnaire
     this.nonFlatToFlat(
       true,
@@ -999,6 +1082,73 @@ export class AppFormFillQuestionnaireV2Component
 
     // make dirty
     this.onChange(this.value);
+
+    // display alerts for the questions whose alert rule just became satisfied
+    if (!this.viewOnly) {
+      const alertedAfter = this.alertRuleSatisfiedQuestions();
+      Object.keys(alertedAfter).forEach((variable) => {
+        if (!alertedBefore[variable]) {
+          this.toastV2Service.notice(
+            this.alertRuleMessage(alertedAfter[variable]),
+            undefined,
+            `questionnaire-alert-rule-${variable}`
+          );
+        }
+      });
+    }
+  }
+
+  /**
+   * Check if the alert rule of a question is satisfied by the current answers
+   */
+  isAlertRuleSatisfied(question: QuestionModel): boolean {
+    // nothing to check ?
+    if (
+      !question?.alertRuleEnabled ||
+      !this.value ||
+      !this.value[question.variable]
+    ) {
+      return false;
+    }
+
+    // any of the answers ( multi answer questions can have more ) satisfies the rule ?
+    return this.value[question.variable].some((answer) => QuestionModel.isAlertRuleSatisfied(
+      question,
+      Array.isArray(answer?.value) ?
+        answer.value :
+        []
+    ));
+  }
+
+  /**
+   * Alert rule message
+   */
+  alertRuleMessage(question: QuestionModel): string {
+    return question.alertRuleMessage?.trim() ?
+      question.alertRuleMessage.trim() :
+      this.i18nService.instant('LNG_QUESTIONNAIRE_ALERT_RULE_DEFAULT_MESSAGE');
+  }
+
+  /**
+   * Visible questions whose alert rule is satisfied
+   */
+  private alertRuleSatisfiedQuestions(): {
+    [variable: string]: QuestionModel
+  } {
+    const satisfied: {
+      [variable: string]: QuestionModel
+    } = {};
+    (this.flattenedQuestions || []).forEach((item) => {
+      if (
+        item.type === FlattenType.QUESTION &&
+        this.isAlertRuleSatisfied(item.data)
+      ) {
+        satisfied[item.data.variable] = item.data;
+      }
+    });
+
+    // finished
+    return satisfied;
   }
 
   /**
@@ -1303,6 +1453,10 @@ export class AppFormFillQuestionnaireV2Component
               answer.value.length < 1
             )
           )
+        ) ||
+        this.breaksAnswerLimits(
+          flatQuestion.data,
+          answer.value
         )
       ) {
         // not valid

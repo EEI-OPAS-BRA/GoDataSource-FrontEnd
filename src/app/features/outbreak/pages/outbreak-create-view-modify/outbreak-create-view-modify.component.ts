@@ -1661,7 +1661,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 return throwError(err);
               })
             )
-            .subscribe();
+            .subscribe(() => {
+              TopnavComponent.REFRESH_NOTIFICATIONS();
+            });
         }
 
         // refresh list of top nav outbreaks

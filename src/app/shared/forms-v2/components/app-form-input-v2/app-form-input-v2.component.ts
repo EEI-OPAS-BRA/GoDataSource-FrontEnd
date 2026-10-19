@@ -40,6 +40,9 @@ export class AppFormInputV2Component
   // autocomplete
   @Input() autocomplete: string | 'on' | 'off';
 
+  // max number of characters ( optional )
+  @Input() maxLength: number;
+
   // view only
   @Input() viewOnly: boolean;
 

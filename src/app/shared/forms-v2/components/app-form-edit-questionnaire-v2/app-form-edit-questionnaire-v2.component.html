@@ -301,6 +301,19 @@
                 <!-- Alert -->
                 <mat-icon
                   *ngIf="item.data.alert">notification_important</mat-icon>
+
+                <!-- Alert rule -->
+                <ng-container
+                  *ngIf="$any(item.parent?.data)?.alertRuleEnabled">
+                  <mat-icon
+                    *ngIf="item.data.alertRuleRequired"
+                    class="gd-form-edit-questionnaire-v2-item-answer-alert-rule-required"
+                    [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED' | translate">priority_high</mat-icon>
+                  <mat-icon
+                    *ngIf="item.data.alertRuleCounts && !item.data.alertRuleRequired"
+                    class="gd-form-edit-questionnaire-v2-item-answer-alert-rule-counts"
+                    [matTooltip]="'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS' | translate">rule</mat-icon>
+                </ng-container>
               </span>
 
             </div>

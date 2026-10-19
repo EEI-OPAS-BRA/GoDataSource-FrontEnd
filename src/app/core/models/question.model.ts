@@ -12,6 +12,9 @@ export class AnswerModel {
   label: string;
   value: string;
   alert: boolean;
+  // question alert rule ( multiple answers )
+  alertRuleCounts: boolean;
+  alertRuleRequired: boolean;
   order: number = 1;
   additionalQuestions: QuestionModel[];
 
@@ -22,6 +25,8 @@ export class AnswerModel {
     this.label = _.get(data, 'label');
     this.value = _.get(data, 'value');
     this.alert = _.get(data, 'alert');
+    this.alertRuleCounts = !!_.get(data, 'alertRuleCounts');
+    this.alertRuleRequired = !!_.get(data, 'alertRuleRequired');
     this.order = _.get(data, 'order');
 
     this.additionalQuestions = _.map(
@@ -50,8 +55,121 @@ export class QuestionModel {
   // used for answer types that don't have selectable answer options (e.g. free text, numeric, date/time, file upload)
   additionalQuestions: QuestionModel[];
 
+  // answer limits ( which ones apply depends on the answer type )
+  minValue: number;
+  maxValue: number;
+  minLength: number;
+  maxLength: number;
+  minDate: string;
+  maxDate: string;
+  disallowFutureDates: boolean;
+  minSelections: number;
+  maxSelections: number;
+
+  // alert rule ( multiple answers ) - display an alert when all required answers are selected
+  // and the number of selected answers that count reaches the minimum
+  alertRuleEnabled: boolean;
+  alertRuleMinAnswers: number;
+  alertRuleMessage: string;
+
   // used by ui
   collapsed: boolean;
+
+  /**
+   * Check if the alert rule of a question is satisfied by the selected answer values
+   */
+  static isAlertRuleSatisfied(
+    question: QuestionModel,
+    selectedValues: string[]
+  ): boolean {
+    // rule applies only to multiple answers questions
+    if (
+      !question?.alertRuleEnabled ||
+      question.answerType !== Constants.ANSWER_TYPES.MULTIPLE_OPTIONS.value ||
+      !question.answers?.length
+    ) {
+      return false;
+    }
+
+    // map selected values
+    const selected: {
+      [value: string]: true
+    } = {};
+    (selectedValues || []).forEach((value) => {
+      selected[value] = true;
+    });
+
+    // check answers
+    let counted: number = 0;
+    let hasRuleAnswers: boolean = false;
+    for (const answer of question.answers) {
+      // answer not part of the rule ?
+      if (
+        !answer.alertRuleCounts &&
+        !answer.alertRuleRequired
+      ) {
+        continue;
+      }
+
+      // part of the rule
+      hasRuleAnswers = true;
+
+      // selected ?
+      if (selected[answer.value]) {
+        counted++;
+      } else if (answer.alertRuleRequired) {
+        // required answer missing
+        return false;
+      }
+    }
+
+    // nothing to count ?
+    if (!hasRuleAnswers) {
+      return false;
+    }
+
+    // check minimum
+    return counted >= (question.alertRuleMinAnswers > 0 ? question.alertRuleMinAnswers : 1);
+  }
+
+  /**
+   * Copy alert rule from one question to another
+   */
+  static copyAlertRule(
+    source: QuestionModel,
+    destination: QuestionModel
+  ): void {
+    destination.alertRuleEnabled = source.alertRuleEnabled;
+    destination.alertRuleMinAnswers = source.alertRuleMinAnswers;
+    destination.alertRuleMessage = source.alertRuleMessage;
+  }
+
+  /**
+   * Normalize an optional numeric limit ( empty values become undefined )
+   */
+  static limitNumber(value: any): number {
+    return value === undefined || value === null || value === '' || isNaN(Number(value)) ?
+      undefined :
+      Number(value);
+  }
+
+  /**
+   * Copy answer limits from one question to another
+   */
+  static copyAnswerLimits(
+    source: QuestionModel,
+    destination: QuestionModel
+  ): void {
+    destination.minValue = source.minValue;
+    destination.maxValue = source.maxValue;
+    destination.minLength = source.minLength;
+    destination.maxLength = source.maxLength;
+    destination.minDate = source.minDate;
+    destination.maxDate = source.maxDate;
+    destination.disallowFutureDates = source.disallowFutureDates;
+    destination.minSelections = source.minSelections;
+    destination.maxSelections = source.maxSelections;
+  }
 
   constructor(data = null) {
     this.text = _.get(data, 'text');
@@ -63,6 +181,20 @@ export class QuestionModel {
     this.order = _.get(data, 'order');
     this.answerType = _.get(data, 'answerType');
     this.answersDisplay = _.get(data, 'answersDisplay', Constants.ANSWERS_DISPLAY.VERTICAL.value);
+
+    this.minValue = QuestionModel.limitNumber(_.get(data, 'minValue'));
+    this.maxValue = QuestionModel.limitNumber(_.get(data, 'maxValue'));
+    this.minLength = QuestionModel.limitNumber(_.get(data, 'minLength'));
+    this.maxLength = QuestionModel.limitNumber(_.get(data, 'maxLength'));
+    this.minDate = _.get(data, 'minDate') || undefined;
+    this.maxDate = _.get(data, 'maxDate') || undefined;
+    this.disallowFutureDates = !!_.get(data, 'disallowFutureDates');
+    this.minSelections = QuestionModel.limitNumber(_.get(data, 'minSelections'));
+    this.maxSelections = QuestionModel.limitNumber(_.get(data, 'maxSelections'));
+
+    this.alertRuleEnabled = !!_.get(data, 'alertRuleEnabled');
+    this.alertRuleMinAnswers = QuestionModel.limitNumber(_.get(data, 'alertRuleMinAnswers'));
+    this.alertRuleMessage = _.get(data, 'alertRuleMessage') || undefined;
 
     this.answers = _.map(
       _.get(data, 'answers', []),
