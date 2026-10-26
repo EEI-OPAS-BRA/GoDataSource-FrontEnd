@@ -1660,7 +1660,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
           ) {
             this.teamNotificationDataService
               .createTeamNotification({
-                teamId: this._notifyTeamId,
+                outbreakId: this.selectedOutbreak.id,
+                targetType: Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+                teamIds: [this._notifyTeamId],
                 title: 'LNG_PAGE_CREATE_CONTACT_NOTIFY_TEAM_DEFAULT_TITLE',
                 message: item.name,
                 severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,

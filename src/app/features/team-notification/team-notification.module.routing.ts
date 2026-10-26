@@ -6,6 +6,7 @@ import { PERMISSION } from '../../core/models/permission.model';
 import { TeamDataResolver } from '../../core/services/resolvers/data/team.resolver';
 import { YesNoAllDataResolver } from '../../core/services/resolvers/data/yes-no-all.resolver';
 import { CreatedOnResolver } from '../../core/services/resolvers/data/created-on.resolver';
+import { OutbreakDataResolver } from '../../core/services/resolvers/data/outbreak.resolver';
 
 const routes: Routes = [
   // Team Notifications list
@@ -20,6 +21,7 @@ const routes: Routes = [
     },
     resolve: {
       team: TeamDataResolver,
+      outbreak: OutbreakDataResolver,
       createdOn: CreatedOnResolver,
       yesNoAll: YesNoAllDataResolver
     }

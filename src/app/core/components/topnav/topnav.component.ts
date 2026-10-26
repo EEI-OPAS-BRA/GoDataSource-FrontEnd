@@ -734,6 +734,43 @@ export class TopnavComponent implements OnInit, OnDestroy {
           });
       };
 
+      // remove notification for the current user only
+      const dismiss = (
+        _dialogData: IV2SideDialogData,
+        handler: IV2SideDialogHandler
+      ) => {
+        this.teamNotificationDataService
+          .dismissOccurrence(item.id)
+          .pipe(
+            catchError((err) => {
+              // show error
+              this.toastV2Service.error(err);
+
+              // finished
+              return throwError(err);
+            })
+          )
+          .subscribe(() => {
+            // update badge count & history
+            this.refreshNotificationsOccurrences();
+
+            // remove card right away
+            const cardIndex: number = cards.indexOf(card);
+            if (cardIndex > -1) {
+              cards.splice(cardIndex, 1);
+            }
+
+            // nothing left to display ?
+            if (cards.length < 1) {
+              handler.hide();
+              return;
+            }
+
+            // update ui
+            handler.detectChanges();
+          });
+      };
+
       // card content
       card.inputs = [{
         type: V2SideDialogConfigInputType.HTML,
@@ -754,6 +791,15 @@ export class TopnavComponent implements OnInit, OnDestroy {
         cssClasses: 'gd-team-notification-card-mark-read',
         click: markAsRead,
         visible: (): boolean => !item.isReadByUser(currentUserId)
+      }, {
+        type: V2SideDialogConfigInputType.BUTTON,
+        name: `notification-dismiss-${item.id}`,
+        placeholder: '',
+        icon: 'delete',
+        tooltip: 'LNG_COMMON_BUTTON_REMOVE_NOTIFICATION',
+        color: undefined,
+        cssClasses: 'gd-team-notification-card-dismiss',
+        click: dismiss
       }];
 
       // finished

@@ -108,6 +108,13 @@ export class TeamNotificationDataService {
   }
 
   /**
+   * Remove a single occurrence from the current user notifications ( other users still see it )
+   */
+  dismissOccurrence(occurrenceId: string): Observable<any> {
+    return this.http.post(`team-notifications/occurrences/${occurrenceId}/dismiss`, {});
+  }
+
+  /**
    * Mark all occurrences as read for the current user
    */
   markAllOccurrencesRead(): Observable<any> {

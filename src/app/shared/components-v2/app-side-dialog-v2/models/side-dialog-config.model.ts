@@ -428,6 +428,10 @@ export interface IV2SideDialogConfigInputButton extends IV2SideDialogConfigInput
   placeholder: string;
   color: 'text' | 'secondary' | 'primary' | 'warn' | 'accent' | undefined;
   click: (data: IV2SideDialogData, handler: IV2SideDialogHandler, item: IV2SideDialogConfigInputButton) => void;
+
+  // optional
+  icon?: string;
+  tooltip?: string;
 }
 
 /**

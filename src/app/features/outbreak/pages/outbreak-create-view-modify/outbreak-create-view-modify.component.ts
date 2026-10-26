@@ -1648,7 +1648,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
         ) {
           this.teamNotificationDataService
             .createTeamNotification({
-              teamId: this._notifyTeamId,
+              outbreakId: outbreak.id,
+              targetType: Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+              teamIds: [this._notifyTeamId],
               title: 'LNG_PAGE_CREATE_OUTBREAK_NOTIFY_TEAM_DEFAULT_TITLE',
               message: outbreak.name,
               severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,

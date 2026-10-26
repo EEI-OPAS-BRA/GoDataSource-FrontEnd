@@ -344,8 +344,12 @@
               *ngSwitchCase="V2SideDialogConfigInputType.BUTTON"
               type="button"
               mat-flat-button
+              class="{{input.cssClasses}}"
               [color]="input.color"
+              [matTooltip]="input.tooltip ? (input.tooltip | translate) : undefined"
               (click)="input.click(dialogHandler.data, dialogHandler, input)">
+              <mat-icon
+                *ngIf="input.icon">{{input.icon}}</mat-icon>
               {{input.placeholder | translate}}
             </button>
 

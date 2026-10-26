@@ -2,11 +2,16 @@ import { Component, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import * as _ from 'lodash';
 import { throwError } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { catchError, takeUntil, tap } from 'rxjs/operators';
 import { ListComponent } from '../../../../core/helperClasses/list-component';
 import { Constants } from '../../../../core/models/constants';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { TeamModel } from '../../../../core/models/team.model';
+import { OutbreakModel } from '../../../../core/models/outbreak.model';
+import { LocationModel } from '../../../../core/models/location.model';
+import { LocationDataService } from '../../../../core/services/data/location.data.service';
+import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
+import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { TeamNotificationModel } from '../../../../core/models/team-notification.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
 import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
@@ -20,6 +25,8 @@ import { IV2Column, IV2ColumnPinned, V2ColumnFormat } from '../../../../shared/c
 import { V2FilterTextType, V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
 import {
   IV2SideDialogConfigButtonType,
+  IV2SideDialogConfigInputMultipleLocation,
+  IV2SideDialogConfigInputMultiDropdown,
   IV2SideDialogConfigInputNumber,
   IV2SideDialogConfigInputSingleDropdown,
   IV2SideDialogConfigInputText,
@@ -35,6 +42,11 @@ import {
 export class TeamNotificationListComponent
   extends ListComponent<TeamNotificationModel, IV2Column>
   implements OnDestroy {
+  // names of the locations used as recipients by the displayed notifications
+  private _locationNames: {
+    [locationId: string]: string
+  } = {};
+
   /**
    * Constructor
    */
@@ -43,7 +55,9 @@ export class TeamNotificationListComponent
     private teamNotificationDataService: TeamNotificationDataService,
     private toastV2Service: ToastV2Service,
     private activatedRoute: ActivatedRoute,
-    private dialogV2Service: DialogV2Service
+    private dialogV2Service: DialogV2Service,
+    private locationDataService: LocationDataService,
+    private i18nService: I18nService
   ) {
     super(
       listHelperService, {
@@ -191,17 +205,25 @@ export class TeamNotificationListComponent
         }
       },
       {
-        field: 'teamId',
-        label: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TEAM',
+        field: 'outbreakId',
+        label: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_OUTBREAK',
         format: {
           type: (item: TeamNotificationModel) => {
-            return (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).map[item.teamId]?.name ||
-              item.teamId;
+            return item.outbreakId ?
+              (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map[item.outbreakId]?.name || item.outbreakId :
+              '—';
           }
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).options
+          options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options
+        }
+      },
+      {
+        field: 'teamIds',
+        label: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECIPIENTS',
+        format: {
+          type: (item: TeamNotificationModel) => this.recipientsLabel(item)
         }
       },
       {
@@ -324,6 +346,10 @@ export class TeamNotificationListComponent
   protected refreshListFields(): string[] {
     return [
       'id',
+      'outbreakId',
+      'targetType',
+      'teamIds',
+      'locationIds',
       'teamId',
       'title',
       'message',
@@ -344,6 +370,7 @@ export class TeamNotificationListComponent
     this.records$ = this.teamNotificationDataService
       .getTeamNotificationsList(this.queryBuilder)
       .pipe(
+        tap((records) => this.loadLocationNames(records)),
         takeUntil(this.destroyed$)
       );
   }
@@ -370,6 +397,76 @@ export class TeamNotificationListComponent
       )
       .subscribe((response) => {
         this.pageCount = response;
+      });
+  }
+
+  /**
+   * Recipients label - selected teams or selected locations
+   */
+  private recipientsLabel(item: TeamNotificationModel): string {
+    // location based
+    if (item.targetType === Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION.value) {
+      return item.locationIds
+        .map((locationId) => this._locationNames[locationId] || '…')
+        .join(', ');
+    }
+
+    // team based
+    const teams = (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).map;
+    return item.teamIds
+      .map((teamId) => teams[teamId]?.name || teamId)
+      .join(', ');
+  }
+
+  /**
+   * Load the names of the locations used as recipients
+   */
+  private loadLocationNames(records: TeamNotificationModel[]): void {
+    // determine missing names
+    const missing: string[] = [];
+    (records || []).forEach((record) => {
+      (record.locationIds || []).forEach((locationId) => {
+        if (
+          !this._locationNames[locationId] &&
+          missing.indexOf(locationId) < 0
+        ) {
+          missing.push(locationId);
+        }
+      });
+    });
+
+    // nothing to load ?
+    if (missing.length < 1) {
+      return;
+    }
+
+    // load
+    const qb = new RequestQueryBuilder();
+    qb.fields('id', 'name');
+    qb.filter.bySelect(
+      'id',
+      missing,
+      true,
+      null
+    );
+    this.locationDataService
+      .getLocationsList(qb)
+      .pipe(
+        catchError((err) => {
+          this.toastV2Service.error(err);
+          return throwError(err);
+        }),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((locations: LocationModel[]) => {
+        locations.forEach((location) => {
+          this._locationNames[location.id] = location.name;
+        });
+
+        // update table
+        this.tableV2Component?.agTable?.api.refreshCells({
+          force: true
+        });
       });
   }
 
@@ -409,6 +506,8 @@ export class TeamNotificationListComponent
   private openCreateModifyDialog(item?: TeamNotificationModel): void {
     const isModify: boolean = !!item;
     const teamOptions = (this.activatedRoute.snapshot.data.team as IResolverV2ResponseModel<TeamModel>).options;
+    const outbreakOptions = (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options;
+    const isTargetType = (data, targetType: string): boolean => (data.map.targetType as IV2SideDialogConfigInputSingleDropdown)?.value === targetType;
 
     this.dialogV2Service
       .showSideDialog({
@@ -422,13 +521,56 @@ export class TeamNotificationListComponent
         inputs: [
           {
             type: V2SideDialogConfigInputType.DROPDOWN_SINGLE,
-            name: 'teamId',
-            placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TEAM',
-            options: teamOptions,
-            value: item?.teamId,
+            name: 'outbreakId',
+            placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_OUTBREAK',
+            options: outbreakOptions,
+            value: item ?
+              item.outbreakId :
+              this.selectedOutbreak?.id,
             validators: {
               required: () => true
             }
+          },
+          {
+            type: V2SideDialogConfigInputType.DROPDOWN_SINGLE,
+            name: 'targetType',
+            placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TARGET_TYPE',
+            options: [
+              Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM,
+              Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION
+            ],
+            value: item?.targetType || Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+            validators: {
+              required: () => true
+            }
+          },
+          {
+            type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
+            name: 'teamIds',
+            placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TEAMS',
+            options: teamOptions,
+            values: item?.teamIds || [],
+            validators: {
+              required: (data) => isTargetType(data, Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value)
+            },
+            visible: (data): boolean => isTargetType(data, Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value)
+          },
+          {
+            type: V2SideDialogConfigInputType.LOCATION_MULTIPLE,
+            name: 'locationIds',
+            placeholder: 'LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS',
+            values: item?.locationIds || [],
+            useOutbreakLocations: false,
+            validators: {
+              required: (data) => isTargetType(data, Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION.value)
+            },
+            visible: (data): boolean => isTargetType(data, Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION.value)
+          },
+          {
+            type: V2SideDialogConfigInputType.HTML,
+            name: 'locationIdsDescription',
+            placeholder: this.i18nService.instant('LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS_DESCRIPTION'),
+            visible: (data): boolean => isTargetType(data, Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION.value)
           },
           {
             type: V2SideDialogConfigInputType.TEXT,
@@ -526,8 +668,16 @@ export class TeamNotificationListComponent
 
         // construct payload
         const recurring: boolean = (response.data.map.recurring as IV2SideDialogConfigInputToggleCheckbox).value;
+        const targetType: string = (response.data.map.targetType as IV2SideDialogConfigInputSingleDropdown).value;
         const data: any = {
-          teamId: (response.data.map.teamId as IV2SideDialogConfigInputSingleDropdown).value,
+          outbreakId: (response.data.map.outbreakId as IV2SideDialogConfigInputSingleDropdown).value,
+          targetType,
+          teamIds: targetType === Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value ?
+            (response.data.map.teamIds as IV2SideDialogConfigInputMultiDropdown).values :
+            [],
+          locationIds: targetType === Constants.TEAM_NOTIFICATION_TARGET_TYPE.LOCATION.value ?
+            (response.data.map.locationIds as IV2SideDialogConfigInputMultipleLocation).values :
+            [],
           title: (response.data.map.title as IV2SideDialogConfigInputText).value,
           message: (response.data.map.message as IV2SideDialogConfigInputTextarea).value,
           severity: (response.data.map.severity as IV2SideDialogConfigInputSingleDropdown).value,

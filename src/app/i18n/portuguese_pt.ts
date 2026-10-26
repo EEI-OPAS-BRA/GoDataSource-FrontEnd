@@ -12,6 +12,7 @@ export const PortuguesePtLang = {
      */
     'LNG_COMMON_BUTTON_MARK_ALL_AS_READ': 'Marcar tudo como lido',
     'LNG_COMMON_BUTTON_MARK_AS_READ': 'Marcar como lida',
+    'LNG_COMMON_BUTTON_REMOVE_NOTIFICATION': 'Remover notificação',
 
     /**
      * Questionnaire answer limits
@@ -58,6 +59,14 @@ export const PortuguesePtLang = {
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECURRENCE_UNIT': 'Unidade de recorrência',
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_ACTIVE': 'Ativa',
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_CREATED_AT': 'Criada em',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_OUTBREAK': 'Surto',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TARGET_TYPE': 'Enviar para',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TEAMS': 'Equipes',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS': 'Localizações',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS_DESCRIPTION': 'Todas as equipes que atuam nas localizações selecionadas ou em qualquer sub-localização delas recebem a notificação',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECIPIENTS': 'Destinatários',
+    'LNG_TEAM_NOTIFICATION_TARGET_TYPE_TEAM': 'Equipes',
+    'LNG_TEAM_NOTIFICATION_TARGET_TYPE_LOCATION': 'Localizações',
 
     'LNG_TEAM_NOTIFICATION_SEVERITY_GREEN': 'Verde',
     'LNG_TEAM_NOTIFICATION_SEVERITY_YELLOW': 'Amarelo',
