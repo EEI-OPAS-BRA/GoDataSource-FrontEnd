@@ -1352,7 +1352,11 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
         this.authUser,
         undefined,
-        filterAddressModel
+        filterAddressModel,
+        () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.locationId'
+        )
       ),
       // one logradouro / numero / complemento / bairro column per address type (except current)
       ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
@@ -1361,7 +1365,11 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         'LNG_ADDRESS_FIELD_LABEL_LOGRADOURO',
         this.personAndRelatedHelperService.i18nService,
         undefined,
-        filterAddressModel
+        filterAddressModel,
+        () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.logradouro'
+        )
       ),
       ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
         (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
@@ -1369,7 +1377,11 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         'LNG_ADDRESS_FIELD_LABEL_NUMERO',
         this.personAndRelatedHelperService.i18nService,
         undefined,
-        filterAddressModel
+        filterAddressModel,
+        () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.numero'
+        )
       ),
       ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
         (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
@@ -1377,7 +1389,11 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         'LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO',
         this.personAndRelatedHelperService.i18nService,
         undefined,
-        filterAddressModel
+        filterAddressModel,
+        () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.complemento'
+        )
       ),
       ...this.personAndRelatedHelperService.list.retrieveAddressFieldColumnsPerType(
         (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
@@ -1385,7 +1401,11 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         'LNG_ADDRESS_FIELD_LABEL_BAIRRO',
         this.personAndRelatedHelperService.i18nService,
         undefined,
-        filterAddressModel
+        filterAddressModel,
+        () => this.shouldVisibleMandatoryTableColumnBeVisible(
+          this.personAndRelatedHelperService.case.visibleMandatoryKey,
+          'addresses.bairro'
+        )
       ),
       {
         field: 'addresses.emailAddress',
