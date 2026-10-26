@@ -157,6 +157,9 @@
               autocomplete="off"
               [disabled]="input.disabled && input.disabled(dialogHandler.data, dialogHandler, input)"
               [required]="input.validators?.required && input.validators?.required(dialogHandler.data, dialogHandler, input)"
+              app-date-validator
+              [dateSameOrBefore]="input.validators?.dateSameOrBefore ? input.validators?.dateSameOrBefore(dialogHandler.data, dialogHandler, input) : undefined"
+              [dateSameOrAfter]="input.validators?.dateSameOrAfter ? input.validators?.dateSameOrAfter(dialogHandler.data, dialogHandler, input) : undefined"
               (ngModelChange)="input.change ? input.change(dialogHandler.data, dialogHandler, input) : undefined"></app-form-date-v2>
 
             <!-- Date Range -->

@@ -974,10 +974,17 @@ export class AppFormEditQuestionnaireV2Component
   private answerLimitsEditInputs(modifyQuestion: QuestionModel): V2SideDialogConfigInput[] {
     // helper to check selected answer type
     const isAnswerType = (data, answerType: string): boolean => (data.map.answerType as IV2SideDialogConfigInputSingleDropdown).value === answerType;
-    const nonNegative = () => ({
-      min: 0,
-      max: undefined
-    });
+    const maxOf = (...values: number[]): number => {
+      const numbers = values.filter((value) => value !== undefined);
+      return numbers.length ? Math.max(...numbers) : undefined;
+    };
+
+    // re-validate counterpart limit ( min <-> max ) when one of them changes
+    const revalidate = (name: string) => (_data, handler): void => {
+      setTimeout(() => {
+        handler.form?.controls[name]?.updateValueAndValidity();
+      });
+    };
 
     // inputs
     return [
@@ -1001,12 +1008,26 @@ export class AppFormEditQuestionnaireV2Component
           type: V2SideDialogConfigInputType.NUMBER,
           name: 'minValue',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_VALUE',
-          value: modifyQuestion?.minValue
+          value: modifyQuestion?.minValue,
+          validators: {
+            minMax: (_data, handler) => ({
+              min: undefined,
+              max: QuestionModel.limitNumber(handler.form?.controls.maxValue?.value)
+            })
+          },
+          change: revalidate('maxValue')
         }, {
           type: V2SideDialogConfigInputType.NUMBER,
           name: 'maxValue',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_VALUE',
-          value: modifyQuestion?.maxValue
+          value: modifyQuestion?.maxValue,
+          validators: {
+            minMax: (_data, handler) => ({
+              min: QuestionModel.limitNumber(handler.form?.controls.minValue?.value),
+              max: undefined
+            })
+          },
+          change: revalidate('minValue')
         }]
       },
 
@@ -1022,16 +1043,24 @@ export class AppFormEditQuestionnaireV2Component
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_LENGTH',
           value: modifyQuestion?.minLength,
           validators: {
-            minMax: nonNegative
-          }
+            minMax: (_data, handler) => ({
+              min: 0,
+              max: QuestionModel.limitNumber(handler.form?.controls.maxLength?.value)
+            })
+          },
+          change: revalidate('maxLength')
         }, {
           type: V2SideDialogConfigInputType.NUMBER,
           name: 'maxLength',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_LENGTH',
           value: modifyQuestion?.maxLength,
           validators: {
-            minMax: nonNegative
-          }
+            minMax: (_data, handler) => ({
+              min: maxOf(0, QuestionModel.limitNumber(handler.form?.controls.minLength?.value)),
+              max: undefined
+            })
+          },
+          change: revalidate('minLength')
         }]
       },
 
@@ -1045,12 +1074,18 @@ export class AppFormEditQuestionnaireV2Component
           type: V2SideDialogConfigInputType.DATE,
           name: 'minDate',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_DATE',
-          value: modifyQuestion?.minDate
+          value: modifyQuestion?.minDate,
+          validators: {
+            dateSameOrBefore: () => 'maxDate'
+          }
         }, {
           type: V2SideDialogConfigInputType.DATE,
           name: 'maxDate',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_DATE',
-          value: modifyQuestion?.maxDate
+          value: modifyQuestion?.maxDate,
+          validators: {
+            dateSameOrAfter: () => 'minDate'
+          }
         }]
       },
       {
@@ -1075,16 +1110,24 @@ export class AppFormEditQuestionnaireV2Component
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_SELECTIONS',
           value: modifyQuestion?.minSelections,
           validators: {
-            minMax: nonNegative
-          }
+            minMax: (_data, handler) => ({
+              min: 0,
+              max: QuestionModel.limitNumber(handler.form?.controls.maxSelections?.value)
+            })
+          },
+          change: revalidate('maxSelections')
         }, {
           type: V2SideDialogConfigInputType.NUMBER,
           name: 'maxSelections',
           placeholder: 'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_SELECTIONS',
           value: modifyQuestion?.maxSelections,
           validators: {
-            minMax: nonNegative
-          }
+            minMax: (_data, handler) => ({
+              min: maxOf(0, QuestionModel.limitNumber(handler.form?.controls.minSelections?.value)),
+              max: undefined
+            })
+          },
+          change: revalidate('minSelections')
         }]
       },
 
