@@ -898,7 +898,9 @@ export class EventsCreateViewModifyComponent extends CreateViewModifyComponent<E
     return (
       type,
       data,
-      finished
+      finished,
+      loading,
+      forms
     ) => {
       // finished
       (type === CreateViewModifyV2ActionType.CREATE ?
@@ -924,15 +926,37 @@ export class EventsCreateViewModifyComponent extends CreateViewModifyComponent<E
         // should be the last pipe
         takeUntil(this.destroyed$)
       ).subscribe((item: EventModel) => {
-        // success creating / updating event
-        this.personAndRelatedHelperService.toastV2Service.success(
-          type === CreateViewModifyV2ActionType.CREATE ?
-            'LNG_PAGE_CREATE_EVENT_ACTION_CREATE_EVENT_SUCCESS_MESSAGE' :
-            'LNG_PAGE_MODIFY_EVENT_ACTION_MODIFY_EVENT_SUCCESS_MESSAGE'
-        );
+        this.personAndRelatedHelperService.createViewModify
+          .isPersonVisibleAfterSave(
+            this.selectedOutbreak,
+            EntityType.EVENT,
+            item.id
+          )
+          .pipe(takeUntil(this.destroyed$))
+          .subscribe((visible) => {
+            // the record view would deny access, so go back to the list
+            if (!visible) {
+              this.personAndRelatedHelperService.toastV2Service.warning(
+                type === CreateViewModifyV2ActionType.CREATE ?
+                  'LNG_PAGE_CREATE_EVENT_ACTION_CREATE_EVENT_SUCCESS_OUT_OF_AREA_MESSAGE' :
+                  'LNG_PAGE_MODIFY_EVENT_ACTION_MODIFY_EVENT_SUCCESS_OUT_OF_AREA_MESSAGE'
+              );
+              forms.markFormsAsPristine();
+              loading.hide();
+              this.router.navigate(['/events']);
+              return;
+            }
 
-        // finished with success
-        finished(undefined, item);
+            // success creating / updating event
+            this.personAndRelatedHelperService.toastV2Service.success(
+              type === CreateViewModifyV2ActionType.CREATE ?
+                'LNG_PAGE_CREATE_EVENT_ACTION_CREATE_EVENT_SUCCESS_MESSAGE' :
+                'LNG_PAGE_MODIFY_EVENT_ACTION_MODIFY_EVENT_SUCCESS_MESSAGE'
+            );
+
+            // finished with success
+            finished(undefined, item);
+          });
       });
     };
   }

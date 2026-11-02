@@ -9,6 +9,11 @@ import { IVisibleMandatoryDataGroupTab, IVisibleMandatoryDataGroupTabSectionFiel
 import { PersonAndRelatedHelperService } from '../person-and-related-helper.service';
 import { v4 as uuid } from 'uuid';
 import { OutbreakModel } from '../../../models/outbreak.model';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { EntityType } from '../../../models/entity-type';
+import { RequestQueryBuilder } from '../../../helperClasses/request-query-builder';
+import { IBasicCount } from '../../../models/basic-count.interface';
 
 export class CreateViewModifyHelperModel {
   /**
@@ -574,5 +579,51 @@ export class CreateViewModifyHelperModel {
 
     // finished
     return tab;
+  }
+
+  /**
+   * Check if geographic restrictions still let the logged user read a person after saving it
+   */
+  isPersonVisibleAfterSave(
+    outbreak: OutbreakModel,
+    personType: EntityType,
+    personId: string
+  ): Observable<boolean> {
+    if (
+      !outbreak?.applyGeographicRestrictions ||
+      this.parent.authUser?.disregardGeographicRestrictions
+    ) {
+      return of(true);
+    }
+
+    const qb = new RequestQueryBuilder();
+    qb.filter.byEquality(
+      'id',
+      personId
+    );
+
+    let count$: Observable<IBasicCount>;
+    switch (personType) {
+      case EntityType.CASE:
+        count$ = this.parent.case.caseDataService.getCasesCount(outbreak.id, qb);
+        break;
+      case EntityType.CONTACT:
+        count$ = this.parent.contact.contactDataService.getContactsCount(outbreak.id, qb);
+        break;
+      case EntityType.CONTACT_OF_CONTACT:
+        count$ = this.parent.contactOfContact.contactsOfContactsDataService.getContactsOfContactsCount(outbreak.id, qb);
+        break;
+      case EntityType.EVENT:
+        count$ = this.parent.event.eventDataService.getEventsCount(outbreak.id, qb);
+        break;
+      default:
+        return of(true);
+    }
+
+    // if the check fails keep the usual redirect to the record
+    return count$.pipe(
+      map((response) => response.count > 0),
+      catchError(() => of(true))
+    );
   }
 }
