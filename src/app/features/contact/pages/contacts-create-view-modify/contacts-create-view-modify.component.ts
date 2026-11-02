@@ -1677,26 +1677,48 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
 
           // finished
           const finishedProcessingData = () => {
-            // success creating / updating
-            this.toastV2Service.success(
-              type === CreateViewModifyV2ActionType.CREATE ?
-                'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_MESSAGE' :
-                'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_MESSAGE'
-            );
+            this.personAndRelatedHelperService.createViewModify
+              .isPersonVisibleAfterSave(
+                this.selectedOutbreak,
+                EntityType.CONTACT,
+                item.id
+              )
+              .pipe(takeUntil(this.destroyed$))
+              .subscribe((visible) => {
+                // the record view would deny access, so go back to the list
+                if (!visible) {
+                  this.toastV2Service.warning(
+                    type === CreateViewModifyV2ActionType.CREATE ?
+                      'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_OUT_OF_AREA_MESSAGE' :
+                      'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_OUT_OF_AREA_MESSAGE'
+                  );
+                  forms.markFormsAsPristine();
+                  loading.hide();
+                  this.router.navigate(['/contacts']);
+                  return;
+                }
 
-            // finished with success
-            if (!overwriteFinished) {
-              finished(undefined, item);
-            } else {
-              // mark pristine
-              forms.markFormsAsPristine();
+                // success creating / updating
+                this.toastV2Service.success(
+                  type === CreateViewModifyV2ActionType.CREATE ?
+                    'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_MESSAGE' :
+                    'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_MESSAGE'
+                );
 
-              // hide loading
-              loading.hide();
+                // finished with success
+                if (!overwriteFinished) {
+                  finished(undefined, item);
+                } else {
+                  // mark pristine
+                  forms.markFormsAsPristine();
 
-              // call overwrite
-              overwriteFinished(item);
-            }
+                  // hide loading
+                  loading.hide();
+
+                  // call overwrite
+                  overwriteFinished(item);
+                }
+              });
           };
 
           // there are no records marked as NOT duplicates ?
