@@ -112,6 +112,15 @@ export class ImportExportDataService {
       delete data.dontTranslateValues;
     }
 
+    // add flag dontIncludeTimestamp
+    if (!_.isUndefined(data.dontIncludeTimestamp)) {
+      queryBuilder.filter.flag(
+        'dontIncludeTimestamp',
+        data.dontIncludeTimestamp
+      );
+      delete data.dontIncludeTimestamp;
+    }
+
     // add flag useQuestionVariable
     if (!_.isUndefined(data.useQuestionVariable)) {
       queryBuilder.filter.flag(
@@ -296,6 +305,15 @@ export class ImportExportDataService {
         data.dontTranslateValues
       );
       delete data.dontTranslateValues;
+    }
+
+    // add flag dontIncludeTimestamp
+    if (!_.isUndefined(data.dontIncludeTimestamp)) {
+      queryBuilder.filter.flag(
+        'dontIncludeTimestamp',
+        data.dontIncludeTimestamp
+      );
+      delete data.dontIncludeTimestamp;
     }
 
     // add flag useQuestionVariable

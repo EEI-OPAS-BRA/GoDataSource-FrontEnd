@@ -1,5 +1,6 @@
 import { ICellRendererComp, IHeaderParams } from '@ag-grid-community/core';
 import { IV2SpreadsheetEditorExtendedColDef } from './extended-column.model';
+import { IV2SpreadsheetEditorColumnValidatorRequired } from './column.model';
 
 /**
  * Row number cell renderer
@@ -169,6 +170,28 @@ export class AppSpreadsheetEditorV2CellBasicHeaderModel implements ICellRenderer
    * Update value
    */
   protected updateValue(): void {
-    this._guiRootValueHTML.innerHTML = this._params.displayName;
+    // mark mandatory columns with an asterisk
+    this._guiRootValueHTML.innerHTML = this.isColumnMandatory() ?
+      `${this._params.displayName}<span class="gd-spreadsheet-editor-v2-cell-basic-header-value-required">*</span>` :
+      this._params.displayName;
+  }
+
+  /**
+   * Check if column is mandatory (always required or required by outbreak settings)
+   * - conditional validators (e.g. document type/number, geolocation lat/lng) return false
+   *   for an empty row, so they are not marked as mandatory
+   */
+  private isColumnMandatory(): boolean {
+    const required = (this._colDef.columnDefinition?.validators as IV2SpreadsheetEditorColumnValidatorRequired)?.required;
+    if (!required) {
+      return false;
+    }
+
+    // mandatory if required regardless of row content
+    try {
+      return required({ model: {}, relationship: {} });
+    } catch {
+      return false;
+    }
   }
 }

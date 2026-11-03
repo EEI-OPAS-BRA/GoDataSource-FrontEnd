@@ -54,6 +54,7 @@ interface IV2FilterBasic {
   value?: never;
   defaultValue?: never;
   addressField?: never;
+  addressType?: never;
   includeNoValue?: never;
   groups?: never;
   groupLabelKey?: never;
@@ -160,7 +161,7 @@ interface IV2FilterAddressPhoneNumber extends Omit<IV2FilterBasic, 'address' | '
 /**
  * Address location
  */
-interface IV2FilterAddressMultipleLocation extends Omit<IV2FilterBasic, 'address' | 'defaultValue'> {
+interface IV2FilterAddressMultipleLocation extends Omit<IV2FilterBasic, 'address' | 'defaultValue' | 'addressType'> {
   // required
   type: V2FilterType.ADDRESS_MULTIPLE_LOCATION;
   address: AddressModel;
@@ -169,6 +170,11 @@ interface IV2FilterAddressMultipleLocation extends Omit<IV2FilterBasic, 'address
 
   // optional
   defaultValue?: string[];
+  // when set, the location filter targets addresses of this type (typeId) instead of the current address
+  addressType?: string;
+  // when set, the current address location filter also matches this singular address field, for records
+  // that don't have `field` as an array (e.g. events, which have a single `address` instead of `addresses`)
+  singleAddressField?: string;
 }
 
 /**

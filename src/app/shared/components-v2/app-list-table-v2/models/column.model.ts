@@ -2,7 +2,7 @@ import { V2Action } from './action.model';
 import { V2Filter, IV2FilterDate, V2FilterType, V2FilterTextType } from './filter.model';
 import { RequestQueryBuilder, RequestSortDirection } from '../../../../core/helperClasses/request-query-builder';
 import { AppFormSelectMultipleV2Component } from '../../../forms-v2/components/app-form-select-multiple-v2/app-form-select-multiple-v2.component';
-import { AddressModel } from '../../../../core/models/address.model';
+import { AddressModel, AddressType } from '../../../../core/models/address.model';
 import * as _ from 'lodash';
 import { ChangeValue } from '../../app-changes-v2/models/change.model';
 
@@ -442,8 +442,9 @@ export const applyFilterBy = (
       switch (column.filter.textType) {
         case V2FilterTextType.STARTS_WITH:
 
-          // filter
-          query.filter.byText(
+          // filter using 'contains' so partial / mid-word values match (e.g. "aulo" matches "São Paulo")
+          // accent-insensitive matching is preserved by textContains
+          query.filter.byContainingText(
             column.field,
             column.filter.value,
             true,
@@ -564,13 +565,22 @@ export const applyFilterBy = (
       // IMPORTANT: and => and => and => is required to make it unique, so it doesn't interfere with advanced by address filters
       query.filter.removePathCondition('and.and.and.and.address');
       query.filter.removePathCondition('and.and.and.and.addresses');
+      query.filter.removePathCondition('and.and.and.and.or');
+
+      // records that don't have this field as an array (e.g. events) need a single-address match instead,
+      // combined with the array match below since a record can only ever have one of the two shapes
+      const singleAddressField: string = (column.filter as any).singleAddressField;
 
       // create a query builder
+      // - when combining with a single-address field, the current-address condition is generated separately
+      //   below instead, so it can be combined with an "or" instead of always requiring the array shape
       const searchQb: RequestQueryBuilder = AddressModel.buildAddressFilter(
         column.filter.field,
         column.filter.fieldIsArray,
         column.filter.address,
-        column.filter.address.filterLocationIds,
+        singleAddressField ?
+          undefined :
+          column.filter.address.filterLocationIds,
         (column.filter as any).useLike
       );
 
@@ -580,6 +590,39 @@ export const applyFilterBy = (
         !searchQb.isEmpty()
       ) {
         query.merge(searchQb);
+      }
+
+      // combine the array-address match with a single-address match
+      if (
+        singleAddressField &&
+        column.filter.address.filterLocationIds?.length > 0
+      ) {
+        const singleAddressQb: RequestQueryBuilder = new RequestQueryBuilder();
+        singleAddressQb.filter.where({
+          and: [{
+            and: [{
+              and: [{
+                or: [
+                  {
+                    [column.filter.field]: {
+                      elemMatch: {
+                        typeId: AddressType.CURRENT_ADDRESS,
+                        parentLocationIdFilter: {
+                          $in: column.filter.address.filterLocationIds
+                        }
+                      }
+                    }
+                  }, {
+                    [`${singleAddressField}.parentLocationIdFilter`]: {
+                      inq: column.filter.address.filterLocationIds
+                    }
+                  }
+                ]
+              }]
+            }]
+          }]
+        });
+        query.merge(singleAddressQb);
       }
 
       // finished
@@ -679,7 +722,14 @@ export const applyResetOnAllFilters = (
         break;
 
       case V2FilterType.ADDRESS_MULTIPLE_LOCATION:
-        column.filter.address.filterLocationIds = column.filter.defaultValue;
+        if (column.filter.addressType) {
+          if (!column.filter.address.filterLocationIdsByType) {
+            column.filter.address.filterLocationIdsByType = {};
+          }
+          column.filter.address.filterLocationIdsByType[column.filter.addressType] = column.filter.defaultValue;
+        } else {
+          column.filter.address.filterLocationIds = column.filter.defaultValue;
+        }
 
         // finished
         break;

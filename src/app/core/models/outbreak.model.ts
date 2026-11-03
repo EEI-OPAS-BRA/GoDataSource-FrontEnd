@@ -79,8 +79,12 @@ export class OutbreakModel
   allowCrossLocationCreation: boolean;
   allowCaseCrossLocationCreation: boolean;
   allowNotificationLocationAccess: boolean;
+  allowResidenceChainAccess: boolean;
   checkLastContactDateAgainstDateOnSet: boolean;
   disableModifyingLegacyQuestionnaire: boolean;
+  allowQuestionnaireInBulkModify: boolean;
+  optionalCaseContactAddressFields: boolean;
+  preventAddressDeletion: boolean;
 
   generateFollowUpsOverwriteExisting: boolean;
   generateFollowUpsKeepTeamAssignment: boolean;
@@ -180,8 +184,12 @@ export class OutbreakModel
     this.allowCrossLocationCreation = _.get(data, 'allowCrossLocationCreation', false);
     this.allowCaseCrossLocationCreation = _.get(data, 'allowCaseCrossLocationCreation', false);
     this.allowNotificationLocationAccess = _.get(data, 'allowNotificationLocationAccess', false);
+    this.allowResidenceChainAccess = _.get(data, 'allowResidenceChainAccess', false);
     this.checkLastContactDateAgainstDateOnSet = _.get(data, 'checkLastContactDateAgainstDateOnSet', false);
     this.disableModifyingLegacyQuestionnaire = _.get(data, 'disableModifyingLegacyQuestionnaire', false);
+    this.allowQuestionnaireInBulkModify = _.get(data, 'allowQuestionnaireInBulkModify', false);
+    this.optionalCaseContactAddressFields = _.get(data, 'optionalCaseContactAddressFields', false);
+    this.preventAddressDeletion = _.get(data, 'preventAddressDeletion', false);
     this.generateFollowUpsOverwriteExisting = _.get(data, 'generateFollowUpsOverwriteExisting', false);
     this.generateFollowUpsKeepTeamAssignment = _.get(data, 'generateFollowUpsKeepTeamAssignment', true);
     this.generateFollowUpsTeamAssignmentAlgorithm = _.get(data, 'generateFollowUpsTeamAssignmentAlgorithm', Constants.FOLLOWUP_GENERATION_TEAM_ASSIGNMENT_ALGORITHM.ROUND_ROBIN_ALL_TEAMS.value);

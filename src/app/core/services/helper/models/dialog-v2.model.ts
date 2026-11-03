@@ -108,7 +108,8 @@ export interface IV2ExportDataConfig {
       dbColumns?: boolean,
       dbValues?: boolean,
       jsonReplaceUndefinedWithNull?: boolean,
-      questionnaireVariables?: boolean
+      questionnaireVariables?: boolean,
+      dontIncludeTimestamp?: boolean
     },
 
     // optional

@@ -988,8 +988,10 @@ export abstract class ListComponent<T, U extends (IV2Column | IV2ColumnToVisible
           break;
 
         case V2FilterType.ADDRESS_MULTIPLE_LOCATION:
-          // get value
-          value = column.filter.address.filterLocationIds;
+          // get value ( per address type when the column targets a specific type )
+          value = column.filter.addressType ?
+            (column.filter.address.filterLocationIdsByType || {})[column.filter.addressType] :
+            column.filter.address.filterLocationIds;
 
           // finished
           break;
@@ -1159,8 +1161,15 @@ export abstract class ListComponent<T, U extends (IV2Column | IV2ColumnToVisible
           break;
 
         case V2FilterType.ADDRESS_MULTIPLE_LOCATION:
-          // get value
-          column.filter.address.filterLocationIds = value;
+          // set value ( per address type when the column targets a specific type )
+          if (column.filter.addressType) {
+            if (!column.filter.address.filterLocationIdsByType) {
+              column.filter.address.filterLocationIdsByType = {};
+            }
+            column.filter.address.filterLocationIdsByType[column.filter.addressType] = value;
+          } else {
+            column.filter.address.filterLocationIds = value;
+          }
 
           // finished
           break;

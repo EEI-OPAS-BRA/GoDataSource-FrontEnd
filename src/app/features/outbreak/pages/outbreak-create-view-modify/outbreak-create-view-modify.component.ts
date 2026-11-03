@@ -43,6 +43,7 @@ import { RedirectService } from '../../../../core/services/helper/redirect.servi
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { Constants } from '../../../../core/models/constants';
 import { IGeneralAsyncValidatorResponse } from '../../../../shared/forms-v2/validators/general-async-validator.directive';
+import { AppFormLocationBaseV2 } from '../../../../shared/forms-v2/core/app-form-location-base-v2';
 
 /**
  * Component
@@ -569,6 +570,7 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                     this.itemData.allowCrossLocationCreation = false;
                     this.itemData.allowCaseCrossLocationCreation = false;
                     this.itemData.allowNotificationLocationAccess = false;
+                    this.itemData.allowResidenceChainAccess = false;
                   }
                 }
               }
@@ -605,6 +607,18 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.allowNotificationLocationAccess,
                 set: (value) => {
                   this.itemData.allowNotificationLocationAccess = value;
+                }
+              },
+              visible: () => !!this.itemData.applyGeographicRestrictions
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowResidenceChainAccess',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_RESIDENCE_CHAIN_ACCESS',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_RESIDENCE_CHAIN_ACCESS_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowResidenceChainAccess,
+                set: (value) => {
+                  this.itemData.allowResidenceChainAccess = value;
                 }
               },
               visible: () => !!this.itemData.applyGeographicRestrictions
@@ -677,6 +691,39 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 get: () => this.itemData.allowCasesFollowUp,
                 set: (value) => {
                   this.itemData.allowCasesFollowUp = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowQuestionnaireInBulkModify',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_QUESTIONNAIRE_IN_BULK_MODIFY',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_QUESTIONNAIRE_IN_BULK_MODIFY_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowQuestionnaireInBulkModify,
+                set: (value) => {
+                  this.itemData.allowQuestionnaireInBulkModify = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'optionalCaseContactAddressFields',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_OPTIONAL_CASE_CONTACT_ADDRESS_FIELDS',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_OPTIONAL_CASE_CONTACT_ADDRESS_FIELDS_DESCRIPTION',
+              value: {
+                get: () => this.itemData.optionalCaseContactAddressFields,
+                set: (value) => {
+                  this.itemData.optionalCaseContactAddressFields = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'preventAddressDeletion',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_PREVENT_ADDRESS_DELETION',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_PREVENT_ADDRESS_DELETION_DESCRIPTION',
+              value: {
+                get: () => this.itemData.preventAddressDeletion,
+                set: (value) => {
+                  this.itemData.preventAddressDeletion = value;
                 }
               }
             }
@@ -1550,6 +1597,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
       ).subscribe((outbreak) => {
         // refresh list of top nav outbreaks
         TopnavComponent.REFRESH_OUTBREAK_LIST();
+
+        // outbreak locations may have changed
+        AppFormLocationBaseV2.CACHE = {};
 
         // no need to update language ?
         if (

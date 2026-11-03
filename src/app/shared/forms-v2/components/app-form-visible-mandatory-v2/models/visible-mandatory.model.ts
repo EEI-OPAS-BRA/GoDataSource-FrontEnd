@@ -80,6 +80,7 @@ export type V2SpreadsheetEditorColumnToVisibleMandatoryConf = V2SpreadsheetEdito
 export interface IVisibleMandatoryDataValueField {
   visible?: boolean;
   mandatory?: boolean;
+  expandedByDefault?: boolean;
 }
 
 /**
@@ -111,6 +112,9 @@ export interface IVisibleMandatoryDataGroupTabSection {
   id: string;
   label: string;
   children: IVisibleMandatoryDataGroupTabSectionField[];
+
+  // set when the section contains a LIST-type input; stores the input name (e.g. 'documents')
+  listInputName?: string;
 
   // used by ui
   collapsed?: boolean;

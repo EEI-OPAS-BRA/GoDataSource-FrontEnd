@@ -200,6 +200,11 @@ app-spreadsheet-editor-v2 {
       padding: 0 0.8rem;
       width: 100%;
 
+      .gd-spreadsheet-editor-v2-cell-basic-header-value-required {
+        color: var(--gd-danger);
+        padding-left: 0.2rem;
+      }
+
       &.gd-spreadsheet-editor-v2-cell-basic-header-selected-partial {
         background-color: rgba(var(--gd-primary-rgb), 0.15);
       }

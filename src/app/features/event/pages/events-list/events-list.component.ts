@@ -651,7 +651,7 @@ export class EventsListComponent
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(this.selectedOutbreak.id)),
           includeNoValue: true
         },
         exclude: (): boolean => {
@@ -1709,7 +1709,8 @@ export class EventsListComponent
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });
@@ -1787,7 +1788,8 @@ export class EventsListComponent
                     },
                     dbColumns: true,
                     dbValues: true,
-                    jsonReplaceUndefinedWithNull: true
+                    jsonReplaceUndefinedWithNull: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

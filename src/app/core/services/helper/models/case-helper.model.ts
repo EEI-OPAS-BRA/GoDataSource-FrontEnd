@@ -60,6 +60,9 @@ export class CaseHelperModel {
       }
     }
   ): ICreateViewModifyV2Tab {
+    // addresses the outbreak can forbid deleting: the ones already saved or, on create, the block the form starts with
+    const lockedAddresses: Set<AddressModel> = new Set(data.isCreate ? [] : (data.itemData.addresses || []));
+
     // create tab
     const tab: ICreateViewModifyV2Tab = this.parent.createViewModify.tabFilter(
       {
@@ -314,11 +317,11 @@ export class CaseHelperModel {
                 placeholder: () => 'LNG_CASE_FIELD_LABEL_RESPONSIBLE_USER_ID',
                 description: () => 'LNG_CASE_FIELD_LABEL_RESPONSIBLE_USER_ID_DESCRIPTION',
                 options: data.options.user
-                .filter(u => u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
-                .concat(
-                  data.options.deletedUser
-                    .filter(u => u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
-                ),
+                  .filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
+                  .concat(
+                    data.options.deletedUser
+                      .filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(useToFilterOutbreak.id))
+                  ),
                 value: {
                   get: () => data.itemData.responsibleUserId,
                   set: (value) => {
@@ -375,6 +378,16 @@ export class CaseHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // at least one address is needed unless the outbreak allows saving without one;
+              // records saved before without any address can still be edited
+              required: !data.selectedOutbreak?.optionalCaseContactAddressFields && (
+                data.isCreate ||
+                data.itemData.addresses?.length > 0
+              ),
+              // when the outbreak allows it, address type & location are not required
+              optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
+                ['typeId', 'locationId'] :
+                undefined,
               itemsChanged: (list) => {
                 // update addresses
                 data.itemData.addresses = list.items;
@@ -388,7 +401,12 @@ export class CaseHelperModel {
                 },
                 remove: {
                   label: 'LNG_COMMON_BUTTON_DELETE',
-                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS'
+                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS',
+                  // the outbreak can forbid removing addresses
+                  visible: AddressModel.removeVisibleWithDeletionLock(
+                    data.selectedOutbreak?.preventAddressDeletion,
+                    lockedAddresses
+                  )
                 },
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
@@ -399,6 +417,10 @@ export class CaseHelperModel {
                     data.selectedOutbreak?.applyGeographicRestrictions === true &&
                     data.selectedOutbreak?.allowCaseCrossLocationCreation === true
                   ),
+                  // when the outbreak allows it, address type & location are not required
+                  optionalMandatoryChildFields: data.selectedOutbreak?.optionalCaseContactAddressFields ?
+                    ['typeId', 'locationId'] :
+                    undefined,
                   value: {
                     get: (index: number) => {
                       return data.itemData.addresses[index];
@@ -416,6 +438,11 @@ export class CaseHelperModel {
       this.visibleMandatoryKey,
       useToFilterOutbreak
     );
+
+    // on create the form may start with a pre-filled address block
+    if (data.isCreate) {
+      (data.itemData.addresses || []).forEach((address) => lockedAddresses.add(address));
+    }
 
     // finished
     return tab;
@@ -1591,7 +1618,7 @@ export class CaseHelperModel {
           this.visibleMandatoryKey,
           'responsibleUserId'
         ),
-        options: data.options.user,
+        options: data.options.user.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(selectedOutbreak.id)),
         sortable: true
       }, {
         type: V2AdvancedFilterType.MULTISELECT,

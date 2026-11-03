@@ -135,7 +135,7 @@ export abstract class AppFormLocationBaseV2<T>
     );
 
     // check if we have a request cached for this query
-    const cacheKey: string = queryBuilder.buildQuery();
+    const cacheKey: string = `${outbreakId || ''}_${queryBuilder.buildQuery()}`;
     if (
       !AppFormLocationBaseV2.CACHE[methodKey] ||
       !AppFormLocationBaseV2.CACHE[methodKey][cacheKey]
@@ -231,17 +231,27 @@ export abstract class AppFormLocationBaseV2<T>
     if (this.useOutbreakLocations) {
       // get selected outbreak
       this.outbreakSubscription = this.outbreakDataService
-        .getSelectedOutbreak()
+        .getSelectedOutbreakSubject()
         .subscribe((outbreak) => {
-          if (outbreak && outbreak.id) {
+          if (
+            outbreak &&
+            outbreak.id &&
+            outbreak.id !== this.outbreakId
+          ) {
             // select outbreak
+            const isSwitch: boolean = !!this.outbreakId;
             this.outbreakId = outbreak.id;
 
-            // bring only top location when empty search
-            this.addLocationCondition();
+            // switching drops the previous outbreak's locations and reapplies the typed text, if any
+            if (isSwitch) {
+              this.search();
+            } else {
+              // bring only top location when empty search
+              this.addLocationCondition();
 
-            // retrieve data
-            this.refreshLocationList();
+              // retrieve data
+              this.refreshLocationList();
+            }
           }
         });
     }

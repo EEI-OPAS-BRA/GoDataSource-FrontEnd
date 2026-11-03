@@ -1309,7 +1309,7 @@ export class ContactDailyFollowUpsListComponent extends ListComponent<FollowUpMo
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(this.selectedOutbreak.id)),
           includeNoValue: true,
           value: this._workloadData?.user ?
             [this._workloadData.user] :
@@ -2731,7 +2731,8 @@ export class ContactDailyFollowUpsListComponent extends ListComponent<FollowUpMo
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   },
                   inputs: {
                     append: [

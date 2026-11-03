@@ -1107,7 +1107,8 @@ export class EntityLabResultsListComponent extends ListComponent<LabResultModel,
                   dbColumns: true,
                   dbValues: true,
                   questionnaireVariables: true,
-                  jsonReplaceUndefinedWithNull: true
+                  jsonReplaceUndefinedWithNull: true,
+                  dontIncludeTimestamp: true
                 }
               }
             });

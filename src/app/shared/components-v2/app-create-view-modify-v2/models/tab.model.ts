@@ -478,7 +478,11 @@ export interface ICreateViewModifyV2TabInputList {
     },
     remove: {
       label: string,
-      confirmLabel: string
+      confirmLabel: string,
+      visible?: (
+        input: ICreateViewModifyV2TabInputList,
+        index?: number
+      ) => boolean
     }
   };
   itemsChanged: (list: ICreateViewModifyV2TabInputList) => void;
@@ -486,8 +490,10 @@ export interface ICreateViewModifyV2TabInputList {
   // optional
   sortable?: boolean;
   readonly?: boolean;
+  required?: boolean;
   cssClasses?: string;
   actionIconButtons?: ICreateViewModifyV2TabInputActionButton[];
+  optionalMandatoryChildFields?: string[]; // child fields (e.g. typeId, locationId) forced to be NOT mandatory regardless of outbreak visible/mandatory config
 
   // used by ui
   visibleMandatoryChild?: {
@@ -562,6 +568,7 @@ export interface ICreateViewModifyV2TabInputAddress extends ICreateViewModifyV2T
   // optional
   name?: string; // used for single address - event
   useOutbreakLocations?: boolean; // restrict the location dropdown to the outbreak/team locations (default true)
+  optionalMandatoryChildFields?: string[]; // child fields (e.g. typeId, locationId) forced to be NOT mandatory regardless of outbreak visible/mandatory config
   validators?: {
     required?: () => boolean
   };

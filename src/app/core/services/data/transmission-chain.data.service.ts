@@ -341,7 +341,7 @@ export class TransmissionChainDataService {
       if (
         mustFilterSnapshot && (
           !snapshotFiltersName ||
-          nodeData.model.name.toLowerCase().indexOf(snapshotFiltersName) > -1
+          (nodeData.model.name || '').toLowerCase().indexOf(snapshotFiltersName) > -1
         ) && (
           !snapshotFiltersLabSeqResult || (
             nodeData.labResults &&
@@ -1017,6 +1017,11 @@ export class TransmissionChainDataService {
             }
           }
 
+          // a masked node is identified by its visual ID no matter which label criteria is selected
+          if (nodeData.masked) {
+            nodeData.label = node.model.visualId ? node.model.visualId : '';
+          }
+
           // check min / max dates
           if (nodeData.dateTimeline) {
             if (LocalizationHelper.toMoment(nodeData.dateTimeline).isAfter(maxTimelineDate) || !maxTimelineDate) {
@@ -1145,8 +1150,8 @@ export class TransmissionChainDataService {
           sourceDate &&
           targetDate
         ) {
-          const momentTargetDate = LocalizationHelper.toMoment(targetDate, LocalizationHelper.getDateDisplayFormat());
-          const momentSourceDate = LocalizationHelper.toMoment(sourceDate, LocalizationHelper.getDateDisplayFormat());
+          const momentTargetDate = LocalizationHelper.toMoment(targetDate);
+          const momentSourceDate = LocalizationHelper.toMoment(sourceDate);
           noDays = Math.round(LocalizationHelper.duration(momentTargetDate.diff(momentSourceDate)).asDays());
           graphEdge.label = String(noDays);
         }

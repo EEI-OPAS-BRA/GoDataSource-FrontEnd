@@ -826,6 +826,7 @@ export class AppSpreadsheetEditorV2Component implements OnInit, OnDestroy {
           // finished
           break;
         case V2SpreadsheetEditorColumnType.SINGLE_SELECT:
+        case V2SpreadsheetEditorColumnType.MULTIPLE_SELECT:
           // map options
           column.optionsMap = {};
           column.options.forEach((option) => {

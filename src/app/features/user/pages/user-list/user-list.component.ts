@@ -1017,7 +1017,8 @@ export class UserListComponent extends ListComponent<UserModel, IV2Column> imple
             },
             dbColumns: true,
             dbValues: true,
-            jsonReplaceUndefinedWithNull: true
+            jsonReplaceUndefinedWithNull: true,
+            dontIncludeTimestamp: true
           }
         }
       });

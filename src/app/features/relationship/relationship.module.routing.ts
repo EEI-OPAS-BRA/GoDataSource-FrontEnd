@@ -5,8 +5,10 @@ import { PERMISSION } from '../../core/models/permission.model';
 import { PermissionExpression } from '../../core/models/user.model';
 import { AuthGuard } from '../../core/services/guards/auth-guard.service';
 import { PageChangeConfirmationGuard } from '../../core/services/guards/page-change-confirmation-guard.service';
+import { AddressTypeDataResolver } from '../../core/services/resolvers/data/address-type.resolver';
 import { CertaintyLevelDataResolver } from '../../core/services/resolvers/data/certainty-level.resolver';
 import { ClusterDataResolver } from '../../core/services/resolvers/data/cluster.resolver';
+import { TeamDataResolver } from '../../core/services/resolvers/data/team.resolver';
 import { ContextOfTransmissionDataResolver } from '../../core/services/resolvers/data/context-of-transmission.resolver';
 import { ExposureDurationDataResolver } from '../../core/services/resolvers/data/exposure-duration.resolver';
 import { ExposureFrequencyDataResolver } from '../../core/services/resolvers/data/exposure-frequency.resolver';
@@ -64,13 +66,16 @@ const relationshipTypeChildrenRoutes = [
       yesNoAll: YesNoAllDataResolver,
       yesNo: YesNoDataResolver,
       certaintyLevel: CertaintyLevelDataResolver,
+      classification: ClassificationDataResolver,
       exposureType: ExposureTypeDataResolver,
       exposureFrequency: ExposureFrequencyDataResolver,
       exposureDuration: ExposureDurationDataResolver,
       contextOfTransmission: ContextOfTransmissionDataResolver,
       cluster: ClusterDataResolver,
+      team: TeamDataResolver,
       personType: PersonTypeDataResolver,
       user: UserDataResolver,
+      addressType: AddressTypeDataResolver,
       entity: RelationshipPersonDataResolver
     }
   },

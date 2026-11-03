@@ -18,6 +18,8 @@ import { AppListTableV2DetailColumnComponent } from './app-list-table-v2/compone
 import { AppChangesV2Component } from './app-changes-v2/app-changes-v2.component';
 import { AppSpreadsheetEditorV2Component } from './app-spreadsheet-editor-v2/app-spreadsheet-editor-v2.component';
 import { AppSpreadsheetEditorV2EditorSingleSelectComponent } from './app-spreadsheet-editor-v2/components/editor-single-select/app-spreadsheet-editor-v2-editor-single-select.component';
+import { AppSpreadsheetEditorV2EditorMultiSelectComponent } from './app-spreadsheet-editor-v2/components/editor-multi-select/app-spreadsheet-editor-v2-editor-multi-select.component';
+import { AppSpreadsheetEditorV2EditorFileComponent } from './app-spreadsheet-editor-v2/components/editor-file/app-spreadsheet-editor-v2-editor-file.component';
 import { AppSpreadsheetEditorV2EditorDateComponent } from './app-spreadsheet-editor-v2/components/editor-date/app-spreadsheet-editor-v2-editor-date.component';
 import { AppSpreadsheetEditorV2EditorLocationComponent } from './app-spreadsheet-editor-v2/components/editor-location/app-spreadsheet-editor-v2-editor-location.component';
 import { AppSpreadsheetEditorV2EditorNumberComponent } from './app-spreadsheet-editor-v2/components/editor-number/app-spreadsheet-editor-v2-editor-number.component';
@@ -52,6 +54,8 @@ export const components: any[] = [
   AppSpreadsheetEditorV2EditorLocationComponent,
   AppSpreadsheetEditorV2EditorNumberComponent,
   AppSpreadsheetEditorV2EditorSingleSelectComponent,
+  AppSpreadsheetEditorV2EditorMultiSelectComponent,
+  AppSpreadsheetEditorV2EditorFileComponent,
   AppSpreadsheetEditorV2LoadingComponent,
   AppSpreadsheetEditorV2NoDataComponent
 ];

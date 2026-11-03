@@ -12,6 +12,7 @@ import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { EntityModel, RelationshipModel } from '../../../../core/models/entity-and-relationship.model';
 import { EntityType } from '../../../../core/models/entity-type';
 import { ExportFieldsGroupModelNameEnum } from '../../../../core/models/export-fields-group.model';
+import { environment } from '../../../../../environments/environment';
 import { FollowUpModel } from '../../../../core/models/follow-up.model';
 import { LabResultModel } from '../../../../core/models/lab-result.model';
 import { LocationModel } from '../../../../core/models/location.model';
@@ -1051,6 +1052,13 @@ export class ContactsListComponent
             undefined;
         }
       },
+      // one location column per address type (except current), e.g. notification / previous address
+      ...this.personAndRelatedHelperService.list.retrieveAddressLocationColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        this.authUser,
+        undefined,
+        filterAddressModel
+      ),
       {
         field: 'addresses.emailAddress',
         label: 'LNG_CONTACT_FIELD_LABEL_EMAIL',
@@ -1636,7 +1644,7 @@ export class ContactsListComponent
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(this.selectedOutbreak.id)),
           includeNoValue: true
         },
         exclude: (): boolean => {
@@ -2251,9 +2259,105 @@ export class ContactsListComponent
           visible: (): boolean => {
             return ContactModel.canExportDailyFollowUpsForm(this.authUser);
           }
+        },
+
+        // Divider
+        {
+          visible: (): boolean => {
+            return true;
+          }
+        },
+
+        // API query (opens the contacts-with-relationships/filter endpoint straight in /explorer)
+        {
+          label: {
+            get: () => 'LNG_PAGE_LIST_CONTACTS_ACTION_API_QUERY'
+          },
+          action: {
+            click: () => {
+              this.openContactsWithRelationshipsApiExplorer();
+            }
+          },
+          visible: (): boolean => {
+            return true;
+          }
         }
       ]
     };
+  }
+
+  /**
+   * Open the contacts-with-relationships/filter endpoint directly in the /explorer (Swagger UI),
+   * already scrolled/expanded to that operation. Also copies the selected outbreak id to the
+   * clipboard, since Swagger's deep-link can't pre-fill the "id" path param form field.
+   */
+  private openContactsWithRelationshipsApiExplorer(): void {
+    // remove the /api suffix from apiUrl to get to the server root, where /explorer is mounted
+    const apiRoot: string = environment.apiUrl.replace(/\/api\/?$/, '');
+    const explorerUrl: string = `${apiRoot}/explorer/#!/outbreak/outbreak_prototype_findContactsWithRelationships`;
+    const outbreakId: string = this.selectedOutbreak?.id || '';
+
+    // copy icon (outline) / check icon (filled) - swapped on click, purely with inline JS so it
+    // works regardless of Angular's sanitizer, since this whole block is injected as raw HTML.
+    // NOTE: these use single-quoted SVG attributes on purpose - they get embedded below inside an
+    // onclick="..." (double-quoted) HTML attribute, via &quot;-escaped JS string literals, so no
+    // quote character here can collide with either of those two outer delimiters.
+    const copyIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'9\' y=\'9\' width=\'13\' height=\'13\' rx=\'2\'></rect><path d=\'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\'></path></svg>';
+    const checkIconSvg = '<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'#2e7d32\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'20 6 9 17 4 12\'></polyline></svg>';
+    const i18nService = this.personAndRelatedHelperService.i18nService;
+
+    this.personAndRelatedHelperService.dialogV2Service
+      .showBottomDialog({
+        config: {
+          title: {
+            get: () => 'LNG_PAGE_LIST_CONTACTS_ACTION_API_QUERY'
+          },
+          message: {
+            get: () => `
+              <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <p style="margin: 0;">
+                  ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_DESCRIPTION')}
+                </p>
+                <p style="margin: 0;">
+                  ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_OPEN_DOCUMENTATION_HINT', { button: i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_GO_TO_DOCUMENTATION_BUTTON') })}
+                </p>
+                <div>
+                  <p style="margin: 0 0 0.4rem;">
+                    ${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_OUTBREAK_ID_HINT')}
+                  </p>
+                  <div style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1rem; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 6px;">
+                    <code style="flex: 1; font-size: 1.3rem; word-break: break-all;">${outbreakId}</code>
+                    <button
+                      type="button"
+                      title="${i18nService.instant('LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_COPY_OUTBREAK_ID')}"
+                      onclick="navigator.clipboard.writeText(&quot;${outbreakId}&quot;).then(() => { this.innerHTML = &quot;${checkIconSvg}&quot;; setTimeout(() => { this.innerHTML = &quot;${copyIconSvg}&quot;; }, 1500); });"
+                      style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 4px; background: transparent; color: inherit; cursor: pointer;"
+                    >${copyIconSvg}</button>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        },
+        bottomButtons: [
+          {
+            type: IV2BottomDialogConfigButtonType.OTHER,
+            label: 'LNG_PAGE_LIST_CONTACTS_API_QUERY_DIALOG_GO_TO_DOCUMENTATION_BUTTON',
+            key: 'goToDocs',
+            color: 'primary'
+          },
+          {
+            type: IV2BottomDialogConfigButtonType.CANCEL,
+            label: 'LNG_COMMON_BUTTON_CLOSE',
+            color: 'text'
+          }
+        ]
+      })
+      .subscribe((response) => {
+        if (response.button.key === 'goToDocs') {
+          window.open(explorerUrl, '_blank');
+        }
+      });
   }
 
   /**
@@ -2983,7 +3087,8 @@ export class ContactsListComponent
                   dbColumns: true,
                   dbValues: true,
                   jsonReplaceUndefinedWithNull: true,
-                  questionnaireVariables: true
+                  questionnaireVariables: true,
+                  dontIncludeTimestamp: true
                 },
                 inputs: {
                   append: [
@@ -3131,7 +3236,8 @@ export class ContactsListComponent
                   },
                   dbColumns: true,
                   dbValues: true,
-                  jsonReplaceUndefinedWithNull: true
+                  jsonReplaceUndefinedWithNull: true,
+                  dontIncludeTimestamp: true
                 }
               }
             });

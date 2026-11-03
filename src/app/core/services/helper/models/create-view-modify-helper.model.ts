@@ -2,6 +2,7 @@ import {
   CreateViewModifyV2TabInput,
   CreateViewModifyV2TabInputType,
   ICreateViewModifyV2Tab,
+  ICreateViewModifyV2TabInputList,
   ICreateViewModifyV2TabInputValidatorRequired
 } from '../../../../shared/components-v2/app-create-view-modify-v2/models/tab.model';
 import { IVisibleMandatoryDataGroupTab, IVisibleMandatoryDataGroupTabSectionField, IVisibleMandatoryDataValueField } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
@@ -94,6 +95,46 @@ export class CreateViewModifyHelperModel {
       }, {
         id: `${name}.addressLine1`,
         label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_ADDRESS_LINE_1')}`,
+        supportsRequired: true,
+        visibleMandatoryConf: {
+          needs: [{
+            field: `${name}.typeId`
+          }]
+        },
+        inputHasRequiredValidator: false
+      }, {
+        id: `${name}.logradouro`,
+        label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_LOGRADOURO')}`,
+        supportsRequired: true,
+        visibleMandatoryConf: {
+          needs: [{
+            field: `${name}.typeId`
+          }]
+        },
+        inputHasRequiredValidator: false
+      }, {
+        id: `${name}.numero`,
+        label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_NUMERO')}`,
+        supportsRequired: true,
+        visibleMandatoryConf: {
+          needs: [{
+            field: `${name}.typeId`
+          }]
+        },
+        inputHasRequiredValidator: false
+      }, {
+        id: `${name}.complemento`,
+        label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_COMPLEMENTO')}`,
+        supportsRequired: true,
+        visibleMandatoryConf: {
+          needs: [{
+            field: `${name}.typeId`
+          }]
+        },
+        inputHasRequiredValidator: false
+      }, {
+        id: `${name}.bairro`,
+        label: `${this.parent.i18nService.instant('LNG_ENTITY_FIELD_LABEL_ADDRESS')} ${this.parent.i18nService.instant('LNG_ADDRESS_FIELD_LABEL_BAIRRO')}`,
         supportsRequired: true,
         visibleMandatoryConf: {
           needs: [{
@@ -353,12 +394,21 @@ export class CreateViewModifyHelperModel {
             ));
           });
 
+          // detect LIST inputs so the UI can show the "expanded by default" toggle
+          let listInputName: string | undefined;
+          section.inputs.forEach((input) => {
+            if (!listInputName && input.type === CreateViewModifyV2TabInputType.LIST) {
+              listInputName = input.name;
+            }
+          });
+
           // finished
           return {
             // must be uuid because section names are the same for multiple tabs / groups
             id: uuid(),
             label: section.label,
-            children
+            children,
+            listInputName
           };
         })
       };
@@ -419,6 +469,12 @@ export class CreateViewModifyHelperModel {
               return !!visibleAndMandatoryConf[`${input.name}.${prop}`]?.visible;
             },
             mandatory: (prop: string) => {
+              // some inputs (address / list) force specific child fields to be optional regardless of the outbreak config
+              const optionalChildFields = (input as { optionalMandatoryChildFields?: string[] }).optionalMandatoryChildFields;
+              if (optionalChildFields?.includes(prop)) {
+                return false;
+              }
+
               return fieldDefMap[`${input.name}.${prop}`]?.visibleMandatoryConf?.required ||
                 visibleAndMandatoryConf[`${input.name}.${prop}`]?.mandatory;
             }
@@ -488,6 +544,18 @@ export class CreateViewModifyHelperModel {
 
         // visible ?
         if (visible) {
+          // pre-populate LIST with one empty item when "expanded by default" is configured and entity is new
+          if (
+            input.type === CreateViewModifyV2TabInputType.LIST &&
+            visibleAndMandatoryConf[input.name]?.expandedByDefault
+          ) {
+            const listInput = input as ICreateViewModifyV2TabInputList;
+            if (listInput.items.length === 0) {
+              listInput.items.push(listInput.definition.add.newItem());
+              listInput.itemsChanged(listInput);
+            }
+          }
+
           // make sure it is visible
           section.inputs.push(input);
         }

@@ -141,68 +141,44 @@ export class OutbreakListComponent extends ListComponent<OutbreakModel, IV2Colum
           iconTooltip: 'LNG_PAGE_LIST_OUTBREAKS_ACTION_SET_ACTIVE',
           action: {
             click: (item: OutbreakModel): void => {
-              // show confirm dialog
-              this.dialogV2Service.showConfirmDialog({
-                config: {
-                  title: {
-                    get: () => 'LNG_COMMON_LABEL_ACTIVE',
-                    data: () => ({
-                      name: item.name
-                    })
-                  },
-                  message: {
-                    get: () => 'LNG_DIALOG_CONFIRM_MAKE_OUTBREAK_ACTIVE',
-                    data: () => ({
-                      name: item.name
-                    })
+              // show loading
+              const loading = this.dialogV2Service.showLoadingDialog();
+
+              // modify outbreak
+              this.userDataService
+                .modifyUser(
+                  this.authUser.id,
+                  {
+                    activeOutbreakId: item.id
                   }
-                }
-              }).subscribe((response) => {
-                // canceled ?
-                if (response.button.type === IV2BottomDialogConfigButtonType.CANCEL) {
-                  // finished
-                  return;
-                }
+                )
+                .pipe(
+                  catchError((err) => {
+                    this.toastV2Service.error(err);
+                    return throwError(err);
+                  })
+                )
+                .subscribe(() => {
+                  // reload user data to save the new active outbreak
+                  this.authDataService
+                    .reloadAndPersistAuthUser()
+                    .subscribe((authenticatedUser) => {
+                      this.authUser = authenticatedUser.user;
+                      this.outbreakDataService.checkActiveSelectedOutbreak();
 
-                // show loading
-                const loading = this.dialogV2Service.showLoadingDialog();
+                      // refresh list of top nav outbreaks
+                      TopnavComponent.REFRESH_OUTBREAK_LIST();
 
-                // modify outbreak
-                this.userDataService
-                  .modifyUser(
-                    this.authUser.id,
-                    {
-                      activeOutbreakId: item.id
-                    }
-                  )
-                  .pipe(
-                    catchError((err) => {
-                      this.toastV2Service.error(err);
-                      return throwError(err);
-                    })
-                  )
-                  .subscribe(() => {
-                    // reload user data to save the new active outbreak
-                    this.authDataService
-                      .reloadAndPersistAuthUser()
-                      .subscribe((authenticatedUser) => {
-                        this.authUser = authenticatedUser.user;
-                        this.outbreakDataService.checkActiveSelectedOutbreak();
+                      // success
+                      this.toastV2Service.success('LNG_PAGE_LIST_OUTBREAKS_ACTION_SET_ACTIVE_SUCCESS_MESSAGE');
 
-                        // refresh list of top nav outbreaks
-                        TopnavComponent.REFRESH_OUTBREAK_LIST();
+                      // hide loading
+                      loading.close();
 
-                        // success
-                        this.toastV2Service.success('LNG_PAGE_LIST_OUTBREAKS_ACTION_SET_ACTIVE_SUCCESS_MESSAGE');
-
-                        // hide loading
-                        loading.close();
-
-                        // reload data
-                        this.needsRefreshList(true);
-                      });
-                  });
-              });
+                      // reload data
+                      this.needsRefreshList(true);
+                    });
+                });
             }
           },
           cssClasses: (item: OutbreakModel): string => {
@@ -960,6 +936,20 @@ export class OutbreakListComponent extends ListComponent<OutbreakModel, IV2Colum
         }
       },
       {
+        field: 'allowResidenceChainAccess',
+        label: 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_RESIDENCE_CHAIN_ACCESS',
+        notVisible: true,
+        sortable: true,
+        format: {
+          type: V2ColumnFormat.BOOLEAN
+        },
+        filter: {
+          type: V2FilterType.BOOLEAN,
+          value: '',
+          defaultValue: ''
+        }
+      },
+      {
         field: 'isContactsOfContactsActive',
         label: 'LNG_OUTBREAK_FIELD_LABEL_IS_CONTACT_OF_CONTACT_ACTIVE',
         notVisible: true,
@@ -1405,6 +1395,7 @@ export class OutbreakListComponent extends ListComponent<OutbreakModel, IV2Colum
       'allowCrossLocationCreation',
       'allowCaseCrossLocationCreation',
       'allowNotificationLocationAccess',
+      'allowResidenceChainAccess',
       'isContactsOfContactsActive',
       'periodOfFollowup',
       'frequencyOfFollowUpPerDay',

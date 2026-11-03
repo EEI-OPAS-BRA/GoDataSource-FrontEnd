@@ -374,11 +374,8 @@ export class UserCreateViewModifyComponent extends CreateViewModifyComponent<Use
               description: () => 'LNG_USER_FIELD_LABEL_AVAILABLE_OUTBREAKS_DESCRIPTION',
               value: {
                 get: () => this.itemData.outbreakIds,
-                set: (value) => {
-                  // set data
+                set: (value: string[]) => {
                   this.itemData.outbreakIds = value;
-
-                  // update visible active outbreaks
                   (tab.nameToInput.activeOutbreakId as ICreateViewModifyV2TabInputSingleSelect).options = this.getAllowedActiveOutbreaks();
                 }
               },
@@ -561,30 +558,19 @@ export class UserCreateViewModifyComponent extends CreateViewModifyComponent<Use
       // create / modify
       (
         type === CreateViewModifyV2ActionType.CREATE ?
-          this.userDataService.createUser(
-            data
-          ) :
-          this.userDataService.modifyUser(
-            this.itemData.id,
-            data
-          )
+          this.userDataService.createUser(data) :
+          this.userDataService.modifyUser(this.itemData.id, data)
       ).pipe(
         catchError((err) => {
-          // show error
           finished(err, undefined);
-
-          // finished
           return throwError(err);
         })
       ).subscribe((outbreak) => {
-        // display message
         this.toastV2Service.success(
           type === CreateViewModifyV2ActionType.CREATE ?
             'LNG_PAGE_CREATE_USER_ACTION_CREATE_USER_SUCCESS_MESSAGE' :
             'LNG_PAGE_MODIFY_USER_ACTION_MODIFY_USER_SUCCESS_MESSAGE'
         );
-
-        // hide loading & redirect
         finished(undefined, outbreak);
       });
     };

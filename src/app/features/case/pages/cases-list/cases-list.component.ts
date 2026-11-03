@@ -1347,6 +1347,13 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
             undefined;
         }
       },
+      // one location column per address type (except current), e.g. notification / previous address
+      ...this.personAndRelatedHelperService.list.retrieveAddressLocationColumnsPerType(
+        (this.activatedRoute.snapshot.data.addressType as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+        this.authUser,
+        undefined,
+        filterAddressModel
+      ),
       {
         field: 'addresses.emailAddress',
         label: 'LNG_CASE_FIELD_LABEL_EMAIL',
@@ -1693,7 +1700,7 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         },
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
-          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options,
+          options: (this.activatedRoute.snapshot.data.user as IResolverV2ResponseModel<UserModel>).options.filter((u) => !u.data?.outbreakIds?.length || u.data?.outbreakIds?.includes(this.selectedOutbreak.id)),
           includeNoValue: true
         },
         exclude: (): boolean => {
@@ -3099,7 +3106,8 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
                     dbColumns: true,
                     dbValues: true,
                     jsonReplaceUndefinedWithNull: true,
-                    questionnaireVariables: true
+                    questionnaireVariables: true,
+                    dontIncludeTimestamp: true
                   },
                   inputs: {
                     append: [
@@ -3195,7 +3203,8 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
                     },
                     dbColumns: true,
                     dbValues: true,
-                    jsonReplaceUndefinedWithNull: true
+                    jsonReplaceUndefinedWithNull: true,
+                    dontIncludeTimestamp: true
                   }
                 }
               });

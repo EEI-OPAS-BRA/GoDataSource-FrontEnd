@@ -3,6 +3,37 @@ import { LocalizationHelper } from '../localization-helper';
 
 export class RequestFilterGenerator {
   /**
+   * Groups of latin characters considered equivalent for accent-insensitive search.
+   * Each group lists the base letter together with its accented variants (lower and upper case),
+   * so that searching "sao" matches "São" and searching "São" matches "sao" (bidirectional).
+   */
+  private static readonly ACCENT_GROUPS: string[] = [
+    'aáàâãäåAÁÀÂÃÄÅ',
+    'eéèêëEÉÈÊË',
+    'iíìîïIÍÌÎÏ',
+    'oóòôõöøOÓÒÔÕÖØ',
+    'uúùûüUÚÙÛÜ',
+    'cçCÇ',
+    'nñNÑ',
+    'yýÿYÝŸ'
+  ];
+
+  /**
+   * Lookup map built from ACCENT_GROUPS: every character (base or accented variant)
+   * maps to the regex character class that matches the whole equivalence group.
+   */
+  private static readonly ACCENT_MAP: { [char: string]: string } = RequestFilterGenerator.ACCENT_GROUPS.reduce(
+    (map, group) => {
+      const charClass = '[' + group + ']';
+      for (const char of group) {
+        map[char] = charClass;
+      }
+      return map;
+    },
+    {} as { [char: string]: string }
+  );
+
+  /**
      * Escape string
      * @param value
      */
@@ -14,32 +45,63 @@ export class RequestFilterGenerator {
   }
 
   /**
+   * Expand each accent-bearing character (and its base letter) into a regex character class
+   * covering the whole equivalence group, making the regex accent-insensitive.
+   * Must be applied to an already regex-escaped string and BEFORE wildcard/url-encode replacements,
+   * so it only touches literal text and never the metacharacters introduced afterwards.
+   * @param escapedValue value already passed through escapeStringForRegex
+   */
+  static expandAccents(escapedValue: string): string {
+    let result = '';
+    for (let index = 0; index < escapedValue.length; index++) {
+      const char = escapedValue[index];
+
+      // preserve escaped sequences ( backslash + next char ) verbatim
+      if (
+        char === '\\' &&
+        index + 1 < escapedValue.length
+      ) {
+        result += char + escapedValue[index + 1];
+        index++;
+        continue;
+      }
+
+      result += RequestFilterGenerator.ACCENT_MAP[char] || char;
+    }
+    return result;
+  }
+
+  /**
+   * Build the body of a search regex from a raw value: escape regex specials,
+   * expand accents for accent-insensitive matching, then apply the existing
+   * wildcard ( %, ? ) and url-encode replacements.
+   * @param value
+   */
+  private static buildRegexBody(value: string): string {
+    return RequestFilterGenerator.expandAccents(
+      RequestFilterGenerator.escapeStringForRegex(value)
+    )
+      .replace(/%/g, '.*')
+      .replace(/\\\?/g, '.')
+      .replace(/&/g, '%26')
+      .replace(/#/g, '%23')
+      .replace(/\+/g, '%2B');
+  }
+
+  /**
    * Text is exactly the provided value ( case-insensitive )
    */
   static textIs(
     value: string,
     useLike?: boolean
   ): any {
+    const body = RequestFilterGenerator.buildRegexBody(value);
     return useLike ?
       {
-        like: '^' +
-          RequestFilterGenerator.escapeStringForRegex(value)
-            .replace(/%/g, '.*')
-            .replace(/\\\?/g, '.')
-            .replace(/&/g, '%26')
-            .replace(/#/g, '%23')
-            .replace(/\+/g, '%2B') +
-          '$',
+        like: '^' + body + '$',
         options: 'i'
       } : {
-        regexp: '/^' +
-          RequestFilterGenerator.escapeStringForRegex(value)
-            .replace(/%/g, '.*')
-            .replace(/\\\?/g, '.')
-            .replace(/&/g, '%26')
-            .replace(/#/g, '%23')
-            .replace(/\+/g, '%2B') +
-          '$/i'
+        regexp: '/^' + body + '$/i'
       };
   }
 
@@ -50,24 +112,13 @@ export class RequestFilterGenerator {
     value: string,
     useLike?: boolean
   ): any {
+    const body = RequestFilterGenerator.buildRegexBody(value);
     return useLike ?
       {
-        like: RequestFilterGenerator.escapeStringForRegex(value)
-          .replace(/%/g, '.*')
-          .replace(/\\\?/g, '.')
-          .replace(/&/g, '%26')
-          .replace(/#/g, '%23')
-          .replace(/\+/g, '%2B'),
+        like: body,
         options: 'i'
       } : {
-        regexp: '/' +
-                    RequestFilterGenerator.escapeStringForRegex(value)
-                      .replace(/%/g, '.*')
-                      .replace(/\\\?/g, '.')
-                      .replace(/&/g, '%26')
-                      .replace(/#/g, '%23')
-                      .replace(/\+/g, '%2B') +
-                    '/i'
+        regexp: '/' + body + '/i'
       };
   }
 
@@ -78,25 +129,13 @@ export class RequestFilterGenerator {
     value: string,
     useLike?: boolean
   ): any {
+    const body = RequestFilterGenerator.buildRegexBody(value);
     return useLike ?
       {
-        like: '^' +
-          RequestFilterGenerator.escapeStringForRegex(value)
-            .replace(/%/g, '.*')
-            .replace(/\\\?/g, '.')
-            .replace(/&/g, '%26')
-            .replace(/#/g, '%23')
-            .replace(/\+/g, '%2B'),
+        like: '^' + body,
         options: 'i'
       } : {
-        regexp: '/^' +
-          RequestFilterGenerator.escapeStringForRegex(value)
-            .replace(/%/g, '.*')
-            .replace(/\\\?/g, '.')
-            .replace(/&/g, '%26')
-            .replace(/#/g, '%23')
-            .replace(/\+/g, '%2B') +
-          '/i'
+        regexp: '/^' + body + '/i'
       };
   }
 

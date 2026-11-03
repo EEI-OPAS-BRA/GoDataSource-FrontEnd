@@ -21,6 +21,7 @@ import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v
 import { IResolverV2ResponseModel } from '../../resolvers/data/models/resolver-response.model';
 import { ReferenceDataEntryModel } from '../../../models/reference-data.model';
 import { ClusterModel } from '../../../models/cluster.model';
+import { TeamModel } from '../../../models/team.model';
 import { V2FilterTextType, V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
 import { RequestQueryBuilder } from '../../../helperClasses/request-query-builder';
 import { IBasicCount } from '../../../models/basic-count.interface';
@@ -29,6 +30,8 @@ import { PersonAndRelatedHelperService } from '../person-and-related-helper.serv
 import { RelationshipDataService } from '../../data/relationship.data.service';
 import { IV2ColumnToVisibleMandatoryConf, V2AdvancedFilterToVisibleMandatoryConf } from '../../../../shared/forms-v2/components/app-form-visible-mandatory-v2/models/visible-mandatory.model';
 import { LocalizationHelper, Moment } from '../../../helperClasses/localization-helper';
+import { LocationModel } from '../../../models/location.model';
+import { AddressModel } from '../../../models/address.model';
 
 /**
  * From ?
@@ -495,7 +498,8 @@ export class RelationshipHelperModel {
                     selectedOutbreak?.isContactsOfContactsActive
                   ) &&
                   relationshipData.model.canView(this.parent.authUser) &&
-                  !relationshipData.model.deleted
+                  !relationshipData.model.deleted &&
+                  !relationshipData.model.masked
                 }, {
                   type: V2SideDialogConfigInputType.DIVIDER
                 });
@@ -528,13 +532,19 @@ export class RelationshipHelperModel {
                 ];
 
                 // View full resource link
-                const sourcePerson = relationshipData.relationship.sourcePerson;
+                // anchored on the dialog's main entity (not the relationship's source person), since
+                // the source person may be masked and unreachable directly, same as the list actions
                 relationshipsInputs.push({
                   type: V2SideDialogConfigInputType.LINK,
                   name: `relationship-list-view-list-${relationshipData.relationship.id}`,
                   placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
                   link: () => [
-                    `/relationships/${sourcePerson.type}/${sourcePerson.id}/contacts/${relationshipData.relationship.id}/view`
+                    '/relationships',
+                    entity.type,
+                    entity.id,
+                    from === SentFromColumn.CONTACTS ? 'contacts' : 'exposures',
+                    relationshipData.relationship.id,
+                    'view'
                   ],
                   visible: () => RelationshipModel.canView(this.parent.authUser) &&
                     (
@@ -695,19 +705,32 @@ export class RelationshipHelperModel {
     const relationshipConfig = config as {
       showResourceViewPageLink: boolean
     };
+    let relationshipLink: string;
     if (
       entity instanceof RelationshipModel &&
       relationshipConfig?.showResourceViewPageLink &&
       entity.sourcePerson
     ) {
-      // determine relationship link
+      const sourcePeople = (entity.people || []).find((people) => people.model.id === entity.sourcePerson.id);
+      if (!sourcePeople?.model.masked) {
+        relationshipLink = `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`;
+      } else {
+        const targetPerson = (entity.persons || []).find((person) => person.target);
+        const targetPeople = (entity.people || []).find((people) => people.model.id === targetPerson?.id);
+        if (
+          targetPerson &&
+          !targetPeople?.model.masked
+        ) {
+          relationshipLink = `/relationships/${targetPerson.type}/${targetPerson.id}/exposures/${entity.id}/view`;
+        }
+      }
+    }
+    if (relationshipLink) {
       inputs.push({
         type: V2SideDialogConfigInputType.LINK,
         name: uuid(),
         placeholder: 'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_FULL_RESOURCE',
-        link: () => [
-          `/relationships/${entity.sourcePerson.type}/${entity.sourcePerson.id}/contacts/${entity.id}/view`
-        ]
+        link: () => [relationshipLink]
       });
     }
 
@@ -1044,10 +1067,10 @@ export class RelationshipHelperModel {
     // create list of fields to display
     const lightObject: ILabelValuePairModel[] = [{
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_SOURCE',
-      value: sourcePeople.model.name
+      value: sourcePeople.model.masked ? (sourcePeople.model.visualId || '') : sourcePeople.model.name
     }, {
       label: 'LNG_RELATIONSHIP_FIELD_LABEL_TARGET',
-      value: destinationPeople.model.name
+      value: destinationPeople.model.masked ? (destinationPeople.model.visualId || '') : destinationPeople.model.name
     }];
 
     // contactDate
@@ -1332,17 +1355,25 @@ export class RelationshipHelperModel {
     definitions: {
       personType: IResolverV2ResponseModel<ReferenceDataEntryModel>,
       cluster: IResolverV2ResponseModel<ClusterModel>,
+      team?: IResolverV2ResponseModel<TeamModel>,
       options: {
         createdOn: ILabelValuePairModel[],
+        classification?: ILabelValuePairModel[],
         certaintyLevel: ILabelValuePairModel[],
         exposureType: ILabelValuePairModel[],
         exposureFrequency: ILabelValuePairModel[],
         exposureDuration: ILabelValuePairModel[],
         contextOfTransmission: ILabelValuePairModel[],
-        user: ILabelValuePairModel[]
+        user: ILabelValuePairModel[],
+        addressType?: ILabelValuePairModel[]
       }
     }
   ): IV2Column[] {
+    // address model used to search by location, combined across the address columns below
+    const filterAddressModel: AddressModel = new AddressModel({
+      geoLocationAccurate: ''
+    });
+
     // default table columns
     const tableColumns: IV2ColumnToVisibleMandatoryConf[] = [
       {
@@ -1371,7 +1402,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1402,7 +1433,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1437,7 +1468,7 @@ export class RelationshipHelperModel {
           textType: V2FilterTextType.STARTS_WITH
         },
         link: (data) => {
-          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted ?
+          return data.model && data.model.canView(this.parent.authUser) && !data.model.deleted && !data.model.masked ?
             `${this.entityMap[data.model.type].link}/${data.model.id}/view` :
             undefined;
         }
@@ -1489,6 +1520,102 @@ export class RelationshipHelperModel {
 
           // finished
           return forms;
+        }
+      },
+      {
+        field: 'classification',
+        label: 'LNG_CASE_FIELD_LABEL_CLASSIFICATION',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'classification'
+        ),
+        format: {
+          type: (item) => item.model?.classification ?
+            this.parent.i18nService.instant(item.model.classification) :
+            item.model?.classification
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: definitions.options.classification || [],
+          includeNoValue: true
+        }
+      },
+      {
+        field: 'dateOfReporting',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_REPORTING',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contactOfContact.visibleMandatoryKey,
+          'dateOfReporting'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.event.visibleMandatoryKey,
+          'dateOfReporting'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfReporting
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
+        }
+      },
+      {
+        field: 'dateOfOnset',
+        label: 'LNG_CASE_FIELD_LABEL_DATE_OF_ONSET',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'dateOfOnset'
+        ),
+        format: {
+          type: V2ColumnFormat.DATE,
+          value: (item) => item.model?.dateOfOnset
+        },
+        sortable: true,
+        filter: {
+          type: V2FilterType.DATE_RANGE
+        }
+      },
+      {
+        field: 'followUpTeamId',
+        label: 'LNG_CASE_FIELD_LABEL_FOLLOW_UP_TEAM_ID',
+        visibleMandatoryIf: () => this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.case.visibleMandatoryKey,
+          'followUpTeamId'
+        ) || this.parent.list.shouldVisibleMandatoryTableColumnBeVisible(
+          useToFilterOutbreak,
+          this.parent.contact.visibleMandatoryKey,
+          'followUpTeamId'
+        ),
+        format: {
+          type: (item) => item.model?.followUpTeamId && definitions.team?.map[item.model.followUpTeamId] ?
+            definitions.team.map[item.model.followUpTeamId].name :
+            ''
+        },
+        link: (data) => {
+          return data.model?.followUpTeamId &&
+            TeamModel.canView(this.parent.authUser) &&
+            definitions.team?.map[data.model.followUpTeamId] ?
+            `/teams/${ data.model.followUpTeamId }/view` :
+            undefined;
+        },
+        filter: {
+          type: V2FilterType.MULTIPLE_SELECT,
+          options: definitions.team?.options || [],
+          includeNoValue: true
         }
       },
       {
@@ -1796,6 +1923,43 @@ export class RelationshipHelperModel {
         }
       }
     );
+
+    // address location columns are only added where the address types are provided (relationships list)
+    if (definitions.options.addressType) {
+      // current (residential) address location
+      tableColumns.push({
+        field: 'location',
+        label: 'LNG_CASE_FIELD_LABEL_ADDRESS_LOCATION',
+        visibleMandatoryIf: () => true,
+        format: {
+          type: 'model.mainAddress.location.name'
+        },
+        filter: {
+          type: V2FilterType.ADDRESS_MULTIPLE_LOCATION,
+          address: filterAddressModel,
+          field: 'addresses',
+          fieldIsArray: true,
+          // events only have a single `address`, not an `addresses` array
+          singleAddressField: 'address'
+        },
+        link: (data) => {
+          return data.model?.mainAddress?.location?.name && LocationModel.canView(this.parent.authUser) ?
+            `/locations/${data.model.mainAddress.location.id}/view` :
+            undefined;
+        }
+      });
+
+      // one location column per address type (except current), e.g. notification / previous address
+      tableColumns.push(
+        ...this.parent.list.retrieveAddressLocationColumnsPerType(
+          definitions.options.addressType,
+          this.parent.authUser,
+          (item) => item?.model?.addresses || (item?.model?.address ? [item.model.address] : []),
+          filterAddressModel,
+          'address'
+        )
+      );
+    }
 
     // finished
     return this.parent.list.filterVisibleMandatoryTableColumns(tableColumns);

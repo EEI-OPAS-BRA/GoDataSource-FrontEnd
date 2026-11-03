@@ -121,16 +121,31 @@
       (ngModelChange)="component.columnFilterBy(extendedColDef)"></app-form-input-v2>
 
     <!-- Address multiple location -->
-    <app-form-select-location-multiple-v2
-      *ngSwitchCase="V2FilterType.ADDRESS_MULTIPLE_LOCATION"
-      class="gd-list-table-column-filter-input"
-      [(ngModel)]="extendedColDef.columnDefinition.filter.address.filterLocationIds"
-      [name]="'filterBy' + extendedColDef.field"
-      placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
-      neverFloatLabel="true"
-      useOutbreakLocations="true"
-      (ngModelChange)="component.columnFilterBy(extendedColDef)">
-    </app-form-select-location-multiple-v2>
+    <ng-container *ngSwitchCase="V2FilterType.ADDRESS_MULTIPLE_LOCATION">
+      <!-- current address location -->
+      <app-form-select-location-multiple-v2
+        *ngIf="!extendedColDef.columnDefinition.filter.addressType"
+        class="gd-list-table-column-filter-input"
+        [(ngModel)]="extendedColDef.columnDefinition.filter.address.filterLocationIds"
+        [name]="'filterBy' + extendedColDef.field"
+        placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
+        neverFloatLabel="true"
+        useOutbreakLocations="true"
+        (ngModelChange)="component.columnFilterBy(extendedColDef)">
+      </app-form-select-location-multiple-v2>
+
+      <!-- location of a specific address type -->
+      <app-form-select-location-multiple-v2
+        *ngIf="extendedColDef.columnDefinition.filter.addressType"
+        class="gd-list-table-column-filter-input"
+        [(ngModel)]="extendedColDef.columnDefinition.filter.address.filterLocationIdsByType[$any(extendedColDef.columnDefinition.filter.addressType)]"
+        [name]="'filterBy' + extendedColDef.field"
+        placeholder="LNG_LAYOUT_LIST_DEFAULT_FILTER_PLACEHOLDER"
+        neverFloatLabel="true"
+        useOutbreakLocations="true"
+        (ngModelChange)="component.columnFilterBy(extendedColDef)">
+      </app-form-select-location-multiple-v2>
+    </ng-container>
 
     <!-- Address field -->
     <app-form-input-v2

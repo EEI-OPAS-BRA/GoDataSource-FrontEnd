@@ -1,0 +1,45 @@
+@import 'mixins';
+
+/* Spreadsheet file editor */
+app-spreadsheet-editor-v2-editor-file {
+  .gd-spreadsheet-editor-v2-editor-file {
+    height: 2.4rem;
+    padding: 0 0.5rem;
+    background-color: var(--gd-background);
+    gap: 0.4rem;
+
+    /* Choose / replace file */
+    .gd-spreadsheet-editor-v2-editor-file-choose {
+      cursor: pointer;
+      gap: 0.2rem;
+      color: var(--gd-text);
+
+      .mat-icon {
+        font-size: 1.8rem;
+        height: 1.8rem;
+        width: 1.8rem;
+      }
+
+      .gd-spreadsheet-editor-v2-editor-file-choose-label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    /* Remove current attachment */
+    .gd-spreadsheet-editor-v2-editor-file-remove {
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--gd-text);
+      padding: 0;
+
+      .mat-icon {
+        font-size: 1.8rem;
+        height: 1.8rem;
+        width: 1.8rem;
+      }
+    }
+  }
+}

@@ -215,13 +215,13 @@ export class FollowUpCreateViewModifyComponent extends CreateViewModifyComponent
     } else if (this.isModify) {
       this.pageTitle = 'LNG_PAGE_MODIFY_FOLLOW_UP_TITLE';
       this.pageTitleData = {
-        dateFormatted: LocalizationHelper.toMoment(this.itemData.date).format('YYYY-MM-DD')
+        dateFormatted: LocalizationHelper.displayDate(this.itemData.date)
       };
     } else {
       // view
       this.pageTitle = 'LNG_PAGE_VIEW_FOLLOW_UP_TITLE';
       this.pageTitleData = {
-        dateFormatted: LocalizationHelper.toMoment(this.itemData.date).format('YYYY-MM-DD')
+        dateFormatted: LocalizationHelper.displayDate(this.itemData.date)
       };
     }
   }
@@ -393,7 +393,7 @@ export class FollowUpCreateViewModifyComponent extends CreateViewModifyComponent
       this.breadcrumbs.push({
         label: this.personAndRelatedHelperService.i18nService.instant(
           'LNG_PAGE_MODIFY_FOLLOW_UP_TITLE', {
-            dateFormatted: LocalizationHelper.toMoment(this.itemData.date).format('YYYY-MM-DD')
+            dateFormatted: LocalizationHelper.displayDate(this.itemData.date)
           }
         ),
         action: null
@@ -403,7 +403,7 @@ export class FollowUpCreateViewModifyComponent extends CreateViewModifyComponent
       this.breadcrumbs.push({
         label: this.personAndRelatedHelperService.i18nService.instant(
           'LNG_PAGE_VIEW_FOLLOW_UP_TITLE', {
-            dateFormatted: LocalizationHelper.toMoment(this.itemData.date).format('YYYY-MM-DD')
+            dateFormatted: LocalizationHelper.displayDate(this.itemData.date)
           }
         ),
         action: null

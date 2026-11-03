@@ -17,27 +17,46 @@ export abstract class LocalizationHelper {
   // other constants
   static readonly ISO_8601: MomentBuiltinFormat = moment.ISO_8601;
 
-  // default display constants
+  // default display constants ( fallback when the server doesn't provide custom formats )
   private static readonly DEFAULT_DATE_DISPLAY_FORMAT = 'YYYY-MM-DD';
   private static readonly DEFAULT_DATE_TIME_DISPLAY_FORMAT = 'YYYY-MM-DD HH:mm';
+
+  // active display formats ( overridable from server config )
+  private static DATE_DISPLAY_FORMAT: string = LocalizationHelper.DEFAULT_DATE_DISPLAY_FORMAT;
+  private static DATE_TIME_DISPLAY_FORMAT: string = LocalizationHelper.DEFAULT_DATE_TIME_DISPLAY_FORMAT;
 
   /**
    * Initialize
    */
-  static initialize(timezone: string): void {
+  static initialize(
+    timezone: string,
+    dateDisplayFormat?: string,
+    dateTimeDisplayFormat?: string
+  ): void {
     // #TODO - enable deprecation warning by removing this code once this is addressed in the entire website
     (moment as any).suppressDeprecationWarnings = true;
 
     // default timezone
     LocalizationHelper.TIMEZONE = timezone;
     moment.tz.setDefault(LocalizationHelper.TIMEZONE);
+
+    // display formats ( fallback to defaults when not provided by the server )
+    LocalizationHelper.DATE_DISPLAY_FORMAT = dateDisplayFormat || LocalizationHelper.DEFAULT_DATE_DISPLAY_FORMAT;
+    LocalizationHelper.DATE_TIME_DISPLAY_FORMAT = dateTimeDisplayFormat || LocalizationHelper.DEFAULT_DATE_TIME_DISPLAY_FORMAT;
   }
 
   /**
    * Date display format
    */
   static getDateDisplayFormat(): string {
-    return LocalizationHelper.DEFAULT_DATE_DISPLAY_FORMAT;
+    return LocalizationHelper.DATE_DISPLAY_FORMAT;
+  }
+
+  /**
+   * Date & time display format
+   */
+  static getDateTimeDisplayFormat(): string {
+    return LocalizationHelper.DATE_TIME_DISPLAY_FORMAT;
   }
 
   /**
@@ -62,6 +81,30 @@ export abstract class LocalizationHelper {
     format?: moment.MomentFormatSpecification,
     strict?: boolean
   ): Moment {
+    // a display formatted string is ambiguous for the default parser ( 01/09/2026 is read as month first ),
+    // so try the configured display formats before falling back to it
+    if (
+      !format &&
+      typeof data === 'string' &&
+      data &&
+      !/^\d{4}-\d{2}-\d{2}/.test(data)
+    ) {
+      const displayFormats: string[] = [
+        LocalizationHelper.DATE_TIME_DISPLAY_FORMAT,
+        LocalizationHelper.DATE_DISPLAY_FORMAT
+      ];
+      for (const displayFormat of displayFormats) {
+        const displayMoment = moment(
+          data,
+          displayFormat,
+          true
+        );
+        if (displayMoment.isValid()) {
+          return displayMoment.tz(LocalizationHelper.TIMEZONE);
+        }
+      }
+    }
+
     return moment(
       data,
       format,
@@ -74,7 +117,7 @@ export abstract class LocalizationHelper {
    */
   static displayDate(data: string | Date | Moment): string {
     return data ?
-      LocalizationHelper.toMoment(data).format(LocalizationHelper.DEFAULT_DATE_DISPLAY_FORMAT) :
+      LocalizationHelper.toMoment(data).format(LocalizationHelper.DATE_DISPLAY_FORMAT) :
       '';
   }
 
@@ -83,7 +126,7 @@ export abstract class LocalizationHelper {
    */
   static displayDateTime(data: string | Date | Moment): string {
     return data ?
-      LocalizationHelper.toMoment(data).format(LocalizationHelper.DEFAULT_DATE_TIME_DISPLAY_FORMAT) :
+      LocalizationHelper.toMoment(data).format(LocalizationHelper.DATE_TIME_DISPLAY_FORMAT) :
       '';
   }
 

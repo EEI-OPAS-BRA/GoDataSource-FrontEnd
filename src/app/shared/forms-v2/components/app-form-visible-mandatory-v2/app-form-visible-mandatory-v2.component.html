@@ -236,6 +236,15 @@
             </span>
           </div>
 
+          <!-- Expanded by default toggle (only for LIST sections) -->
+          <app-form-checkbox-v2
+            *ngIf="!viewOnly && item.data.listInputName"
+            [ngModel]="value && value[item.parent.parent.data.id] && value[item.parent.parent.data.id][item.data.listInputName] && value[item.parent.parent.data.id][item.data.listInputName].expandedByDefault"
+            [name]="'expandedByDefault_' + item.data.id"
+            placeholder="LNG_COMMON_LABEL_EXPANDED_BY_DEFAULT"
+            [disabled]="viewOnly"
+            (ngModelChange)="setExpandedByDefault(item, $event)"></app-form-checkbox-v2>
+
           <!-- Buttons -->
           <div
             *ngIf="!viewOnly"

@@ -444,7 +444,8 @@ export class AuditLogsListComponent
             },
             dbColumns: true,
             dbValues: true,
-            jsonReplaceUndefinedWithNull: true
+            jsonReplaceUndefinedWithNull: true,
+            dontIncludeTimestamp: true
           }
         }
       });

@@ -23,7 +23,7 @@
   </div>
 
   <div class="gd-relationship-summary-footer" fxLayout="column" fxLayoutGap="0.8rem">
-    <div fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="0.8rem">
+    <div *ngIf="!relationshipIsFullyMasked" fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="0.8rem">
       <button *ngIf="canReverseRelation && RelationshipModel.canReverse(authUser) && entityCanReverse"
         (click)="reverseExistingRelationship()"
         [matTooltip]="'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_REVERSE_RELATIONSHIP_TOOLTIP' | translate"
@@ -42,7 +42,7 @@
       </a>
     </div>
 
-    <div *ngIf="RelationshipModel.canView(authUser) && entityCanView" fxLayout="row" fxLayoutAlign="center center"
+    <div *ngIf="relationshipLink && RelationshipModel.canView(authUser) && entityCanView" fxLayout="row" fxLayoutAlign="center center"
       fxLayoutGap="0.8rem">
       <a [href]="relationshipLink" target="_blank" mat-flat-button color="secondary">
         {{'LNG_PAGE_GRAPH_CHAINS_OF_TRANSMISSION_ACTION_VIEW_RELATIONSHIP' | translate}}
