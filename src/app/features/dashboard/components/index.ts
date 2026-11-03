@@ -19,6 +19,13 @@ import { BbDonutChartComponent } from './bb-donut-chart/bb-donut-chart.component
 import { BbBarChartComponent } from './bb-bar-chart/bb-bar-chart.component';
 import { BoxplotChartComponent } from './boxplot-chart/boxplot-chart.component';
 import { OutbreakOverviewDashletComponent } from './outbreak-overview-dashlet/outbreak-overview-dashlet.component';
+import { EpiCurveTabsDashletComponent } from './epi-curve-tabs-dashlet/epi-curve-tabs-dashlet.component';
+import { BbAreaLineChartComponent } from './bb-area-line-chart/bb-area-line-chart.component';
+import { EpiCurveCumulativeDashletComponent } from './epi-curve-cumulative-dashlet/epi-curve-cumulative-dashlet.component';
+import { DataQualityDashletComponent } from './data-quality-dashlet/data-quality-dashlet.component';
+import { DataCompletenessDashletComponent } from './data-completeness-dashlet/data-completeness-dashlet.component';
+import { ContactFollowUpTabsDashletComponent } from './contact-follow-up-tabs-dashlet/contact-follow-up-tabs-dashlet.component';
+import { ContactProfileDashletComponent } from './contact-profile-dashlet/contact-profile-dashlet.component';
 
 // export the list of all page components
 export const components: any[] = [
@@ -42,6 +49,13 @@ export const components: any[] = [
   BbDonutChartComponent,
   BbBarChartComponent,
   BoxplotChartComponent,
-  OutbreakOverviewDashletComponent
+  OutbreakOverviewDashletComponent,
+  EpiCurveTabsDashletComponent,
+  BbAreaLineChartComponent,
+  EpiCurveCumulativeDashletComponent,
+  DataQualityDashletComponent,
+  DataCompletenessDashletComponent,
+  ContactFollowUpTabsDashletComponent,
+  ContactProfileDashletComponent,
 ];
 

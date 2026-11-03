@@ -1,0 +1,136 @@
+<div class="gd-dashlet-epi-curve-cumulative">
+
+  <!-- Filters -->
+  <div
+    class="gd-dashlet-epi-curve-cumulative-filters"
+    fxLayout="row wrap" fxLayoutGap="2.4rem">
+    <!-- Group by -->
+    <div>
+      <div class="gd-dashlet-epi-curve-cumulative-filter-label">
+        {{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_GROUP_BY_LABEL' | translate }}
+      </div>
+      <app-form-toggle-v2
+        name="epiCurveCumulativeViewType"
+        [options]="viewTypeOptions"
+        [(ngModel)]="viewType"
+        (ngModelChange)="refreshDataCaller.call()">
+      </app-form-toggle-v2>
+    </div>
+
+    <!-- Date base -->
+    <div
+      *ngIf="dateBaseOptions.length > 1">
+      <div class="gd-dashlet-epi-curve-cumulative-filter-label">
+        {{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_DATE_BASE_LABEL' | translate }}
+      </div>
+      <app-form-toggle-v2
+        name="epiCurveCumulativeDateBase"
+        [options]="dateBaseOptions"
+        [(ngModel)]="dateBase"
+        (ngModelChange)="refreshDataCaller.call()">
+      </app-form-toggle-v2>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div
+    *ngIf="displayLoading"
+    class="gd-dashlet-epi-curve-cumulative-loading"
+    fxLayoutAlign="center center">
+    <mat-progress-spinner
+      diameter="24"
+      mode="indeterminate"></mat-progress-spinner>
+  </div>
+
+  <!-- No data -->
+  <div
+    *ngIf="!displayLoading && total < 1"
+    class="gd-dashlet-epi-curve-cumulative-no-data">
+    {{ 'LNG_PAGE_DASHLET_CASES_COUNT_OVER_TIME_NO_DATA_LABEL' | translate }}
+  </div>
+
+  <!-- Data -->
+  <ng-container
+    *ngIf="!displayLoading && total > 0">
+    <div
+      fxLayout="row" fxLayout.lt-md="column" fxLayoutGap="1.6rem">
+
+      <!-- Chart -->
+      <div
+        class="gd-dashlet-epi-curve-cumulative-chart"
+        fxFlex>
+        <app-bb-area-line-chart
+          [categories]="categories"
+          [values]="values"
+          [seriesLabel]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_TAB' | translate"
+          [color]="chartColor"
+          [xLabel]="(xAxisPeriodToken | translate) + ' ' + (xAxisBaseToken | translate)"
+          [yLabel]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_Y_LABEL' | translate">
+        </app-bb-area-line-chart>
+      </div>
+
+      <!-- Summary -->
+      <div
+        class="gd-dashlet-epi-curve-cumulative-summary"
+        fxFlex="22rem" fxFlex.lt-md="auto"
+        fxLayout="column" fxLayoutGap="1.6rem">
+
+        <!-- Total -->
+        <div class="gd-dashlet-epi-curve-cumulative-stat">
+          <div
+            class="gd-dashlet-epi-curve-cumulative-stat-label"
+            fxLayout="row" fxLayoutAlign="space-between center">
+            <span>{{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_TOTAL_LABEL' | translate }}</span>
+            <app-fancy-tooltip
+              tooltip="LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_TOTAL_DESCRIPTION">
+            </app-fancy-tooltip>
+          </div>
+          <div class="gd-dashlet-epi-curve-cumulative-stat-value">
+            {{ total }}
+          </div>
+        </div>
+
+        <!-- Last period -->
+        <div class="gd-dashlet-epi-curve-cumulative-stat">
+          <div
+            class="gd-dashlet-epi-curve-cumulative-stat-label"
+            fxLayout="row" fxLayoutAlign="space-between center">
+            <span>{{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_LAST_PERIOD_LABEL' | translate }}</span>
+            <app-fancy-tooltip
+              tooltip="LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_LAST_PERIOD_DESCRIPTION">
+            </app-fancy-tooltip>
+          </div>
+          <div class="gd-dashlet-epi-curve-cumulative-stat-value">
+            +{{ lastPeriodNew }}
+          </div>
+          <div class="gd-dashlet-epi-curve-cumulative-stat-hint">
+            {{ lastPeriodLabel }}
+          </div>
+        </div>
+
+        <!-- Growth -->
+        <div class="gd-dashlet-epi-curve-cumulative-stat">
+          <div
+            class="gd-dashlet-epi-curve-cumulative-stat-label"
+            fxLayout="row" fxLayoutAlign="space-between center">
+            <span>{{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_GROWTH_LABEL' | translate }}</span>
+            <app-fancy-tooltip
+              tooltip="LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_GROWTH_DESCRIPTION">
+            </app-fancy-tooltip>
+          </div>
+          <div class="gd-dashlet-epi-curve-cumulative-stat-value">
+            {{ growthRate !== null ? '+' + (growthRate | number:'1.1-1') + '%' : '—' }}
+          </div>
+          <div class="gd-dashlet-epi-curve-cumulative-stat-hint">
+            {{ lastPeriodLabel }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="gd-dashlet-epi-curve-cumulative-note">
+      {{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_NOTE' | translate }}
+    </div>
+  </ng-container>
+</div>

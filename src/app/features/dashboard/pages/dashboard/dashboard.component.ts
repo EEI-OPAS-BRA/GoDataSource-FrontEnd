@@ -31,14 +31,13 @@ import { CaseProfileDashletComponent } from '../../components/case-profile-dashl
 import { CasesByGeographicLocationDashletComponent } from '../../components/case-by-geographic-location-dashlet/case-by-geographic-location-dashlet.component';
 import { CasesHospitalizedPieChartDashletComponent } from '../../components/cases-hospitalized-pie-chart-dashlet/cases-hospitalized-pie-chart-dashlet.component';
 import { HistogramTransmissionChainsSizeDashletComponent } from '../../components/histogram-transmission-chains-size-dashlet/histogram-transmission-chains-size-dashlet.component';
-import { EpiCurveDashletComponent } from '../../components/epi-curve-dashlet/epi-curve-dashlet.component';
-import { EpiCurveOutcomeDashletComponent } from '../../components/epi-curve-outcome-dashlet/epi-curve-outcome-dashlet.component';
-import { EpiCurveReportingDashletComponent } from '../../components/epi-curve-reporting-dashlet/epi-curve-reporting-dashlet.component';
-import { ContactFollowUpOverviewDashletComponent } from '../../components/contact-follow-up-overview-dashlet/contact-follow-up-overview-dashlet.component';
-import { CasesBasedOnContactStatusDashletComponent } from '../../components/cases-based-on-contact-status-dashlet/cases-based-on-contact-status-dashlet.component';
+import { EpiCurveTabsDashletComponent } from '../../components/epi-curve-tabs-dashlet/epi-curve-tabs-dashlet.component';
+import { ContactFollowUpTabsDashletComponent } from '../../components/contact-follow-up-tabs-dashlet/contact-follow-up-tabs-dashlet.component';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ReferenceDataHelperService } from '../../../../core/services/helper/reference-data-helper.service';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
+import { DataQualityDashletComponent } from '../../components/data-quality-dashlet/data-quality-dashlet.component';
+import { ContactProfileDashletComponent } from '../../components/contact-profile-dashlet/contact-profile-dashlet.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -49,19 +48,18 @@ import { LocalizationHelper, Moment } from '../../../../core/helperClasses/local
 export class DashboardComponent implements OnInit, OnDestroy {
   // children dashlets
   @ViewChild('caseSummary', { static: false }) private _caseSummary: CaseSummaryDashletComponent;
-    @ViewChild('caseProfile', { static: false }) private _caseProfile: CaseProfileDashletComponent;
+  @ViewChild('caseProfile', { static: false }) private _caseProfile: CaseProfileDashletComponent;
   @ViewChild('casesPerLocation', { static: false }) private _casesPerLocation: CasesByGeographicLocationDashletComponent;
   @ViewChild('hospitalized', { static: false }) private _hospitalized: CasesHospitalizedPieChartDashletComponent;
   @ViewChild('cotHistogram', { static: false }) private _cotHistogram: HistogramTransmissionChainsSizeDashletComponent;
-  @ViewChild('epiCurveClassification', { static: false }) private _epiCurveClassification: EpiCurveDashletComponent;
-  @ViewChild('epiCurveOutcome', { static: false }) private _epiCurveOutcome: EpiCurveOutcomeDashletComponent;
-  @ViewChild('epiCurveReporting', { static: false }) private _epiCurveReporting: EpiCurveReportingDashletComponent;
-  @ViewChild('followUpOverview', { static: false }) private _followUpOverview: ContactFollowUpOverviewDashletComponent;
-  @ViewChild('contactStatus', { static: false }) private _contactStatus: CasesBasedOnContactStatusDashletComponent;
+  @ViewChild('epiCurveTabs', { static: false }) private _epiCurveTabs: EpiCurveTabsDashletComponent;
+  @ViewChild('contactFollowUpTabs', { static: false }) private _contactFollowUpTabs: ContactFollowUpTabsDashletComponent;
   @ViewChild('kpiSection', { static: false }) private _kpiSection: ElementRef;
   @ViewChild('kpiCases', { static: false }) private _kpiCases: AppCasesKpiDashletComponent;
   @ViewChild('kpiContacts', { static: false }) private _kpiContacts: AppContactsKpiDashletComponent;
   @ViewChild('kpiCOT', { static: false }) private _kpiCOT: AppCotKpiDashletComponent;
+  @ViewChild('dataQuality', { static: false }) private _dataQuality: DataQualityDashletComponent;
+  @ViewChild('contactProfile', { static: false }) private _contactProfile: ContactProfileDashletComponent;
 
   // small screen mode ?
   isSmallScreenMode: boolean = false;
@@ -93,29 +91,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this._cotHistogram.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveClassification
-    if (this._epiCurveClassification) {
-      this._epiCurveClassification.expanded = expanded;
+    // expand / collapse - epiCurveTabs
+    if (this._epiCurveTabs) {
+      this._epiCurveTabs.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveOutcome
-    if (this._epiCurveOutcome) {
-      this._epiCurveOutcome.expanded = expanded;
+        // expand / collapse - data quality
+    if (this._dataQuality) {
+      this._dataQuality.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveReporting
-    if (this._epiCurveReporting) {
-      this._epiCurveReporting.expanded = expanded;
+        // expand / collapse - contact follow-up (tabs)
+    if (this._contactFollowUpTabs) {
+      this._contactFollowUpTabs.expanded = expanded;
     }
 
-    // expand / collapse - followUpOverview
-    if (this._followUpOverview) {
-      this._followUpOverview.expanded = expanded;
-    }
-
-    // expand / collapse - contactStatus
-    if (this._contactStatus) {
-      this._contactStatus.expanded = expanded;
+    // expand / collapse - contactProfile
+    if (this._contactProfile) {
+      this._contactProfile.expanded = expanded;
     }
 
     // expand / collapse - kpiCases
@@ -150,21 +143,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       !this._cotHistogram ||
       this._cotHistogram.expanded
     ) && (
-      !this._epiCurveClassification ||
-      this._epiCurveClassification.expanded
+      !this._epiCurveTabs ||
+      this._epiCurveTabs.expanded
     ) && (
-      !this._epiCurveOutcome ||
-      this._epiCurveOutcome.expanded
+      !this._contactFollowUpTabs ||
+      this._contactFollowUpTabs.expanded
     ) && (
-      !this._epiCurveReporting ||
-      this._epiCurveReporting.expanded
+      !this._dataQuality ||
+      this._dataQuality.expanded
     ) && (
-      !this._followUpOverview ||
-      this._followUpOverview.expanded
-    ) && (
-      !this._contactStatus ||
-      this._contactStatus.expanded
-    ) && (
+      !this._contactProfile ||
+      this._contactProfile.expanded
+      ) && (
       !this._kpiCases?.dashlet ||
       this._kpiCases.dashlet.expanded
     ) && (
@@ -245,6 +235,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     KPICases: boolean,
     KPIContacts: boolean,
     KPICOT: boolean
+    DataQuality: boolean,
+    ContactProfile: boolean,
   } = {
       Overview: false,
       CaseSummary: false,
@@ -259,7 +251,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ContactStatus: false,
       KPICases: false,
       KPIContacts: false,
-      KPICOT: false
+      KPICOT: false,
+      DataQuality: false,
+      ContactProfile: false
     };
 
   /**
@@ -295,6 +289,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       EPICurveOutcome: DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser),
       EPICurveReporting: DashboardModel.canViewEpiCurveStratifiedByClassificationOverReportTimeDashlet(this._authUser),
       FollowUpOverview: DashboardModel.canViewContactFollowUpReportDashlet(this._authUser),
+      DataQuality: CaseModel.canList(this._authUser),
+      ContactProfile: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
       ContactStatus: DashboardModel.canViewContactStatusReportDashlet(this._authUser),
 
       // KPI - cases
@@ -302,7 +298,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         DashboardModel.canViewCaseHospitalizedDashlet(this._authUser) ||
         DashboardModel.canViewCaseWithLessThanXCotactsDashlet(this._authUser) ||
         DashboardModel.canViewNewCasesInPreviousXDaysAmongKnownContactsDashlet(this._authUser) ||
-        DashboardModel.canViewCasesRefusingTreatmentDashlet(this._authUser) ||
         DashboardModel.canViewNewCasesFromKnownCOTDashlet(this._authUser) ||
         DashboardModel.canViewCasesWithPendingLabResultsDashlet(this._authUser) ||
         DashboardModel.canViewCasesNotIdentifiedThroughContactsDashlet(this._authUser) ||

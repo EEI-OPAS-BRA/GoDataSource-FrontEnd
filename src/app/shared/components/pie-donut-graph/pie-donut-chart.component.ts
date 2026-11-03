@@ -195,6 +195,10 @@ implements OnInit, OnDestroy {
 
   // graph no data label
   @Input() noDataLabel: string;
+  
+  // display the relative distribution (%) next to each legend item ?
+  // - calculated over the displayed total (checked items)
+  @Input() showPercentage: boolean = false;
 
   // click item
   @Output() clickItem = new EventEmitter<PieDonutChartData>();
