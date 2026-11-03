@@ -1,4 +1,8 @@
 export class HtmlUtils {
+  static safeColor(value: string): string {
+    return typeof value === 'string' && CSS.supports('color', value) ? value : '';
+  }
+
   static safeUrl(value: string, image: boolean = false): string {
     if (typeof value !== 'string' || !value.trim()) {
       return '';
