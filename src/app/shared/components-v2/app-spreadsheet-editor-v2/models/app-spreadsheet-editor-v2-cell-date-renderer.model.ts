@@ -35,7 +35,7 @@ export class AppSpreadsheetEditorV2CellDateRendererModel extends AppSpreadsheetE
     }
 
     // update text
-    this._guiRootValueHTMLValue.innerHTML = this._colDef.editor.helpers.date(this._params.value);
+    this._guiRootValueHTMLValue.textContent = this._colDef.editor.helpers.date(this._params.value);
   }
 
   /**

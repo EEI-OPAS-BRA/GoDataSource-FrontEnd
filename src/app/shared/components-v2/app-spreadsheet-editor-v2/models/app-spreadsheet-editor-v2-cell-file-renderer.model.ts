@@ -46,9 +46,9 @@ export class AppSpreadsheetEditorV2CellFileRendererModel extends AppSpreadsheetE
     const hasFile: boolean = value !== undefined && value !== null && value !== '';
 
     // label: cached name (just uploaded) or generic when only the id is known
-    this._guiRootValueHTMLValue.innerHTML = '';
+    this._guiRootValueHTMLValue.textContent = '';
     if (hasFile) {
-      this._guiRootValueHTMLValue.innerHTML = bulkFileNameCache[value] ?
+      this._guiRootValueHTMLValue.textContent = bulkFileNameCache[value] ?
         bulkFileNameCache[value] :
         this._colDef.editor.helpers.translate('LNG_MODULE_LABEL_FILE_ATTACHMENT');
     }

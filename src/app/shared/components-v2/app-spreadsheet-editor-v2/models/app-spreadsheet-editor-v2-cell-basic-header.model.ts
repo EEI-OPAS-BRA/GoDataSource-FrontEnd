@@ -171,9 +171,13 @@ export class AppSpreadsheetEditorV2CellBasicHeaderModel implements ICellRenderer
    */
   protected updateValue(): void {
     // mark mandatory columns with an asterisk
-    this._guiRootValueHTML.innerHTML = this.isColumnMandatory() ?
-      `${this._params.displayName}<span class="gd-spreadsheet-editor-v2-cell-basic-header-value-required">*</span>` :
-      this._params.displayName;
+    this._guiRootValueHTML.textContent = this._params.displayName;
+    if (this.isColumnMandatory()) {
+      const required = document.createElement('span');
+      required.classList.add('gd-spreadsheet-editor-v2-cell-basic-header-value-required');
+      required.textContent = '*';
+      this._guiRootValueHTML.appendChild(required);
+    }
   }
 
   /**

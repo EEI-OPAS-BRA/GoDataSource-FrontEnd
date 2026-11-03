@@ -34,7 +34,7 @@ export class AppSpreadsheetEditorV2CellMultiSelectRendererModel extends AppSprea
     }
 
     // reset text
-    this._guiRootValueHTMLValue.innerHTML = '';
+    this._guiRootValueHTMLValue.textContent = '';
 
     // value is an array of selected values
     const values: any[] = Array.isArray(this._params.value) ?
@@ -43,7 +43,7 @@ export class AppSpreadsheetEditorV2CellMultiSelectRendererModel extends AppSprea
 
     // map each value to its translated label and join
     const optionsMap = this._colDef.columnDefinition.optionsMap;
-    this._guiRootValueHTMLValue.innerHTML = values
+    this._guiRootValueHTMLValue.textContent = values
       .map((value) => {
         if (
           value !== undefined &&
