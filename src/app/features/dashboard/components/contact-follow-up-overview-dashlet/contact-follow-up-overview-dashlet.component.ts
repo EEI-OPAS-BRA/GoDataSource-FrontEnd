@@ -53,6 +53,19 @@ export class ContactFollowUpOverviewDashletComponent implements OnInit, OnDestro
   get expanded(): boolean {
     return this._expanded;
   }
+  
+  // displayed inside another card (e.g. tabs of the "contact follow-up" card) ?
+  // - hides the title bar and keeps the chart always expanded
+  private _embedded: boolean = false;
+  @Input() set embedded(embedded: boolean) {
+    this._embedded = embedded;
+    if (embedded) {
+      this.expanded = true;
+    }
+  }
+  get embedded(): boolean {
+    return this._embedded;
+  }
 
   // Global filters => Date
   private _globalFilterDate: Moment | string;

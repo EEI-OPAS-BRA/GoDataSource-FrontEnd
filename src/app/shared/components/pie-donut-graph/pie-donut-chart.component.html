@@ -133,6 +133,12 @@
                       <span>
                         {{ item.label | translate }}
                       </span>
+                      <!-- Percentage -->
+                      <span
+                        *ngIf="showPercentage && item.checked && _graph?.rendered?.totalNo > 0"
+                        class="app-pie-donut-chart-main-left-legend-items-item-text-percentage">
+                        ({{ (item.value / _graph.rendered.totalNo) * 100 | number:'1.1-1' }}%)
+                      </span>
                     </span>
                   </div>
                 </div>

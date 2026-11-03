@@ -1,0 +1,63 @@
+@import 'mixins';
+
+/* Data Quality Dashlet */
+.gd-dashlet-data-quality {
+  background-color: var(--gd-background);
+  @include border-radius(0.4rem);
+  @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                      0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                      0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+
+  /* Top */
+  .gd-dashlet-data-quality-top {
+    padding: 0.8rem 1.6rem;
+
+    .gd-dashlet-data-quality-top-title {
+      color: var(--gd-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .gd-dashlet-data-quality-top-actions {
+      .mat-icon-button {
+        font-size: 2rem;
+        height: 2.4rem;
+        min-width: 2.4rem;
+        padding: 0.4rem;
+        width: 2.4rem;
+
+        .mat-icon {
+          font-size: 1.6rem;
+          @include transition(all 0.24s ease-in-out 0s);
+        }
+      }
+    }
+  }
+
+  /* Filters */
+  .gd-dashlet-data-quality-filters {
+    padding: 0 2.4rem;
+
+    .gd-dashlet-data-quality-filters-year {
+      width: 20rem;
+    }
+  }
+
+  /* Tabs */
+  .gd-dashlet-data-quality-tabs {
+    padding: 0 0 0.8rem;
+  }
+
+  /* Expanded */
+  &.gd-dashlet-data-quality-expanded {
+    .gd-dashlet-data-quality-top {
+      .gd-dashlet-data-quality-top-actions {
+        .mat-icon-button {
+          .mat-icon {
+            @include rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+}
