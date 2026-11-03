@@ -107,6 +107,7 @@ export class CaseModel
   responsibleUser: UserModel;
 
   visualId: string;
+  masked: boolean;
 
   relationships: {
     people: any[]
@@ -291,6 +292,7 @@ export class CaseModel
 
     this.classification = _.get(data, 'classification');
     this.visualId = _.get(data, 'visualId');
+    this.masked = _.get(data, 'masked', false);
     this.riskLevel = _.get(data, 'riskLevel');
     this.riskReason = _.get(data, 'riskReason');
     this.dateOfInfection = _.get(data, 'dateOfInfection');

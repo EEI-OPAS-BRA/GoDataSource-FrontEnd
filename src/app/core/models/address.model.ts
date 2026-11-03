@@ -48,6 +48,17 @@ export class AddressModel {
   }
 
   /**
+   * Remove button visibility for an address list whose locked addresses the outbreak forbids deleting
+   */
+  static removeVisibleWithDeletionLock(
+    preventAddressDeletion: boolean,
+    lockedAddresses: Set<AddressModel>
+  ): (list: { items: AddressModel[] }, index: number) => boolean {
+    return (list, index) => !preventAddressDeletion ||
+      !lockedAddresses.has(list.items[index]);
+  }
+
+  /**
    * Search for current address
    */
   static getCurrentAddress(addresses: AddressModel[]): AddressModel {

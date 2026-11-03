@@ -17,6 +17,7 @@ import { ConfirmOnFormChanges } from '../../../../core/services/guards/page-chan
 import { UserDataService } from '../../../../core/services/data/user.data.service';
 import { Constants } from '../../../../core/models/constants';
 import { BulkCacheHelperService } from '../../../../core/services/helper/bulk-cache-helper.service';
+import { AppFormLocationBaseV2 } from '../../../../shared/forms-v2/core/app-form-location-base-v2';
 
 @Component({
   selector: 'app-login',
@@ -153,6 +154,9 @@ export class LoginComponent {
 
         // remove all errors
         this.toastV2Service.clearHistory();
+
+        // cached locations depend on the user that requested them
+        AppFormLocationBaseV2.CACHE = {};
 
         // successfully authenticated;
         // - use authenticated user's preferred language

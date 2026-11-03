@@ -341,7 +341,7 @@ export class TransmissionChainDataService {
       if (
         mustFilterSnapshot && (
           !snapshotFiltersName ||
-          nodeData.model.name.toLowerCase().indexOf(snapshotFiltersName) > -1
+          (nodeData.model.name || '').toLowerCase().indexOf(snapshotFiltersName) > -1
         ) && (
           !snapshotFiltersLabSeqResult || (
             nodeData.labResults &&
@@ -1015,6 +1015,11 @@ export class TransmissionChainDataService {
             } else {
               nodeData.label = node.model.name;
             }
+          }
+
+          // a masked node is identified by its visual ID no matter which label criteria is selected
+          if (nodeData.masked) {
+            nodeData.label = node.model.visualId ? node.model.visualId : '';
           }
 
           // check min / max dates
