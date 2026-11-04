@@ -157,6 +157,22 @@ app-transmission-chain-bars {
     }
 
     .legend-rect {
+      &.legend-rect-isolation {
+        background-color: var(--gd-primary);
+      }
+
+      &.legend-rect-lab {
+        background-color: var(--gd-warning);
+      }
+
+      &.legend-rect-outcome {
+        background-color: var(--gd-primary-alt);
+      }
+
+      &.legend-rect-burial {
+        background-color: var(--gd-danger);
+      }
+
       border-radius: 0.2rem;
       display: block;
       margin-right: 0.4rem;

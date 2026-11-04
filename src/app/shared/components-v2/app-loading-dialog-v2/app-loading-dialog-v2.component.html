@@ -12,6 +12,6 @@
     class="gd-app-loading-dialog-v2-message">
     <span
       *ngIf="data?.message"
-      [innerHTML]="data.message | translate:data.messageData | safeHtml"></span>
+      [innerHTML]="data.message | htmlTranslate:data.messageData | safeHtml"></span>
   </div>
 </div>

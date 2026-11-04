@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import * as _ from 'lodash';
 
 @Pipe({
   name: 'highlight'
@@ -12,36 +12,16 @@ export class HighlightSearchPipe implements PipeTransform {
     value: string,
     searchValue
   ): string {
-    // nothing to highlight
-    if (
-      !value ||
-      !searchValue
-    ) {
-      return value;
+    const text = value === undefined || value === null ? '' : String(value);
+    if (!searchValue) {
+      return _.escape(text);
     }
 
-    // Match in a case insensitive manner
-    const re = new RegExp(searchValue, 'gi');
-    const match = value.match(re);
-
-    // If there's no match, just return the original value.
-    if (!match) {
-      return value;
-    }
-
-    // format
-    return value.replace(
-      re,
-      `<mark>${match[0]}</mark>`
-    );
+    const re = new RegExp(`(${_.escapeRegExp(String(searchValue))})`, 'gi');
+    return text.split(re)
+      .map((part, index) => index % 2 ? `<mark>${_.escape(part)}</mark>` : _.escape(part))
+      .join('');
   }
-
-  /**
-   * Constructor - inject used services
-   */
-  constructor(
-    private sanitizer: DomSanitizer
-  ) {}
 
   /**
    * Transform
@@ -49,19 +29,10 @@ export class HighlightSearchPipe implements PipeTransform {
   transform(
     value: string,
     searchValue: string
-  ): SafeHtml {
-    // nothing to highlight
-    if (
-      !value ||
-      !searchValue
-    ) {
-      return value;
-    }
-
-    // finished
-    return this.sanitizer.bypassSecurityTrustHtml(HighlightSearchPipe.highlight(
+  ): string {
+    return HighlightSearchPipe.highlight(
       value,
       searchValue
-    ));
+    );
   }
 }

@@ -32,3 +32,22 @@
 @import './components/color-picker';
 @import './components/context-menu';
 @import './components/sync-dialog';
+.gd-rich-text-bold {
+  font-weight: 700;
+}
+
+.gd-rich-text-italic {
+  font-style: italic;
+}
+
+.gd-rich-text-underline {
+  text-decoration: underline;
+}
+
+.gd-rich-text-danger {
+  color: var(--gd-danger);
+}
+
+.gd-rich-text-success {
+  color: var(--gd-success);
+}

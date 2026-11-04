@@ -364,7 +364,7 @@
             <div
               *ngSwitchCase="V2SideDialogConfigInputType.HTML"
               class="gd-app-side-dialog-v2-content-middle-item-input {{input.cssClasses}}"
-              [innerHTML]="input.placeholder ? (input.placeholder | translate | safeHtml) : undefined">
+              [innerHTML]="input.placeholder ? (input.placeholder | htmlTranslate | safeHtml) : undefined">
             </div>
 
             <!-- Link -->
