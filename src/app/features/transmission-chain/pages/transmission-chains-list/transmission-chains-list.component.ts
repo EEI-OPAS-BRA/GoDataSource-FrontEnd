@@ -77,8 +77,15 @@ export class TransmissionChainsListComponent extends ListComponent<TransmissionC
       {
         field: 'rootPerson.name',
         label: 'LNG_TRANSMISSION_CHAIN_FIELD_LABEL_ROOT_CASE',
+        format: {
+          type: (item: TransmissionChainModel) => item.rootPerson?.masked ?
+            item.rootPerson.visualId :
+            item.rootPerson?.name
+        },
         link: (item: TransmissionChainModel) => {
-          return item.rootPerson?.id && TransmissionChainModel.canViewAnyGraph(this.authUser) ?
+          return item.rootPerson?.id &&
+            !item.rootPerson.masked &&
+            TransmissionChainModel.canViewAnyGraph(this.authUser) ?
             `/transmission-chains?personId=${item.rootPerson.id}&selectedEntityType=${item.rootPerson.type}` :
             undefined;
         }
@@ -317,6 +324,7 @@ export class TransmissionChainsListComponent extends ListComponent<TransmissionC
       'nodes.firstName',
       'nodes.middleName',
       'nodes.lastName',
+      'nodes.visualId',
       'nodes.outcomeId'
     ];
   }

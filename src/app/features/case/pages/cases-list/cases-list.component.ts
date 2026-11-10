@@ -1353,6 +1353,7 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
         this.authUser,
         undefined,
         filterAddressModel,
+        undefined,
         () => this.shouldVisibleMandatoryTableColumnBeVisible(
           this.personAndRelatedHelperService.case.visibleMandatoryKey,
           'addresses.locationId'

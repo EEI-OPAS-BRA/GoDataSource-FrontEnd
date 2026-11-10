@@ -29,7 +29,8 @@ export enum QuickEditorV2InputType {
   SELECT_SINGLE,
   ASYNC_VALIDATOR_TEXT,
   TEXTAREA,
-  TOGGLE_CHECKBOX
+  TOGGLE_CHECKBOX,
+  LOCATION_SINGLE
 }
 
 /**
@@ -134,9 +135,22 @@ interface IQuickEditorV2InputToggleCheckbox extends Omit<IQuickEditorV2InputBase
 }
 
 /**
+ * Input - location single
+ */
+interface IQuickEditorV2InputLocationSingle extends Omit<IQuickEditorV2InputBase, 'value'> {
+  // required
+  type: QuickEditorV2InputType.LOCATION_SINGLE;
+  value: IQuickEditorV2InputValue<string>;
+
+  // optional
+  useOutbreakLocations?: boolean;
+  validators?: IQuickEditorV2InputValidatorRequired;
+}
+
+/**
  * Input
  */
-export type QuickEditorV2Input = IQuickEditorV2InputText | IQuickEditorV2InputDate | IQuickEditorV2InputSingleSelect | IQuickEditorV2InputAsyncValidatorText | IQuickEditorV2InputTextArea | IQuickEditorV2InputToggleCheckbox;
+export type QuickEditorV2Input = IQuickEditorV2InputText | IQuickEditorV2InputDate | IQuickEditorV2InputSingleSelect | IQuickEditorV2InputAsyncValidatorText | IQuickEditorV2InputTextArea | IQuickEditorV2InputToggleCheckbox | IQuickEditorV2InputLocationSingle;
 
 /**
  * Section

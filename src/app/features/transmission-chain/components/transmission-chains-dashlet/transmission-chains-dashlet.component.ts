@@ -2141,6 +2141,11 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
           return;
         }
 
+        // don't draw a marker at a masked person's residence
+        if (entity.model.masked) {
+          return;
+        }
+
         // create marker
         const marker: WorldMapMarker = new WorldMapMarker({
           point: new WorldMapPoint(
