@@ -31,6 +31,7 @@ import { AppMessages } from '../../../../core/enums/app-messages.enum';
 import { Location } from '@angular/common';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
 import { CaseModel } from '../../../../core/models/case.model';
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import { ClusterModel } from '../../../../core/models/cluster.model';
@@ -498,7 +499,7 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
       type: CreateViewModifyV2TabInputType.TAB,
       name: 'notify_team',
       label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
-      visible: () => this.isCreate,
+      visible: () => this.isCreate && !!this.selectedOutbreak?.allowContactNotifyTeam,
       sections: [{
         type: CreateViewModifyV2TabInputType.SECTION,
         label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
@@ -1659,7 +1660,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
           ) {
             this.teamNotificationDataService
               .createTeamNotification({
-                teamId: this._notifyTeamId,
+                outbreakId: this.selectedOutbreak.id,
+                targetType: Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+                teamIds: [this._notifyTeamId],
                 title: 'LNG_PAGE_CREATE_CONTACT_NOTIFY_TEAM_DEFAULT_TITLE',
                 message: item.name,
                 severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
@@ -1672,7 +1675,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
                   return throwError(err);
                 })
               )
-              .subscribe();
+              .subscribe(() => {
+                TopnavComponent.REFRESH_NOTIFICATIONS();
+              });
           }
 
           // finished

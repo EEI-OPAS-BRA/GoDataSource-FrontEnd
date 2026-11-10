@@ -44,7 +44,13 @@
       [required]="required"
       [placeholder]="exampleValue ? exampleValue : (neverFloatLabel ? (placeholder | translate) : undefined)"
       [autocomplete]="autocomplete"
+      [attr.maxlength]="maxLength > 0 ? maxLength : null"
       name="{{name}}">
+
+    <!-- Characters counter -->
+    <mat-hint
+      *ngIf="maxLength > 0"
+      align="end">{{ (value?.length || 0) }} / {{ maxLength }}</mat-hint>
 
     <!-- Spinner -->
     <mat-progress-spinner
