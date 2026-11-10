@@ -11,6 +11,40 @@ export const PortuguesePtLang = {
      * Team notifications
      */
     'LNG_COMMON_BUTTON_MARK_ALL_AS_READ': 'Marcar tudo como lido',
+    'LNG_COMMON_BUTTON_MARK_AS_READ': 'Marcar como lida',
+    'LNG_COMMON_BUTTON_REMOVE_NOTIFICATION': 'Remover notificação',
+
+    /**
+     * Questionnaire answer limits
+     */
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ANSWER_LIMITS': 'Limites da resposta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_VALUE': 'Valor mínimo',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_VALUE': 'Valor máximo',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_LENGTH': 'Mínimo de caracteres',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_LENGTH': 'Máximo de caracteres',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_DATE': 'Data mínima',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_DATE': 'Data máxima',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_DISALLOW_FUTURE_DATES': 'Não permitir datas futuras',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MIN_SELECTIONS': 'Mínimo de opções marcadas',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_MAX_SELECTIONS': 'Máximo de opções marcadas',
+
+    /**
+     * Questionnaire alert rule
+     */
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE': 'Regra de alerta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_ENABLED': 'Ativar regra de alerta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_ENABLED_DESCRIPTION': 'Exibe um alerta quando todas as respostas obrigatórias forem marcadas e a quantidade de respostas que contam atingir o mínimo',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MIN_ANSWERS': 'Quantidade mínima de respostas',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_FIELD_LABEL_ALERT_RULE_MESSAGE': 'Mensagem do alerta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS': 'Conta para o alerta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_COUNTS_DESCRIPTION': 'Esta resposta conta para a quantidade mínima da regra de alerta da pergunta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED': 'Obrigatória para o alerta',
+    'LNG_QUESTIONNAIRE_TEMPLATE_QUESTION_ANSWER_FIELD_LABEL_ALERT_RULE_REQUIRED_DESCRIPTION': 'O alerta só é exibido se esta resposta estiver marcada (ela também conta para o mínimo)',
+    'LNG_QUESTIONNAIRE_ALERT_RULE_DEFAULT_MESSAGE': 'Atenção: as respostas marcadas indicam grandes chances de confirmação',
+
+    /**
+     * Team notifications
+     */
     'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_LABEL': 'Notificações da equipe',
     'LNG_LAYOUT_MENU_ITEM_TEAM_NOTIFICATIONS_NO_DATA_LABEL': 'Nenhuma notificação',
     'LNG_LAYOUT_MENU_ITEM_NOTIFICATION_SETTINGS_LABEL': 'Configurações de notificações',
@@ -25,6 +59,14 @@ export const PortuguesePtLang = {
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECURRENCE_UNIT': 'Unidade de recorrência',
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_ACTIVE': 'Ativa',
     'LNG_TEAM_NOTIFICATION_FIELD_LABEL_CREATED_AT': 'Criada em',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_OUTBREAK': 'Surto',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TARGET_TYPE': 'Enviar para',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_TEAMS': 'Equipes',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS': 'Localizações',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_LOCATIONS_DESCRIPTION': 'Todas as equipes que atuam nas localizações selecionadas ou em qualquer sub-localização delas recebem a notificação',
+    'LNG_TEAM_NOTIFICATION_FIELD_LABEL_RECIPIENTS': 'Destinatários',
+    'LNG_TEAM_NOTIFICATION_TARGET_TYPE_TEAM': 'Equipes',
+    'LNG_TEAM_NOTIFICATION_TARGET_TYPE_LOCATION': 'Localizações',
 
     'LNG_TEAM_NOTIFICATION_SEVERITY_GREEN': 'Verde',
     'LNG_TEAM_NOTIFICATION_SEVERITY_YELLOW': 'Amarelo',

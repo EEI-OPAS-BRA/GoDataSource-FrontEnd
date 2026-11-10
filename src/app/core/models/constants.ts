@@ -421,6 +421,17 @@ export class Constants {
   /**
      * Team notification recurrence unit
      */
+  static TEAM_NOTIFICATION_TARGET_TYPE = {
+    TEAM: {
+      label: 'LNG_TEAM_NOTIFICATION_TARGET_TYPE_TEAM',
+      value: 'team'
+    },
+    LOCATION: {
+      label: 'LNG_TEAM_NOTIFICATION_TARGET_TYPE_LOCATION',
+      value: 'location'
+    }
+  };
+
   static TEAM_NOTIFICATION_RECURRENCE_UNIT = {
     HOURS: {
       label: 'LNG_TEAM_NOTIFICATION_RECURRENCE_UNIT_HOURS',

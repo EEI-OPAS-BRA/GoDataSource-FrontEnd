@@ -658,6 +658,28 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
               },
               visible: () => !!this.itemData.applyGeographicRestrictions
             }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowCaseNotifyTeam',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_NOTIFY_TEAM',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CASE_NOTIFY_TEAM_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowCaseNotifyTeam,
+                set: (value) => {
+                  this.itemData.allowCaseNotifyTeam = value;
+                }
+              }
+            }, {
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'allowContactNotifyTeam',
+              placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CONTACT_NOTIFY_TEAM',
+              description: () => 'LNG_OUTBREAK_FIELD_LABEL_ALLOW_CONTACT_NOTIFY_TEAM_DESCRIPTION',
+              value: {
+                get: () => this.itemData.allowContactNotifyTeam,
+                set: (value) => {
+                  this.itemData.allowContactNotifyTeam = value;
+                }
+              }
+            }, {
               type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
               name: 'reportingGeographicalLevelId',
               placeholder: () => 'LNG_OUTBREAK_FIELD_LABEL_LOCATION_GEOGRAPHICAL_LEVEL',
@@ -1638,7 +1660,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
         ) {
           this.teamNotificationDataService
             .createTeamNotification({
-              teamId: this._notifyTeamId,
+              outbreakId: outbreak.id,
+              targetType: Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+              teamIds: [this._notifyTeamId],
               title: 'LNG_PAGE_CREATE_OUTBREAK_NOTIFY_TEAM_DEFAULT_TITLE',
               message: outbreak.name,
               severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
@@ -1651,7 +1675,9 @@ export class OutbreakCreateViewModifyComponent extends CreateViewModifyComponent
                 return throwError(err);
               })
             )
-            .subscribe();
+            .subscribe(() => {
+              TopnavComponent.REFRESH_NOTIFICATIONS();
+            });
         }
 
         // refresh list of top nav outbreaks
