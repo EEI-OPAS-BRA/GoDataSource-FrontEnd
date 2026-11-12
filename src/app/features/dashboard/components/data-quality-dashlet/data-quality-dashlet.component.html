@@ -1,0 +1,79 @@
+<div
+  class="gd-dashlet-data-quality"
+  [class.gd-dashlet-data-quality-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-data-quality-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-data-quality-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-data-quality-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_DATA_QUALITY_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+    <!-- Filters -->
+    <div
+      class="gd-dashlet-data-quality-filters"
+      fxLayout="row" fxLayoutAlign="end center">
+      <div
+        class="gd-dashlet-data-quality-filters-year">
+        <app-form-select-single-v2
+          name="dataQualityYear"
+          placeholder="LNG_PAGE_DASHBOARD_DATA_QUALITY_YEAR_LABEL"
+          [options]="yearOptions"
+          [sortDisabled]="true"
+          [(ngModel)]="selectedYear">
+        </app-form-select-single-v2>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <mat-tab-group
+      class="gd-dashlet-data-quality-tabs"
+      animationDuration="0ms"
+      [(selectedIndex)]="selectedTabIndex">
+
+      <!-- Completeness -->
+      <mat-tab
+        [label]="'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_TAB' | translate">
+        <ng-template matTabContent>
+          <app-data-completeness-dashlet
+            [filterYear]="filterYear"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-data-completeness-dashlet>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</div>

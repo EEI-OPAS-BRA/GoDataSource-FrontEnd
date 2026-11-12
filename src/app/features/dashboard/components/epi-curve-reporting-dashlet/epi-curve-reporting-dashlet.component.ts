@@ -16,6 +16,7 @@ import { ActivatedRoute } from '@angular/router';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { ReferenceDataHelperService } from '../../../../core/services/helper/reference-data-helper.service';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
+import { EpiCurveHelper } from '../../helperClasses/epi-curve-helper';
 
 @Component({
   selector: 'app-epi-curve-reporting-dashlet',
@@ -49,8 +50,41 @@ export class EpiCurveReportingDashletComponent implements OnInit, OnDestroy {
     // retrieve data if expanded and data not retrieved
     this.refreshData();
   }
-  get expanded(): boolean {
+
+    get expanded(): boolean {
     return this._expanded;
+  }
+
+  // displayed inside another card (e.g. tabs of the "case evolution over time" card) ?
+  // - hides the title bar and keeps the chart always expanded
+  private _embedded: boolean = false;
+  @Input() set embedded(embedded: boolean) {
+    this._embedded = embedded;
+    if (embedded) {
+      // epidemiological week (Sunday to Saturday) by default
+      this.epiCurveWeekViewType = Constants.EPI_CURVE_WEEK_TYPES.EPI.value;
+      this.expanded = true;
+    }
+  }
+  get embedded(): boolean {
+    return this._embedded;
+  }
+  
+  // x axis period token (week / month / day)
+  get xAxisPeriodToken(): string {
+    return EpiCurveHelper.getAxisPeriodToken(this.viewType);
+  }
+
+  
+  // year filter (set by the "case evolution over time" card)
+  // - null / undefined => all years
+  private _filterYear: number;
+  @Input() set filterYear(filterYear: number) {
+    this._filterYear = filterYear;
+    this.refreshDataCaller.call();
+  }
+  get filterYear(): number {
+    return this._filterYear;
   }
 
   // Global filters => Date
@@ -217,11 +251,18 @@ export class EpiCurveReportingDashletComponent implements OnInit, OnDestroy {
     // build chart data
     _.forEach(metricData, (metric: MetricCasesCountStratified) => {
       // create the array with categories ( dates displayed on x axis )
-      this.chartDataCategories.push(LocalizationHelper.displayDate(metric.start));
-
+      this.chartDataCategories.push(
+        EpiCurveHelper.getPeriodLabel(
+          metric.start,
+          this.viewType,
+          this.epiCurveWeekViewType,
+          this.i18nService.instant('LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_WEEK_SHORT_LABEL'),
+          !this.filterYear
+        )
+      );
       // create an array with data for each classification
       _.each(metric.classification, (data, key) => {
-        if (key !== Constants.CASE_CLASSIFICATION.NOT_A_CASE) {
+        if (this.embedded || key !== Constants.CASE_CLASSIFICATION.NOT_A_CASE) {
           if (this.mapCaseClassifications[key]) {
             const translatedKey = this.mapCaseClassifications[key].valueTranslated;
             if (chartData[translatedKey]) {
@@ -258,7 +299,9 @@ export class EpiCurveReportingDashletComponent implements OnInit, OnDestroy {
     if (viewType !== Constants.EPI_CURVE_VIEW_TYPE.WEEK.value) {
       this.epiCurveWeekViewType = undefined;
     } else {
-      this.epiCurveWeekViewType = Constants.EPI_CURVE_WEEK_TYPES.ISO.value;
+      this.epiCurveWeekViewType = this.embedded ?
+        Constants.EPI_CURVE_WEEK_TYPES.EPI.value :
+        Constants.EPI_CURVE_WEEK_TYPES.ISO.value;
     }
 
     // re-render chart
@@ -301,17 +344,35 @@ export class EpiCurveReportingDashletComponent implements OnInit, OnDestroy {
       qb.filter.firstLevelConditions();
 
       // date
-      if (this.globalFilterDate) {
-        qb.filter.byEquality(
-          'endDate',
-          LocalizationHelper.toMoment(this.globalFilterDate).clone().endOf('day').toISOString()
+      // - reference date (global filter) or today
+      const referenceDate: Moment = this.globalFilterDate ?
+        LocalizationHelper.toMoment(this.globalFilterDate).clone().endOf('day') :
+        LocalizationHelper.now().endOf('day');
+
+      // year filter ?
+      // - only cases from the selected year (weeks / months / days of that year)
+      // - past years end on December 31
+      let endDate: Moment = referenceDate;
+      if (this.filterYear) {
+        const yearInterval = EpiCurveHelper.getYearInterval(
+          referenceDate,
+          this.filterYear,
+          this.viewType,
+          this.epiCurveWeekViewType
         );
-      } else {
-        qb.filter.byEquality(
-          'endDate',
-          LocalizationHelper.now().endOf('day').toISOString()
-        );
+        if (yearInterval.end.isBefore(endDate)) {
+          endDate = yearInterval.end;
+        }
+        qb.filter.where({
+          dateOfReporting: {
+            gte: yearInterval.start.toISOString()
+          }
+        });
       }
+      qb.filter.byEquality(
+        'endDate',
+        endDate.toISOString()
+      );
 
       // location
       if (this.globalFilterLocationId) {
@@ -334,11 +395,14 @@ export class EpiCurveReportingDashletComponent implements OnInit, OnDestroy {
       }
 
       // exclude discarded cases
-      qb.filter.where({
-        classification: {
-          neq: Constants.CASE_CLASSIFICATION.NOT_A_CASE
-        }
-      });
+      // - except inside the "case evolution over time" card, where all classifications are displayed (including discarded)
+      if (!this.embedded) {
+        qb.filter.where({
+          classification: {
+            neq: Constants.CASE_CLASSIFICATION.NOT_A_CASE
+          }
+        });
+      }
 
       // classification
       if (!_.isEmpty(this.globalFilterClassificationId)) {

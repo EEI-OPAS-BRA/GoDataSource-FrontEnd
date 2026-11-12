@@ -1,0 +1,35 @@
+app-bb-area-line-chart {
+  .tick {
+    font-size: 12px;
+  }
+
+  /* axis */
+  .bb-axis line,
+  .bb-axis path {
+    fill: none !important;
+    stroke: #ccc;
+  }
+
+  /* grid */
+  .bb-grid line {
+    stroke: #eee;
+  }
+
+  /* line => dark green (series color), no fill (removes the black triangle) */
+  path.bb-line {
+    fill: none !important;
+    stroke-width: 2px;
+  }
+
+  /* area => same green, light and translucent */
+  path.bb-area {
+    opacity: 1 !important;
+    fill-opacity: 0.15 !important;
+  }
+
+  /* points => dark green with white border */
+  circle.bb-circle {
+    stroke: #ffffff;
+    stroke-width: 1px;
+  }
+}

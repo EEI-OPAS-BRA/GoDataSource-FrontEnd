@@ -160,6 +160,15 @@
     class="gd-dashboard-bottom"
     fxLayout="column" fxLayoutGap="1.6rem">
 
+    <!-- Outbreak overview (quick indicators) -->
+    <app-outbreak-overview-dashlet
+      *ngIf="visibleDashlets.Overview"
+      [globalFilterDate]="globalFilterDate"
+      [globalFilterLocationId]="globalFilterLocationId"
+      [globalFilterClassificationId]="globalFilterClassificationId"
+      (detectChanges)="detectChanges()">
+    </app-outbreak-overview-dashlet>
+
     <div
       class="gd-dashboard-bottom-row"
       fxLayout="row" fxLayout.lt-lg="column" fxLayoutAlign="start stretch" fxLayoutAlign.lt-lg="start start" fxLayoutGap="1.6rem">
@@ -194,6 +203,17 @@
       </app-cases-hospitalized-pie-chart-dashlet>
     </div>
 
+  
+    <!-- Case profile (sex, age group, age pyramid, age) -->
+    <app-case-profile-dashlet
+      *ngIf="visibleDashlets.CaseProfile"
+      #caseProfile
+      [globalFilterDate]="globalFilterDate"
+      [globalFilterLocationId]="globalFilterLocationId"
+      [globalFilterClassificationId]="globalFilterClassificationId"
+      (detectChanges)="detectChanges()">
+    </app-case-profile-dashlet>
+
     <!-- Histogram - chains of transmission size -->
     <app-histogram-transmission-chains-size-dashlet
       *ngIf="visibleDashlets.COTHistogram"
@@ -204,55 +224,48 @@
       (detectChanges)="detectChanges()">
     </app-histogram-transmission-chains-size-dashlet>
 
-    <!-- Epidemiological Curve - CLASSIFICATION -->
-    <app-epi-curve-dashlet
-      *ngIf="visibleDashlets.EPICurveClassification"
-      #epiCurveClassification
+    <!-- Contact profile (sex, age group, age pyramid, age) -->
+    <app-contact-profile-dashlet
+      *ngIf="visibleDashlets.ContactProfile"
+      #contactProfile
       [globalFilterDate]="globalFilterDate"
-      [globalFilterLocationId]="globalFilterLocationId"
-      [globalFilterClassificationId]="globalFilterClassificationId"
+      [globalFilterLocationId]="globalFilterLocationId" 
       (detectChanges)="detectChanges()">
-    </app-epi-curve-dashlet>
+    </app-contact-profile-dashlet>
 
-    <!-- Epidemiological Curve - OUTCOME -->
-    <app-epi-curve-outcome-dashlet
-      *ngIf="visibleDashlets.EPICurveOutcome"
-      #epiCurveOutcome
+    <app-epi-curve-tabs-dashlet
+      *ngIf="visibleDashlets.EPICurveClassification || visibleDashlets.EPICurveOutcome || visibleDashlets.EPICurveReporting"
+      #epiCurveTabs
+      [showClassification]="visibleDashlets.EPICurveClassification"
+      [showOutcome]="visibleDashlets.EPICurveOutcome"
+      [showReporting]="visibleDashlets.EPICurveReporting"
       [globalFilterDate]="globalFilterDate"
       [globalFilterLocationId]="globalFilterLocationId"
       [globalFilterClassificationId]="globalFilterClassificationId"
       (detectChanges)="detectChanges()">
-    </app-epi-curve-outcome-dashlet>
+    </app-epi-curve-tabs-dashlet>
 
-    <!-- Epidemiological Curve - REPORTING CLASSIFICATION -->
-    <app-epi-curve-reporting-dashlet
-      *ngIf="visibleDashlets.EPICurveReporting"
-      #epiCurveReporting
+    <!-- Contact follow-up (tabs: follow-up report / cases based on contact status) -->
+    <app-contact-follow-up-tabs-dashlet
+      *ngIf="visibleDashlets.FollowUpOverview || visibleDashlets.ContactStatus"
+      #contactFollowUpTabs
+      [showFollowUp]="visibleDashlets.FollowUpOverview"
+      [showContactStatus]="visibleDashlets.ContactStatus"
       [globalFilterDate]="globalFilterDate"
       [globalFilterLocationId]="globalFilterLocationId"
       [globalFilterClassificationId]="globalFilterClassificationId"
       (detectChanges)="detectChanges()">
-    </app-epi-curve-reporting-dashlet>
+    </app-contact-follow-up-tabs-dashlet>
 
-    <!-- Contact follow-up overview -->
-    <app-contact-follow-up-overview-dashlet
-      *ngIf="visibleDashlets.FollowUpOverview"
-      #followUpOverview
+    <!-- Data quality and timeliness -->
+    <app-data-quality-dashlet
+      *ngIf="visibleDashlets.DataQuality"
+      #dataQuality
       [globalFilterDate]="globalFilterDate"
       [globalFilterLocationId]="globalFilterLocationId"
       [globalFilterClassificationId]="globalFilterClassificationId"
       (detectChanges)="detectChanges()">
-    </app-contact-follow-up-overview-dashlet>
-
-    <!-- Cases based on contact status -->
-    <app-cases-based-on-contact-status-dashlet
-      *ngIf="visibleDashlets.ContactStatus"
-      #contactStatus
-      [globalFilterDate]="globalFilterDate"
-      [globalFilterLocationId]="globalFilterLocationId"
-      [globalFilterClassificationId]="globalFilterClassificationId"
-      (detectChanges)="detectChanges()">
-    </app-cases-based-on-contact-status-dashlet>
+    </app-data-quality-dashlet>
 
     <!-- KPI -->
     <div
