@@ -26,6 +26,7 @@ import { SystemSyncDataService } from './data/system-sync.data.service';
 import { SystemSyncLogDataService } from './data/system-sync-log.data.service';
 import { TeamDataService } from './data/team.data.service';
 import { TeamNotificationDataService } from './data/team-notification.data.service';
+import { WhatsappMessageDataService } from './data/whatsapp-message.data.service';
 import { AttachmentDataService } from './data/attachment.data.service';
 import { StorageService } from './helper/storage.service';
 import { LoggerService } from './helper/logger.service';
@@ -288,6 +289,7 @@ export const services: any[] = [
   AttachmentDataService,
   TeamDataService,
   TeamNotificationDataService,
+  WhatsappMessageDataService,
   AuditLogDataService,
   HelpDataService,
   GlobalEntitySearchDataService,

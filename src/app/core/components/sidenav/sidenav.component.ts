@@ -374,6 +374,14 @@ export class SidenavComponent implements OnInit, OnDestroy {
               '/team-notifications'
             ),
             new ChildNavItem(
+              'whatsapp-messages',
+              'LNG_LAYOUT_MENU_ITEM_WHATSAPP_MESSAGES_LABEL',
+              [
+                PERMISSION.WHATSAPP_MESSAGE_LIST
+              ],
+              '/whatsapp-messages'
+            ),
+            new ChildNavItem(
               'help-admin',
               'LNG_LAYOUT_MENU_ITEM_HELP_ADMIN',
               [

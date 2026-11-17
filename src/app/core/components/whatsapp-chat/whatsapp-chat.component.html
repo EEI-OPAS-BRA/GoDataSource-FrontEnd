@@ -1,0 +1,127 @@
+<div
+  *ngIf="visible"
+  class="gd-whatsapp-chat"
+  [class.gd-whatsapp-chat-minimized]="minimized">
+
+  <!-- Header -->
+  <div
+    class="gd-whatsapp-chat-header"
+    (click)="minimized ? toggleMinimized() : undefined">
+    <mat-icon
+      class="gd-whatsapp-chat-header-logo"
+      svgIcon="whatsapp"></mat-icon>
+    <div
+      class="gd-whatsapp-chat-header-title">
+      <div
+        class="gd-whatsapp-chat-header-title-name">{{recipientName || ('LNG_WHATSAPP_CHAT_TITLE' | translate)}}</div>
+      <div
+        *ngIf="validPhoneNumber"
+        class="gd-whatsapp-chat-header-title-phone">+{{normalizedPhoneNumber}}</div>
+    </div>
+    <button
+      type="button"
+      mat-icon-button
+      [matTooltip]="(minimized ? 'LNG_WHATSAPP_CHAT_BUTTON_RESTORE' : 'LNG_WHATSAPP_CHAT_BUTTON_MINIMIZE') | translate"
+      (click)="$event.stopPropagation(); toggleMinimized()">
+      <mat-icon>{{minimized ? 'expand_less' : 'expand_more'}}</mat-icon>
+    </button>
+    <button
+      type="button"
+      mat-icon-button
+      [matTooltip]="'LNG_COMMON_BUTTON_CLOSE' | translate"
+      (click)="$event.stopPropagation(); close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <ng-container
+    *ngIf="!minimized">
+
+    <!-- Loading -->
+    <div
+      *ngIf="loading; else content"
+      class="gd-whatsapp-chat-loading">
+      <mat-spinner
+        diameter="32"></mat-spinner>
+    </div>
+
+    <ng-template
+      #content>
+
+      <!-- Phone & configured message -->
+      <div
+        class="gd-whatsapp-chat-settings">
+
+        <!-- Phone -->
+        <label
+          class="gd-whatsapp-chat-field">
+          <span
+            class="gd-whatsapp-chat-field-label">{{'LNG_WHATSAPP_CHAT_LABEL_PHONE' | translate}}</span>
+          <input
+            type="tel"
+            name="gdWhatsappChatPhone"
+            autocomplete="off"
+            [class.gd-whatsapp-chat-field-invalid]="!validPhoneNumber"
+            [placeholder]="'LNG_WHATSAPP_CHAT_LABEL_PHONE_PLACEHOLDER' | translate"
+            [(ngModel)]="phoneNumber" />
+        </label>
+        <div
+          *ngIf="!recipient?.phoneNumber"
+          class="gd-whatsapp-chat-warning">{{'LNG_WHATSAPP_CHAT_NO_PHONE' | translate}}</div>
+        <div
+          *ngIf="recipient?.phoneNumber && !validPhoneNumber"
+          class="gd-whatsapp-chat-warning">{{'LNG_WHATSAPP_CHAT_INVALID_PHONE' | translate}}</div>
+
+        <!-- Configured messages -->
+        <label
+          *ngIf="templates.length > 1"
+          class="gd-whatsapp-chat-field">
+          <span
+            class="gd-whatsapp-chat-field-label">{{'LNG_WHATSAPP_CHAT_LABEL_TEMPLATE' | translate}}</span>
+          <select
+            name="gdWhatsappChatTemplate"
+            [ngModel]="selectedTemplateId"
+            (ngModelChange)="selectTemplate($event)">
+            <option
+              *ngFor="let template of templates"
+              [value]="template.id">{{template.title}}</option>
+          </select>
+        </label>
+        <div
+          *ngIf="templates.length < 1"
+          class="gd-whatsapp-chat-warning">{{'LNG_WHATSAPP_CHAT_NO_MESSAGE' | translate}}</div>
+      </div>
+
+      <!-- Conversation -->
+      <div
+        class="gd-whatsapp-chat-conversation">
+        <div
+          *ngIf="message?.trim()"
+          class="gd-whatsapp-chat-conversation-bubble">{{message}}</div>
+      </div>
+
+      <!-- Message & send -->
+      <div
+        class="gd-whatsapp-chat-footer">
+        <textarea
+          name="gdWhatsappChatMessage"
+          rows="3"
+          [placeholder]="'LNG_WHATSAPP_CHAT_LABEL_MESSAGE_PLACEHOLDER' | translate"
+          [(ngModel)]="message"></textarea>
+        <button
+          type="button"
+          mat-mini-fab
+          class="gd-whatsapp-chat-footer-send"
+          [disabled]="!canSend"
+          [matTooltip]="'LNG_WHATSAPP_CHAT_BUTTON_SEND' | translate"
+          (click)="send()">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+      <div
+        class="gd-whatsapp-chat-hint">{{'LNG_WHATSAPP_CHAT_HINT' | translate}}</div>
+
+    </ng-template>
+  </ng-container>
+</div>

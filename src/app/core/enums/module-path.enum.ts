@@ -22,6 +22,7 @@ export enum ModulePath {
   SystemConfigModule = 'system-config',
   TeamModule = 'teams',
   TeamNotificationModule = 'team-notifications',
+  WhatsappMessageModule = 'whatsapp-messages',
   AuditLogModule = 'audit-log',
   SavedFiltersModule = 'saved-filters',
   CloudBackupModule = 'cloud-backup',

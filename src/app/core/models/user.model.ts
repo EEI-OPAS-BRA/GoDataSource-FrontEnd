@@ -47,6 +47,7 @@ export enum UserSettings {
   USER_FIELDS = 'userFields',
   TEAM_FIELDS = 'teamFields',
   TEAM_NOTIFICATION_FIELDS = 'teamNotificationFields',
+  WHATSAPP_MESSAGE_FIELDS = 'whatsappMessageFields',
   COT_SNAPSHOT_FIELDS = 'cotSnapshotFields',
   SEARCH_RESULTS_FIELDS = 'searchResultsFields',
   HELP_CATEGORIES_LIST = 'helpCategoriesList',

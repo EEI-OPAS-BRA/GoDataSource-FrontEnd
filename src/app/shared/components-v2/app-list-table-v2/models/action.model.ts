@@ -109,6 +109,10 @@ interface IV2ActionMenuOption {
   visible?: (data: any) => boolean;
   disable?: (data: any) => boolean;
   tooltip?: (data: any) => string;
+
+  // optional icon displayed before the label ( material icon name or registered svg icon name )
+  icon?: string;
+  svgIcon?: string;
 }
 
 /**

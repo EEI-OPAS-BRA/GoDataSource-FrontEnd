@@ -182,6 +182,14 @@ export enum PERMISSION {
   TEAM_NOTIFICATION_MODIFY = 'team_notification_modify',
   TEAM_NOTIFICATION_DELETE = 'team_notification_delete',
 
+  // whatsapp messages
+  WHATSAPP_MESSAGE_LIST = 'whatsapp_message_list',
+  WHATSAPP_MESSAGE_VIEW = 'whatsapp_message_view',
+  WHATSAPP_MESSAGE_CREATE = 'whatsapp_message_create',
+  WHATSAPP_MESSAGE_MODIFY = 'whatsapp_message_modify',
+  WHATSAPP_MESSAGE_DELETE = 'whatsapp_message_delete',
+  WHATSAPP_MESSAGE_SEND = 'whatsapp_message_send',
+
   // clusters
   CLUSTER_LIST = 'cluster_list',
   CLUSTER_VIEW = 'cluster_view',

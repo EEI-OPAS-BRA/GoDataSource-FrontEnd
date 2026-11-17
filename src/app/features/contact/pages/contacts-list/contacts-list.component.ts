@@ -52,6 +52,9 @@ import { IV2ColumnToVisibleMandatoryConf } from '../../../../shared/forms-v2/com
 import { PersonAndRelatedHelperService } from '../../../../core/services/helper/person-and-related-helper.service';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 
+import { WhatsappMessageModel } from '../../../../core/models/whatsapp-message.model';
+import { WhatsappChatService } from '../../../../core/services/helper/whatsapp-chat.service';
+
 @Component({
   selector: 'app-contacts-list',
   templateUrl: './contacts-list.component.html'
@@ -148,7 +151,8 @@ export class ContactsListComponent
     private router: Router,
     private clusterDataService: ClusterDataService,
     private location: Location,
-    private personAndRelatedHelperService: PersonAndRelatedHelperService
+    private personAndRelatedHelperService: PersonAndRelatedHelperService,
+    private whatsappChatService: WhatsappChatService
   ) {
     super(
       listHelperService, {
@@ -871,6 +875,33 @@ export class ContactsListComponent
               visible: (item: ContactModel): boolean => {
                 return !item.deleted &&
                   ContactModel.canViewChronologyChart(this.authUser);
+              }
+            },
+
+            // Send WhatsApp message
+            {
+              label: {
+                get: () => 'LNG_PAGE_LIST_CONTACTS_ACTION_SEND_WHATSAPP_MESSAGE'
+              },
+              svgIcon: 'whatsapp',
+              cssClasses: () => 'gd-list-table-actions-action-menu-whatsapp',
+              action: {
+                click: (item: ContactModel): void => {
+                  this.whatsappChatService.open({
+                    id: item.id,
+                    type: 'contact',
+                    outbreakId: item.outbreakId || this.selectedOutbreak?.id,
+                    outbreakName: this.selectedOutbreak?.name,
+                    firstName: item.firstName,
+                    lastName: item.lastName,
+                    visualId: item.visualId,
+                    phoneNumber: WhatsappChatService.personPhoneNumber(item)
+                  });
+                }
+              },
+              visible: (item: ContactModel): boolean => {
+                return !item.deleted &&
+                  WhatsappMessageModel.canSend(this.authUser);
               }
             },
 

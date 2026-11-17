@@ -455,6 +455,21 @@ export class Constants {
     }
   };
 
+  static WHATSAPP_MESSAGE_APPLIES_TO = {
+    ALL: {
+      label: 'LNG_WHATSAPP_MESSAGE_APPLIES_TO_ALL',
+      value: 'all'
+    },
+    CASE: {
+      label: 'LNG_WHATSAPP_MESSAGE_APPLIES_TO_CASE',
+      value: 'case'
+    },
+    CONTACT: {
+      label: 'LNG_WHATSAPP_MESSAGE_APPLIES_TO_CONTACT',
+      value: 'contact'
+    }
+  };
+
   /**
      * Notification settings check interval unit
      */

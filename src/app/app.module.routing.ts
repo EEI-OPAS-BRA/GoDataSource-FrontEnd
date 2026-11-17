@@ -497,6 +497,25 @@ const routes: Routes = [
           })
         }
       },
+      // WhatsApp Messages Module routes
+      {
+        path: ModulePath.WhatsappMessageModule,
+        loadChildren: () => import('./features/whatsapp-message/whatsapp-message.module').then((m) => m.WhatsappMessageModule),
+        canActivate: [
+          AuthGuard,
+          PasswordChangeGuard
+        ],
+        data: {
+          permissions: new PermissionExpression({
+            or: [
+              PERMISSION.WHATSAPP_MESSAGE_LIST,
+              PERMISSION.WHATSAPP_MESSAGE_CREATE,
+              PERMISSION.WHATSAPP_MESSAGE_VIEW,
+              PERMISSION.WHATSAPP_MESSAGE_MODIFY
+            ]
+          })
+        }
+      },
       // Dashboard Module routes
       {
         path: ModulePath.DashboardModule,

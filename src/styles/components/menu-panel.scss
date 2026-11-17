@@ -76,6 +76,22 @@
         }
       }
 
+      .gd-list-table-actions-action-menu-button {
+        // optional icon before the label
+        .gd-list-table-actions-action-menu-button-icon {
+          font-size: 1.8rem;
+          height: 1.8rem;
+          margin-right: 0.8rem;
+          vertical-align: middle;
+          width: 1.8rem;
+        }
+
+        // whatsapp option
+        &.gd-list-table-actions-action-menu-whatsapp .gd-list-table-actions-action-menu-button-icon {
+          color: #25d366;
+        }
+      }
+
       .gd-list-table-actions-action-menu-button,
       .gd-list-table-selection-header-button {
         &.gd-list-table-actions-action-menu-warning,

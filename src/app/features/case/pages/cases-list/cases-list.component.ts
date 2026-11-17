@@ -48,6 +48,9 @@ import { LocalizationHelper, Moment } from '../../../../core/helperClasses/local
 import { TeamModel } from '../../../../core/models/team.model';
 import { GenericDataService } from '../../../../core/services/data/generic.data.service';
 
+import { WhatsappMessageModel } from '../../../../core/models/whatsapp-message.model';
+import { WhatsappChatService } from '../../../../core/services/helper/whatsapp-chat.service';
+
 @Component({
   selector: 'app-cases-list',
   templateUrl: './cases-list.component.html'
@@ -145,7 +148,8 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
     private referenceDataHelperService: ReferenceDataHelperService,
     private location: Location,
     private personAndRelatedHelperService: PersonAndRelatedHelperService,
-    private genericDataService: GenericDataService
+    private genericDataService: GenericDataService,
+    private whatsappChatService: WhatsappChatService
   ) {
     super(
       listHelperService, {
@@ -728,6 +732,33 @@ export class CasesListComponent extends ListComponent<CaseModel, IV2ColumnToVisi
               visible: (item: CaseModel): boolean => {
                 return !item.deleted &&
                   CaseModel.canViewChronologyChart(this.authUser);
+              }
+            },
+
+            // Send WhatsApp message
+            {
+              label: {
+                get: () => 'LNG_PAGE_LIST_CASES_ACTION_SEND_WHATSAPP_MESSAGE'
+              },
+              svgIcon: 'whatsapp',
+              cssClasses: () => 'gd-list-table-actions-action-menu-whatsapp',
+              action: {
+                click: (item: CaseModel): void => {
+                  this.whatsappChatService.open({
+                    id: item.id,
+                    type: 'case',
+                    outbreakId: item.outbreakId || this.selectedOutbreak?.id,
+                    outbreakName: this.selectedOutbreak?.name,
+                    firstName: item.firstName,
+                    lastName: item.lastName,
+                    visualId: item.visualId,
+                    phoneNumber: WhatsappChatService.personPhoneNumber(item)
+                  });
+                }
+              },
+              visible: (item: CaseModel): boolean => {
+                return !item.deleted &&
+                  WhatsappMessageModel.canSend(this.authUser);
               }
             },
 
