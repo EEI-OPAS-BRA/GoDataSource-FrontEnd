@@ -1039,7 +1039,7 @@ export class TransmissionChainsDashletComponent implements OnInit, OnDestroy {
     if (this.dateGlobalFilter) {
       requestQueryBuilder.filter.byEquality(
         'endDate',
-        LocalizationHelper.toMoment(this.dateGlobalFilter).toISOString()
+        LocalizationHelper.toMoment(this.dateGlobalFilter).endOf('day').toISOString()
       );
     }
 
