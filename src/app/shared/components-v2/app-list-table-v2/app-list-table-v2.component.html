@@ -472,8 +472,26 @@
       <div
         *ngFor="let legend of legends"
         fxLayout="row nowrap" fxLayoutAlign="start start"
-        class="gd-list-table-bottom-left-legend"
-        [innerHTML]="legend.html | safeHtml"></div>
+        class="gd-list-table-bottom-left-legend">
+        <span class="gd-list-table-bottom-left-legend-title">{{ legend.title }}</span>
+        <span class="gd-list-table-bottom-left-legend-items">
+          <span
+            *ngFor="let item of legend.items"
+            class="gd-list-table-bottom-left-legend-items-item">
+            <svg
+              *ngIf="item.form"
+              [ngSwitch]="item.form.type"
+              width="12" height="12" viewBox="0 0 12 12">
+              <title *ngIf="item.form.tooltip">{{ item.form.tooltip }}</title>
+              <circle *ngSwitchCase="IV2ColumnStatusFormType.CIRCLE" [attr.fill]="HtmlUtils.safeColor(item.form.color)" cx="6" cy="6" r="6" />
+              <rect *ngSwitchCase="IV2ColumnStatusFormType.SQUARE" [attr.fill]="HtmlUtils.safeColor(item.form.color)" width="12" height="12" />
+              <polygon *ngSwitchCase="IV2ColumnStatusFormType.TRIANGLE" [attr.fill]="HtmlUtils.safeColor(item.form.color)" points="6 0, 0 12, 12 12" />
+              <polygon *ngSwitchCase="IV2ColumnStatusFormType.STAR" [attr.fill]="HtmlUtils.safeColor(item.form.color)" points="6,0 2.4,12 11.4,4.8 0,4.8 9.6,12" />
+              <polygon *ngSwitchCase="IV2ColumnStatusFormType.HEXAGON" [attr.fill]="HtmlUtils.safeColor(item.form.color)" points="12,6 9.6,11.16 3,11.16 0,6 3,0.72 9,0.72" />
+            </svg>{{ item.label }}
+          </span>
+        </span>
+      </div>
 
     </div>
 

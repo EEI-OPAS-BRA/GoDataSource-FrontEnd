@@ -216,7 +216,7 @@ export class AppSpreadsheetEditorV2CellBasicRendererModel implements ICellRender
    * Update value
    */
   protected updateValue(): void {
-    this._guiRootValueHTML.innerHTML = this._params.value || this._params.value === 0 ?
+    this._guiRootValueHTML.textContent = this._params.value || this._params.value === 0 ?
       this._params.value :
       '';
   }

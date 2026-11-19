@@ -111,10 +111,10 @@ export class TransmissionChainBarsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // init color rectangles
     this.legendColors = {
-      rectCD: `<span class="legend-rect" style="background-color: ${this.transmissionChainBarsService.graphConfig.isolationColor};"></span>`,
-      rectLAB: `<span class="legend-rect" style="background-color: ${this.transmissionChainBarsService.graphConfig.labResultColor};"></span>`,
-      rectOUT: `<span class="legend-rect" style="background-color: ${this.transmissionChainBarsService.graphConfig.dateOutcomeColor};"></span>`,
-      rectB: `<span class="legend-rect" style="background-color: ${this.transmissionChainBarsService.graphConfig.dateOutcomeBurialColor};"></span>`
+      rectCD: '<span class="legend-rect legend-rect-isolation"></span>',
+      rectLAB: '<span class="legend-rect legend-rect-lab"></span>',
+      rectOUT: '<span class="legend-rect legend-rect-outcome"></span>',
+      rectB: '<span class="legend-rect legend-rect-burial"></span>'
     };
 
     // authenticated user

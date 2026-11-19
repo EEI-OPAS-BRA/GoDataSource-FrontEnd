@@ -13,12 +13,13 @@ import { BUTTONS, NgxWigComponent } from 'ngx-wig';
 import * as _ from 'lodash';
 import { AppFormInputV2LibraryButtons } from '../app-form-input-v2/definitions/app-form-input-v2-library-buttons';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { SafeHtmlPipe } from '../../../pipes/safe-html-pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-form-ngx-wig-v2',
   templateUrl: './app-form-ngx-wig-v2.component.html',
   styleUrls: ['./app-form-ngx-wig-v2.component.scss'],
-  providers: [{
+  providers: [SafeHtmlPipe, {
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => AppFormNgxWigV2Component),
     multi: true
@@ -50,6 +51,9 @@ export class AppFormNgxWigV2Component
   @ViewChild('ngxWig', { static: false }) set ngxWig(ngxWig: NgxWigComponent) {
     // keep reference
     this._ngxWig = ngxWig;
+    if (ngxWig) {
+      this.initializeSafeEditor(ngxWig);
+    }
 
     // register component for easy find
     this.addHtmlListeners();
@@ -65,12 +69,30 @@ export class AppFormNgxWigV2Component
     @Optional() @Host() @SkipSelf() protected controlContainer: ControlContainer,
     protected i18nService: I18nService,
     protected changeDetectorRef: ChangeDetectorRef,
-    protected renderer2: Renderer2
+    protected renderer2: Renderer2,
+    private safeHtmlPipe: SafeHtmlPipe
   ) {
     super(
       controlContainer,
       i18nService,
       changeDetectorRef
+    );
+  }
+
+  private initializeSafeEditor(editor: NgxWigComponent): void {
+    const writeValue = editor.writeValue.bind(editor);
+    editor.writeValue = (value) => writeValue(this.safeHtmlPipe.transform(value));
+
+    const preview = editor.onTextareaChange.bind(editor);
+    editor.onTextareaChange = (value) => preview(this.safeHtmlPipe.transform(value));
+
+    const change = editor.onContentChange.bind(editor);
+    editor.onContentChange = (value) => change(this.safeHtmlPipe.transform(value));
+
+    const command = editor.execCommand.bind(editor);
+    editor.execCommand = (name, value) => command(
+      name,
+      typeof name === 'string' && name.toLowerCase() === 'inserthtml' ? this.safeHtmlPipe.transform(value) : value
     );
   }
 

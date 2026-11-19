@@ -42,7 +42,7 @@
     <div
       fxFlex
       class="gd-app-bottom-dialog-v2-middle"
-      [innerHTML]="config?.config.message.get() | translate:(config?.config.message.data ? config?.config.message.data() : undefined) | safeHtml">
+      [innerHTML]="config?.config.message.get() | htmlTranslate:(config?.config.message.data ? config?.config.message.data() : undefined) | safeHtml">
     </div>
 
     <!-- Bottom Bar -->

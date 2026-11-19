@@ -60,6 +60,15 @@ import { determineIfTouchDevice } from '../../../core/methods/touch-device';
 import { I18nService } from '../../../core/services/helper/i18n.service';
 import { RedirectService } from '../../../core/services/helper/redirect.service';
 import { LocalizationHelper } from '../../../core/helperClasses/localization-helper';
+import { HtmlUtils } from '../../utils/html';
+
+interface IListTableV2Legend {
+  title: string;
+  items: {
+    label: string;
+    form?: V2ColumnStatusForm;
+  }[];
+}
 
 /**
  * Component
@@ -418,45 +427,27 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
   @Input() filtersApplied: boolean = false;
 
   // legends
-  legends: {
-    // required
-    html: string;
-  }[];
+  legends: IListTableV2Legend[];
+  HtmlUtils = HtmlUtils;
+  IV2ColumnStatusFormType = IV2ColumnStatusFormType;
 
   // custom legends not related to columns
-  private _suffixLegendsHTML: {
-    // required
-    html: string;
-  }[] = [];
+  private _suffixLegendsData: IListTableV2Legend[] = [];
   private _suffixLegends: ILabelValuePairModel[];
   @Input() set suffixLegends(suffixLegends: ILabelValuePairModel[]) {
     // set data
     this._suffixLegends = suffixLegends;
 
-    // generate html
-    this._suffixLegendsHTML = [];
+    this._suffixLegendsData = [];
     if (suffixLegends?.length > 0) {
       suffixLegends.forEach((item) => {
-        // simple item ?
-        if (Array.isArray(item.value)) {
-          // create html
-          let html: string = `<span class="gd-list-table-bottom-left-legend-title">${this.i18nService.instant(item.label)}</span><span class="gd-list-table-bottom-left-legend-items">`;
-          (item.value as ILabelValuePairModel[]).forEach((subItem) => {
-            html += `<span class="gd-list-table-bottom-left-legend-items-item">${AppListTableV2Component.renderStatusForm({ type: IV2ColumnStatusFormType.SQUARE, color: subItem.color }, false)} ${this.i18nService.instant(subItem.label)}</span>`;
-          });
-
-          // close items list
-          html += '</span>';
-
-          // add legend
-          this._suffixLegendsHTML.push({
-            html
-          });
-        } else {
-          this._suffixLegendsHTML.push({
-            html: `<span class="gd-list-table-bottom-left-legend-title">${this.i18nService.instant(item.label)}</span><span class="gd-list-table-bottom-left-legend-items"><span class="gd-list-table-bottom-left-legend-items-item">${item.value}</span></span>`
-          });
-        }
+        this._suffixLegendsData.push({
+          title: this.i18nService.instant(item.label),
+          items: Array.isArray(item.value) ? item.value.map((subItem: ILabelValuePairModel) => ({
+            label: this.i18nService.instant(subItem.label),
+            form: { type: IV2ColumnStatusFormType.SQUARE, color: subItem.color }
+          })) : [{ label: item.value }]
+        });
       });
     }
   }
@@ -528,6 +519,13 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
     form: V2ColumnStatusForm,
     addGap: boolean
   ): string {
+    if (form.type !== IV2ColumnStatusFormType.EMPTY) {
+      form = {
+        ...form,
+        tooltip: _.escape(form.tooltip),
+        color: _.escape(HtmlUtils.safeColor(form.color))
+      };
+    }
     let statusHtml: string = `<svg width="${AppListTableV2Component.STANDARD_SHAPE_SIZE + (addGap ? AppListTableV2Component.STANDARD_SHAPE_GAP : 0)}" height="${AppListTableV2Component.STANDARD_SHAPE_SIZE}" viewBox="0 0 ${AppListTableV2Component.STANDARD_SHAPE_SIZE + (addGap ? AppListTableV2Component.STANDARD_SHAPE_GAP : 0)} ${AppListTableV2Component.STANDARD_SHAPE_SIZE}" xmlns="http://www.w3.org/2000/svg">`;
     switch (form.type) {
       case IV2ColumnStatusFormType.CIRCLE:
@@ -1124,11 +1122,7 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
 
         // go through legends
         statusColumn.legends.forEach((legend) => {
-          // render legends
-          let html: string = `<span class="gd-list-table-bottom-left-legend-title">${this.i18nService.instant(legend.title)}</span><span class="gd-list-table-bottom-left-legend-items">`;
-
-          // render legend
-          legend.items
+          const items = legend.items
             .sort((item1, item2) => {
               // if same order, compare labels
               if (item1.order === item2.order) {
@@ -1152,18 +1146,15 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
               // compare order
               return order1 - order2;
             })
-            .forEach((legendItem) => {
-              html += `<span class="gd-list-table-bottom-left-legend-items-item">
-                ${AppListTableV2Component.renderStatusForm(legendItem.form, false)} ${this.i18nService.instant(legendItem.label)}
-              </span>`;
-            });
-
-          // close items list
-          html += '</span>';
+            .map((legendItem) => ({
+              label: this.i18nService.instant(legendItem.label),
+              form: legendItem.form
+            }));
 
           // add to legends to render
           this.legends.push({
-            html
+            title: this.i18nService.instant(legend.title),
+            items
           });
         });
       }
@@ -1211,7 +1202,7 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
     }
 
     // add suffix legends
-    this.legends.push(...this._suffixLegendsHTML);
+    this.legends.push(...this._suffixLegendsData);
 
     // update column defs
     this._agTable.api.setColumnDefs(columnDefs);
@@ -1376,16 +1367,18 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
             value,
             (column as any).highlight
           );
+        } else {
+          value = _.escape(value);
         }
 
         // retrieve url link
         const url: string = value ?
-          basicColumn.link(params.data) :
+          HtmlUtils.safeUrl(basicColumn.link(params.data)) :
           undefined;
 
         // create link
         return url ?
-          `<a class="gd-list-table-link" href="${this.location.prepareExternalUrl(url)}"><span is-link="${url}">${value}</span></a>` :
+          `<a class="gd-list-table-link" href="${_.escape(HtmlUtils.safeUrl(this.location.prepareExternalUrl(url)))}"><span is-link="${_.escape(url)}">${value}</span></a>` :
           value;
       };
     } else {
@@ -1401,8 +1394,8 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
 
           // create color display
           return value ?
-            `<div class="gd-list-table-color"><span style="background-color: ${value};"></span> ${value}</div>` :
-            this.i18nService.instant(colorColumn.noColorLabel);
+            `<div class="gd-list-table-color"><span style="background-color: ${_.escape(HtmlUtils.safeColor(value))};"></span> ${_.escape(value)}</div>` :
+            _.escape(this.i18nService.instant(colorColumn.noColorLabel));
         };
       }
 
@@ -1417,9 +1410,10 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
           const value: string = this.formatValue(params);
 
           // create color display
-          return value ?
-            `<img class="gd-list-table-icon-url" src="${value}" alt="${URLIconColumn.noIconLabel}" />` :
-            this.i18nService.instant(URLIconColumn.noIconLabel);
+          const url = HtmlUtils.safeUrl(value, true);
+          return url ?
+            `<img class="gd-list-table-icon-url" src="${_.escape(url)}" alt="${_.escape(URLIconColumn.noIconLabel)}" />` :
+            _.escape(this.i18nService.instant(URLIconColumn.noIconLabel));
         };
       }
 
@@ -1435,8 +1429,8 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
 
           // create color display
           return value ?
-            `<span class="gd-list-table-icon-material"><span class="material-icons">${value}</span></span>` :
-            this.i18nService.instant(materialIconColumn.noIconLabel);
+            `<span class="gd-list-table-icon-material"><span class="material-icons">${_.escape(value)}</span></span>` :
+            _.escape(this.i18nService.instant(materialIconColumn.noIconLabel));
         };
       }
 
@@ -1467,10 +1461,12 @@ export class AppListTableV2Component implements OnInit, OnDestroy {
         return (params: ValueFormatterParams) => {
           // create links
           return (linkListColumn.links(params.data) || [])
-            .map((item) => item.href ?
-              `<a class="gd-list-table-link" href="${this.location.prepareExternalUrl(item.href)}"><span is-link="${item.href}">${item.label}</span></a>` :
-              item.label
-            )
+            .map((item) => {
+              const url = HtmlUtils.safeUrl(item.href);
+              return url ?
+                `<a class="gd-list-table-link" href="${_.escape(HtmlUtils.safeUrl(this.location.prepareExternalUrl(url)))}"><span is-link="${_.escape(url)}">${_.escape(item.label)}</span></a>` :
+                _.escape(item.label);
+            })
             .join(' / ');
         };
       }

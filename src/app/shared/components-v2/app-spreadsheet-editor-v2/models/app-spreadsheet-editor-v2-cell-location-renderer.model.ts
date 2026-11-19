@@ -34,9 +34,9 @@ export class AppSpreadsheetEditorV2CellLocationRendererModel extends AppSpreadsh
     }
 
     // update text
-    this._guiRootValueHTMLValue.innerHTML = this._params.value && this._colDef.editor.locationsMap && this._colDef.editor.locationsMap[this._params.value] ?
+    this._guiRootValueHTMLValue.textContent = this._params.value && this._colDef.editor.locationsMap && this._colDef.editor.locationsMap[this._params.value] ?
       this._colDef.editor.locationsMap[this._params.value].label : (
-        this._params.value ?
+        this._params.value || this._params.value === 0 ?
           this._params.value :
           ''
       );

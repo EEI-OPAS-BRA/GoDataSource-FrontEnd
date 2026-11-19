@@ -1,4 +1,5 @@
 import { AppSpreadsheetEditorV2CellBasicRendererModel } from './app-spreadsheet-editor-v2-cell-basic-renderer.model';
+import { HtmlUtils } from '../../../utils/html';
 
 /**
  * Select cell renderer
@@ -34,7 +35,7 @@ export class AppSpreadsheetEditorV2CellSelectRendererModel extends AppSpreadshee
     }
 
     // update text
-    this._guiRootValueHTMLValue.innerHTML = '';
+    this._guiRootValueHTMLValue.textContent = '';
 
     // icon
     if (
@@ -42,7 +43,10 @@ export class AppSpreadsheetEditorV2CellSelectRendererModel extends AppSpreadshee
       this._params.value !== null &&
       this._colDef.columnDefinition.optionsMap[this._params.value]?.icon
     ) {
-      this._guiRootValueHTMLValue.innerHTML += `<span class="material-icons mat-icon">${this._colDef.columnDefinition.optionsMap[this._params.value].icon}</span>`;
+      const icon = document.createElement('span');
+      icon.classList.add('material-icons', 'mat-icon');
+      icon.textContent = this._colDef.columnDefinition.optionsMap[this._params.value].icon;
+      this._guiRootValueHTMLValue.appendChild(icon);
     }
 
     // icon url
@@ -51,11 +55,16 @@ export class AppSpreadsheetEditorV2CellSelectRendererModel extends AppSpreadshee
       this._params.value !== null &&
       this._colDef.columnDefinition.optionsMap[this._params.value]?.iconUrl
     ) {
-      this._guiRootValueHTMLValue.innerHTML += `<img src="${this._colDef.columnDefinition.optionsMap[this._params.value].iconUrl}" />`;
+      const url = HtmlUtils.safeUrl(this._colDef.columnDefinition.optionsMap[this._params.value].iconUrl, true);
+      if (url) {
+        const icon = document.createElement('img');
+        icon.src = url;
+        this._guiRootValueHTMLValue.appendChild(icon);
+      }
     }
 
     // label
-    this._guiRootValueHTMLValue.innerHTML += this._params.value !== undefined && this._params.value !== null && this._colDef.columnDefinition.optionsMap[this._params.value] ?
+    const label = this._params.value !== undefined && this._params.value !== null && this._colDef.columnDefinition.optionsMap[this._params.value] ?
       (
         this._colDef.columnDefinition.optionsMap[this._params.value].label ?
           this._colDef.editor.helpers.translate(this._colDef.columnDefinition.optionsMap[this._params.value].label) :
@@ -65,6 +74,7 @@ export class AppSpreadsheetEditorV2CellSelectRendererModel extends AppSpreadshee
           this._params.value :
           ''
       );
+    this._guiRootValueHTMLValue.appendChild(document.createTextNode(String(label)));
   }
 
   /**

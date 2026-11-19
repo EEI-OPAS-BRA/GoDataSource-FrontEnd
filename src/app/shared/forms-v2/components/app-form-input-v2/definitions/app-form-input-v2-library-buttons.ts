@@ -13,6 +13,7 @@ import {
   V2SideDialogConfigInputType
 } from '../../../../components-v2/app-side-dialog-v2/models/side-dialog-config.model';
 import { of } from 'rxjs';
+import { HtmlUtils } from '../../../../utils/html';
 
 /**
  * Image data
@@ -445,40 +446,32 @@ export class AppFormInputV2LibraryButtons {
     // reset caret position
     AppFormInputV2LibraryButtons.resetCaretPosition(ctx);
 
-    // construct image html
-    let imgHtml = `<img class="ngx-wig-img" src="${data.imgUrl}"`;
-
-    // set width ?
-    if (
-      _.isNumber(data.imgWidth) ||
-      !_.isEmpty(data.imgWidth)
-    ) {
-      imgHtml += ` width="${data.imgWidth}${data.imgWidthType}"`;
+    const image = AppFormInputV2LibraryButtons.createImage(data);
+    if (image.hasAttribute('src')) {
+      ctx.execCommand('insertHtml', image.outerHTML);
     }
+  }
 
-    // set height ?
-    if (
-      _.isNumber(data.imgHeight) ||
-      !_.isEmpty(data.imgHeight)
-    ) {
-      imgHtml += ` height="${data.imgHeight}${data.imgHeightType}"`;
+  private static createImage(data: INgxWigImgData): HTMLImageElement {
+    const image = document.createElement('img');
+    image.className = 'ngx-wig-img';
+    const url = HtmlUtils.safeUrl(data.imgUrl, true);
+    if (url) {
+      image.setAttribute('src', url);
     }
-
-    // title
-    if (!_.isEmpty(data.imgTitle)) {
-      imgHtml += ` title="${data.imgTitle}"`;
+    if (Number.isFinite(data.imgWidth) && data.imgWidth >= 0) {
+      image.setAttribute('width', `${data.imgWidth}${data.imgWidthType === '%' ? '%' : 'px'}`);
     }
-
-    // alt
-    if (!_.isEmpty(data.imgAlt)) {
-      imgHtml += ` alt="${data.imgAlt}"`;
+    if (Number.isFinite(data.imgHeight) && data.imgHeight >= 0) {
+      image.setAttribute('height', `${data.imgHeight}${data.imgHeightType === '%' ? '%' : 'px'}`);
     }
-
-    // insert image
-    ctx.execCommand(
-      'insertHtml',
-      `${imgHtml} />`
-    );
+    if (data.imgTitle) {
+      image.title = data.imgTitle;
+    }
+    if (data.imgAlt) {
+      image.alt = data.imgAlt;
+    }
+    return image;
   }
 
   /**
@@ -489,74 +482,14 @@ export class AppFormInputV2LibraryButtons {
     element,
     data: INgxWigImgData
   ) {
-    // update URL
-    AppFormInputV2LibraryButtons._renderer2.setAttribute(
-      element,
-      'src',
-      data.imgUrl
-    );
-
-    // set width ?
-    if (
-      _.isNumber(data.imgWidth) ||
-      !_.isEmpty(data.imgWidth)
-    ) {
-      AppFormInputV2LibraryButtons._renderer2.setAttribute(
-        element,
-        'width',
-        `${data.imgWidth}${data.imgWidthType}`
-      );
-    } else {
-      AppFormInputV2LibraryButtons._renderer2.removeAttribute(
-        element,
-        'width'
-      );
-    }
-
-    // set height ?
-    if (
-      _.isNumber(data.imgHeight) ||
-      !_.isEmpty(data.imgHeight)
-    ) {
-      AppFormInputV2LibraryButtons._renderer2.setAttribute(
-        element,
-        'height',
-        `${data.imgHeight}${data.imgHeightType}`
-      );
-    } else {
-      AppFormInputV2LibraryButtons._renderer2.removeAttribute(
-        element,
-        'height'
-      );
-    }
-
-    // title
-    if (!_.isEmpty(data.imgTitle)) {
-      AppFormInputV2LibraryButtons._renderer2.setAttribute(
-        element,
-        'title',
-        data.imgTitle
-      );
-    } else {
-      AppFormInputV2LibraryButtons._renderer2.removeAttribute(
-        element,
-        'title'
-      );
-    }
-
-    // alt
-    if (!_.isEmpty(data.imgAlt)) {
-      AppFormInputV2LibraryButtons._renderer2.setAttribute(
-        element,
-        'alt',
-        data.imgAlt
-      );
-    } else {
-      AppFormInputV2LibraryButtons._renderer2.removeAttribute(
-        element,
-        'alt'
-      );
-    }
+    const image = AppFormInputV2LibraryButtons.createImage(data);
+    ['src', 'width', 'height', 'title', 'alt'].forEach((attribute) => {
+      if (image.hasAttribute(attribute)) {
+        AppFormInputV2LibraryButtons._renderer2.setAttribute(element, attribute, image.getAttribute(attribute));
+      } else {
+        AppFormInputV2LibraryButtons._renderer2.removeAttribute(element, attribute);
+      }
+    });
 
     // content changed - mark as dirty
     ctx.onContentChange(ctx.container.innerHTML);
@@ -672,24 +605,22 @@ export class AppFormInputV2LibraryButtons {
     // reset caret position
     AppFormInputV2LibraryButtons.resetCaretPosition(ctx);
 
-    // construct link html
-    let linkHtml = `<a class="ngx-wig-link" href="${data.linkUrl}"`;
+    ctx.execCommand('insertHtml', AppFormInputV2LibraryButtons.createLink(data).outerHTML);
+  }
 
-    // target
-    if (!_.isEmpty(data.linkTarget)) {
-      linkHtml += ` target="${data.linkTarget}"`;
+  private static createLink(data: INgxWigLinkData): HTMLAnchorElement {
+    const link = document.createElement('a');
+    link.className = 'ngx-wig-link';
+    const url = HtmlUtils.safeUrl(data.linkUrl);
+    if (url) {
+      link.setAttribute('href', url);
     }
-
-    // text - MUST BE LAST
-    if (!_.isEmpty(data.linkText)) {
-      linkHtml += '>' + data.linkText + '</a>';
+    link.textContent = data.linkText;
+    link.target = ['_blank', '_self', '_parent', '_top'].includes(data.linkTarget) ? data.linkTarget : '_self';
+    if (link.target === '_blank') {
+      link.rel = 'noopener noreferrer';
     }
-
-    // insert image
-    ctx.execCommand(
-      'insertHtml',
-      linkHtml
-    );
+    return link;
   }
 
   /**
@@ -700,22 +631,15 @@ export class AppFormInputV2LibraryButtons {
     element,
     data: INgxWigLinkData
   ) {
-    // update URL
-    AppFormInputV2LibraryButtons._renderer2.setAttribute(
-      element,
-      'href',
-      data.linkUrl
-    );
-
-    // text
-    element.innerText = data.linkText;
-
-    // target
-    AppFormInputV2LibraryButtons._renderer2.setAttribute(
-      element,
-      'target',
-      data.linkTarget
-    );
+    const link = AppFormInputV2LibraryButtons.createLink(data);
+    ['href', 'target', 'rel'].forEach((attribute) => {
+      if (link.hasAttribute(attribute)) {
+        AppFormInputV2LibraryButtons._renderer2.setAttribute(element, attribute, link.getAttribute(attribute));
+      } else {
+        AppFormInputV2LibraryButtons._renderer2.removeAttribute(element, attribute);
+      }
+    });
+    element.textContent = data.linkText;
 
     // content changed - mark as dirty
     ctx.onContentChange(ctx.container.innerHTML);
