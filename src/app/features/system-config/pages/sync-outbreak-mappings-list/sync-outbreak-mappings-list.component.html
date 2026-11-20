@@ -1,0 +1,97 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  pageTitle="LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL">
+
+  <div class="gd-mappings">
+
+    <!-- What this page is for -->
+    <div class="gd-mappings-intro">
+      <span class="material-icons">compare_arrows</span>
+      <div>
+        <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_INTRO_TITLE' | translate}}</strong>
+        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_INTRO_DESCRIPTION' | translate}}</p>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="gd-mappings-loading">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading">
+
+      <!-- Nothing received -->
+      <div *ngIf="!waitingItems.length && !approvedItems.length" class="gd-mappings-empty">
+        <span class="material-icons">inbox</span>
+        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_EMPTY' | translate}}</p>
+      </div>
+
+      <!-- Waiting for the user -->
+      <section *ngIf="waitingItems.length">
+        <h3 class="gd-mappings-section-title">
+          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_TITLE' | translate}}
+          <span class="gd-mappings-count gd-mappings-count-warning">{{waitingItems.length}}</span>
+        </h3>
+        <div class="gd-mappings-grid">
+          <ng-container *ngTemplateOutlet="cardTemplate; context: {items: waitingItems}"></ng-container>
+        </div>
+      </section>
+
+      <!-- Approved -->
+      <section *ngIf="approvedItems.length">
+        <h3 class="gd-mappings-section-title">
+          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_APPROVED_TITLE' | translate}}
+          <span class="gd-mappings-count">{{approvedItems.length}}</span>
+        </h3>
+        <div class="gd-mappings-grid">
+          <ng-container *ngTemplateOutlet="cardTemplate; context: {items: approvedItems}"></ng-container>
+        </div>
+      </section>
+
+    </ng-container>
+  </div>
+
+  <!-- Mapping card -->
+  <ng-template #cardTemplate let-items="items">
+    <div
+      *ngFor="let item of items"
+      class="gd-mappings-card gd-mappings-card-{{item.mapping.status | lowercase}}">
+      <div class="gd-mappings-card-header">
+        <span class="gd-mappings-status gd-mappings-status-{{item.mapping.status | lowercase}}">
+          {{('LNG_SYNC_OUTBREAK_MAPPING_STATUS_' + item.mapping.status) | translate}}
+        </span>
+        <small>{{item.updatedAt}}</small>
+      </div>
+
+      <div class="gd-mappings-card-flow">
+        <div>
+          <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_RECEIVED_FROM' | translate}} {{item.clientName}}</small>
+          <strong>{{item.mapping.sourceOutbreakName || ('LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UNKNOWN_OUTBREAK' | translate)}}</strong>
+        </div>
+        <span class="material-icons">arrow_forward</span>
+        <div>
+          <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_HERE' | translate}}</small>
+          <strong *ngIf="item.mapping.mode === 'map'">{{item.targetOutbreakName}}</strong>
+          <strong *ngIf="item.mapping.mode === 'new'">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_IMPORTED_AS_NEW' | translate}}</strong>
+          <em *ngIf="!item.mapping.mode">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_NOT_DEFINED' | translate}}</em>
+        </div>
+      </div>
+
+      <p *ngIf="item.mapping.status === 'REVIEW'" class="gd-mappings-card-note">
+        <span class="material-icons">new_releases</span>
+        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_NEW_QUESTIONS' | translate: {count: item.pendingCount} }}
+      </p>
+      <p *ngIf="item.mapping.status === 'PENDING'" class="gd-mappings-card-note">
+        <span class="material-icons">hourglass_empty</span>
+        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_NOTE' | translate}}
+      </p>
+
+      <a
+        mat-flat-button
+        [color]="item.mapping.status === 'APPROVED' ? 'secondary' : 'primary'"
+        [routerLink]="['/system-config/sync-outbreak-mappings', item.mapping.id]">
+        {{(item.mapping.status === 'APPROVED' ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_VIEW_BUTTON' : (canModify ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_MAP_BUTTON' : 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_VIEW_BUTTON')) | translate}}
+      </a>
+    </div>
+  </ng-template>
+
+</app-basic-page-v2>
