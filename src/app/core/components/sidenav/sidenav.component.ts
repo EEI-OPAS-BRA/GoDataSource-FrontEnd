@@ -446,6 +446,14 @@ export class SidenavComponent implements OnInit, OnDestroy {
               '/system-config/client-applications'
             ),
             new ChildNavItem(
+              'sync-outbreak-mappings',
+              'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
+              [
+                PERMISSION.CLIENT_APPLICATION_LIST
+              ],
+              '/system-config/sync-outbreak-mappings'
+            ),
+            new ChildNavItem(
               'sync',
               'LNG_LAYOUT_MENU_ITEM_SYNC_LABEL',
               [

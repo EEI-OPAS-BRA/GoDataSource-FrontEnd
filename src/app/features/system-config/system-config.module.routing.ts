@@ -297,6 +297,36 @@ const routes: Routes = [
       syncLogsModule: SyncPackageModuleDataResolver,
       syncLogsType: SyncPackageExportTypeDataResolver
     }
+  },
+
+  // Outbreak mappings of the instances that send data
+  {
+    path: 'sync-outbreak-mappings',
+    children: [
+      {
+        path: '',
+        component: fromPages.SyncOutbreakMappingsListComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_LIST
+          ]
+        },
+        resolve: {
+          outbreak: OutbreakDataResolver
+        }
+      },
+      {
+        path: ':mappingId',
+        component: fromPages.SyncOutbreakMappingEditComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_VIEW
+          ]
+        }
+      }
+    ]
   }
 ];
 

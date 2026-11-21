@@ -11,6 +11,8 @@ import { SystemDevicesComponent } from './system-devices-list/system-devices.com
 import { BackupsRestoresComponent } from './backups-restores/backups-restores.component';
 import { NotificationSettingsComponent } from './notification-settings/notification-settings.component';
 import { SyncDocumentationComponent } from './sync-documentation/sync-documentation.component';
+import { SyncOutbreakMappingsListComponent } from './sync-outbreak-mappings-list/sync-outbreak-mappings-list.component';
+import { SyncOutbreakMappingEditComponent } from './sync-outbreak-mapping-edit/sync-outbreak-mapping-edit.component';
 
 // export each page component individually
 export * from './upstream-servers-create-view-modify/upstream-servers-create-view-modify.component';
@@ -25,6 +27,8 @@ export * from './system-devices-list/system-devices.component';
 export * from './view-history-system-device/view-history-system-device.component';
 export * from './system-sync-logs/system-sync-logs.component';
 export * from './sync-documentation/sync-documentation.component';
+export * from './sync-outbreak-mappings-list/sync-outbreak-mappings-list.component';
+export * from './sync-outbreak-mapping-edit/sync-outbreak-mapping-edit.component';
 
 // export the list of all page components
 export const pageComponents: any[] = [
@@ -37,6 +41,8 @@ export const pageComponents: any[] = [
   SystemDevicesComponent,
   SystemSyncLogsComponent,
   SyncDocumentationComponent,
+  SyncOutbreakMappingsListComponent,
+  SyncOutbreakMappingEditComponent,
   UpstreamServersCreateViewModifyComponent,
   UpstreamServersListComponent,
   ViewHistorySystemDeviceComponent
