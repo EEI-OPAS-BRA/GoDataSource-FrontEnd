@@ -59,7 +59,7 @@
         <span class="gd-mappings-status gd-mappings-status-{{item.mapping.status | lowercase}}">
           {{('LNG_SYNC_OUTBREAK_MAPPING_STATUS_' + item.mapping.status) | translate}}
         </span>
-        <small>{{item.updatedAt}}</small>
+        <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UPDATED_AT' | translate: {date: item.updatedAt} }}</small>
       </div>
 
       <div class="gd-mappings-card-flow">

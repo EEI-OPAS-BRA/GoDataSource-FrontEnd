@@ -95,6 +95,20 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
   } = {};
   onlyPending: boolean = false;
 
+  // full rules of the questions step (collapsed by default, the guide shows the summary)
+  showRules: boolean = false;
+
+  // automatic suggestion: running state, questions linked by it (highlighted until the user changes them) & result summary
+  suggesting: boolean = false;
+  suggestResult: {
+    questions: number,
+    answers: number
+  } = null;
+  private _suggestedQuestions: {
+    [key: string]: number
+  } = {};
+  private _suggestTimer: ReturnType<typeof setTimeout>;
+
   // received questions that are new since the last approval
   private _newQuestions: {
     [key: string]: true
@@ -171,6 +185,9 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
    * Release resources
    */
   ngOnDestroy(): void {
+    if (this._suggestTimer) {
+      clearTimeout(this._suggestTimer);
+    }
     this._destroyed$.next();
     this._destroyed$.complete();
   }
@@ -231,6 +248,12 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
     this.targetOutbreakId = outbreakId;
     this.targetQuestionnaires = {};
     this._targetQuestionsMap = {};
+
+    // suggestions were made for another outbreak
+    if (!keepDecisions) {
+      this._suggestedQuestions = {};
+      this.suggestResult = null;
+    }
     if (!outbreakId) {
       return;
     }
@@ -320,6 +343,9 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
     const decision = this.getDecision(questionnaire, sourceQuestion.variable);
     decision.target = target;
     decision.answers = {};
+
+    // chosen by the user => not a suggestion anymore
+    delete this._suggestedQuestions[`${questionnaire}.${sourceQuestion.variable}`];
 
     // options with the same value / text are mapped automatically
     const targetQuestion = this.getTargetQuestion(questionnaire, target);
@@ -491,7 +517,8 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
   /**
    * Map the options with the same value / text
    */
-  private suggestAnswers(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion, decision: IQuestionDecision): void {
+  private suggestAnswers(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion, decision: IQuestionDecision): number {
+    let linked: number = 0;
     sourceQuestion.answers.forEach((sourceAnswer) => {
       if (decision.answers[sourceAnswer.value]) {
         return;
@@ -501,44 +528,73 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
         targetQuestion.answers.find((answer) => this.normalize(answer.labelTranslated) === this.normalize(sourceAnswer.labelTranslated));
       if (targetAnswer) {
         decision.answers[sourceAnswer.value] = targetAnswer.value;
+        linked++;
       }
     });
+    return linked;
+  }
+
+  /**
+   * Received question linked by the automatic suggestion (and not changed by the user since)
+   */
+  isSuggested(questionnaire: string, variable: string): boolean {
+    return this._suggestedQuestions[`${questionnaire}.${variable}`] !== undefined;
+  }
+
+  /**
+   * Delay of the highlight of a suggested question, so they light up one after the other
+   */
+  getSuggestedDelay(questionnaire: string, variable: string): number {
+    return Math.min(this._suggestedQuestions[`${questionnaire}.${variable}`] || 0, 20) * 60;
   }
 
   /**
    * Map the questions (and options) with the same variable / text that weren't decided yet
    */
   suggest(): void {
-    let suggested: number = 0;
-    this.tabs.forEach((tab) => {
-      const targetQuestions = this.targetQuestionnaires[tab.key] || [];
-      tab.questions.forEach((sourceQuestion) => {
-        const decision = this.getDecision(tab.key, sourceQuestion.variable);
+    if (this.suggesting) {
+      return;
+    }
 
-        // question (only compatible questions that aren't linked to another received question)
-        if (!decision.target) {
-          const available = (question: ISyncOutbreakMappingQuestion) => !this.getTargetUnavailableReason(tab.key, sourceQuestion, question);
-          const targetQuestion = targetQuestions.find((question) => question.variable === sourceQuestion.variable && available(question)) ||
-            targetQuestions.find((question) => this.normalize(question.textTranslated) === this.normalize(sourceQuestion.textTranslated) && available(question));
-          if (targetQuestion) {
-            decision.target = targetQuestion.variable;
-            suggested++;
+    // short "searching" state, so the user perceives the work being done before the results light up
+    this.suggesting = true;
+    this.suggestResult = null;
+    this._suggestTimer = setTimeout(() => {
+      this._suggestTimer = undefined;
+      let suggestedQuestions: number = 0;
+      let suggestedAnswers: number = 0;
+      this.tabs.forEach((tab) => {
+        const targetQuestions = this.targetQuestionnaires[tab.key] || [];
+        tab.questions.forEach((sourceQuestion) => {
+          const decision = this.getDecision(tab.key, sourceQuestion.variable);
+
+          // question (only compatible questions that aren't linked to another received question)
+          if (!decision.target) {
+            const available = (question: ISyncOutbreakMappingQuestion) => !this.getTargetUnavailableReason(tab.key, sourceQuestion, question);
+            const targetQuestion = targetQuestions.find((question) => question.variable === sourceQuestion.variable && available(question)) ||
+              targetQuestions.find((question) => this.normalize(question.textTranslated) === this.normalize(sourceQuestion.textTranslated) && available(question));
+            if (targetQuestion) {
+              decision.target = targetQuestion.variable;
+              this._suggestedQuestions[`${tab.key}.${sourceQuestion.variable}`] = suggestedQuestions;
+              suggestedQuestions++;
+            }
           }
-        }
 
-        // options
-        const targetQuestion = this.getTargetQuestion(tab.key, decision.target);
-        if (this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
-          this.suggestAnswers(sourceQuestion, targetQuestion, decision);
-        }
+          // options
+          const targetQuestion = this.getTargetQuestion(tab.key, decision.target);
+          if (this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
+            suggestedAnswers += this.suggestAnswers(sourceQuestion, targetQuestion, decision);
+          }
+        });
       });
-    });
 
-    this.toastV2Service.notice(
-      'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_RESULT', {
-        count: suggested.toString()
-      }
-    );
+      this.suggesting = false;
+      this.suggestResult = {
+        questions: suggestedQuestions,
+        answers: suggestedAnswers
+      };
+      this.changeDetectorRef.markForCheck();
+    }, 700);
   }
 
   /**
