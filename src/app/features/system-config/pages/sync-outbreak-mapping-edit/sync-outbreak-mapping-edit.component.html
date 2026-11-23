@@ -65,6 +65,7 @@
     <section *ngIf="mode === 'map' && targetOutbreakId && tabs.length" class="gd-mapping-section">
       <h3><span class="gd-mapping-step">2</span> {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_QUESTIONS' | translate}}</h3>
       <p class="gd-mapping-hint">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_QUESTIONS_DESCRIPTION' | translate}}</p>
+      <p class="gd-mapping-hint">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_COMPATIBILITY_HINT' | translate}}</p>
 
       <div *ngIf="loadingTarget" class="gd-mapping-loading">
         <mat-spinner diameter="28"></mat-spinner>
@@ -133,12 +134,24 @@
                       <mat-option [value]="IGNORE" class="gd-mapping-ignore-option">
                         {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_IGNORE' | translate}}
                       </mat-option>
-                      <mat-option *ngFor="let targetQuestion of targetQuestionnaires[tab.key]" [value]="targetQuestion.variable">
+                      <mat-option
+                        *ngFor="let targetQuestion of targetQuestionnaires[tab.key]"
+                        [value]="targetQuestion.variable"
+                        [disabled]="!!getTargetUnavailableReason(tab.key, question, targetQuestion)">
                         {{getQuestionLabel(targetQuestion)}}
+                        <small *ngIf="getTargetUnavailableReason(tab.key, question, targetQuestion) as reason" class="gd-mapping-unavailable">
+                          ({{reason | translate}})
+                        </small>
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
                 </div>
+
+                <!-- options written as text -->
+                <p *ngIf="isChoiceToText(tab.key, question)" class="gd-mapping-hint gd-mapping-choice-to-text">
+                  <span class="material-icons">notes</span>
+                  {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_CHOICE_TO_TEXT' | translate}}
+                </p>
 
                 <!-- options -->
                 <div

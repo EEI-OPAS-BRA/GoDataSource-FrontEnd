@@ -5,12 +5,15 @@ import { Subject, throwError } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import {
+  getSyncOutbreakMappingConversion,
+  isSyncOutbreakMappingAnswerableQuestion,
   ISyncOutbreakMappingDetails,
   ISyncOutbreakMappingQuestion,
   ISyncOutbreakMappingQuestionMappings,
   ISyncOutbreakMappingQuestionnaires,
   SYNC_OUTBREAK_MAPPING_CHOICE_ANSWER_TYPES,
   SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES,
+  SyncOutbreakMappingConversion,
   SyncOutbreakMappingMode
 } from '../../../../core/models/sync-outbreak-mapping.model';
 import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
@@ -139,14 +142,14 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
         this.details = details;
         this.initializeBreadcrumbs(authUser);
 
-        // questionnaires that have questions
+        // questionnaires that have questions with answers (markup questions are only texts, there is nothing to map)
         this.tabs = SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES
-          .filter((questionnaire) => details.sourceQuestionnaires[questionnaire]?.length > 0)
           .map((questionnaire) => ({
             key: questionnaire,
             label: SyncOutbreakMappingEditComponent.QUESTIONNAIRE_LABELS[questionnaire],
-            questions: details.sourceQuestionnaires[questionnaire]
-          }));
+            questions: (details.sourceQuestionnaires[questionnaire] || []).filter((question) => isSyncOutbreakMappingAnswerableQuestion(question))
+          }))
+          .filter((tab) => tab.questions.length > 0);
 
         // new questions
         details.mapping.pendingQuestions.forEach((question) => {
@@ -249,14 +252,42 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
           this._targetQuestionsMap[questionnaire] = _.keyBy(questionnaires[questionnaire] || [], 'variable');
         });
 
-        // decisions about questions that don't exist in this outbreak don't apply
+        // decisions that don't apply to the questionnaires of this outbreak (question / option removed, answer type changed, question used twice) must be taken again
         SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES.forEach((questionnaire) => {
+          const sourceQuestions = _.keyBy(this.details?.sourceQuestionnaires[questionnaire] || [], 'variable');
+          const usedTargets: { [targetVariable: string]: true } = {};
           _.each(this.decisions[questionnaire], (decision, sourceVariable) => {
+            if (!keepDecisions) {
+              delete this.decisions[questionnaire][sourceVariable];
+              return;
+            }
+
+            if (!decision.target || decision.target === this.IGNORE) {
+              return;
+            }
+
+            const targetQuestion = this._targetQuestionsMap[questionnaire][decision.target];
+            const conversion = getSyncOutbreakMappingConversion(sourceQuestions[sourceVariable], targetQuestion);
             if (
-              !keepDecisions ||
-              (decision.target && decision.target !== this.IGNORE && !this._targetQuestionsMap[questionnaire][decision.target])
+              !conversion ||
+              usedTargets[decision.target]
             ) {
               delete this.decisions[questionnaire][sourceVariable];
+              return;
+            }
+            usedTargets[decision.target] = true;
+
+            // options of this outbreak that don't exist anymore
+            if (conversion !== SyncOutbreakMappingConversion.CHOICE_TO_TEXT) {
+              const targetValues = (targetQuestion.answers || []).map((answer) => answer.value);
+              _.each(decision.answers, (targetValue, sourceValue) => {
+                if (
+                  targetValue !== this.IGNORE &&
+                  !targetValues.includes(targetValue)
+                ) {
+                  delete decision.answers[sourceValue];
+                }
+              });
             }
           });
         });
@@ -298,6 +329,46 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * How the answers of a received question are converted to a question of this instance; null when they aren't compatible
+   */
+  getConversion(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): SyncOutbreakMappingConversion | null {
+    return getSyncOutbreakMappingConversion(sourceQuestion, targetQuestion);
+  }
+
+  /**
+   * Received question that already uses a question of this instance (each question of this instance receives the answers of only one received question)
+   */
+  private getSourceUsingTarget(questionnaire: string, targetVariable: string, exceptSourceVariable: string): string {
+    return _.findKey(
+      this.decisions[questionnaire] || {},
+      (decision, sourceVariable) => sourceVariable !== exceptSourceVariable && decision.target === targetVariable
+    );
+  }
+
+  /**
+   * Why a question of this instance can't be chosen for a received question (translation token), null when it can
+   */
+  getTargetUnavailableReason(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): string {
+    if (!this.getConversion(sourceQuestion, targetQuestion)) {
+      return 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_INCOMPATIBLE_TYPE';
+    }
+
+    if (this.getSourceUsingTarget(questionnaire, targetQuestion.variable, sourceQuestion.variable)) {
+      return 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_ALREADY_LINKED';
+    }
+
+    return null;
+  }
+
+  /**
+   * The options of the received question are written as text in the question of this instance
+   */
+  isChoiceToText(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion): boolean {
+    const targetQuestion = this.getTargetQuestion(questionnaire, this.decisions[questionnaire]?.[sourceQuestion.variable]?.target);
+    return this.getConversion(sourceQuestion, targetQuestion) === SyncOutbreakMappingConversion.CHOICE_TO_TEXT;
+  }
+
+  /**
    * Question of this instance
    */
   getTargetQuestion(questionnaire: string, variable: string): ISyncOutbreakMappingQuestion {
@@ -317,7 +388,11 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
    * The options must be mapped
    */
   hasAnswersMapping(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): boolean {
-    return this.isChoice(sourceQuestion) && this.isChoice(targetQuestion);
+    const conversion = this.getConversion(sourceQuestion, targetQuestion);
+    return this.isChoice(sourceQuestion) && (
+      conversion === SyncOutbreakMappingConversion.SAME ||
+      conversion === SyncOutbreakMappingConversion.SINGLE_TO_MULTIPLE
+    );
   }
 
   /**
@@ -333,14 +408,27 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    // a question that doesn't exist anymore must be chosen again
+    // a question that doesn't exist anymore / isn't compatible must be chosen again
     const targetQuestion = this.getTargetQuestion(questionnaire, decision.target);
-    if (!targetQuestion) {
+    if (
+      !targetQuestion ||
+      !this.getConversion(sourceQuestion, targetQuestion)
+    ) {
       return true;
     }
 
-    // options
-    return this.isChoice(sourceQuestion) && sourceQuestion.answers.some((answer) => !decision.answers[answer.value]);
+    // options (written as text => nothing to decide)
+    if (!this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
+      return false;
+    }
+    const targetValues = targetQuestion.answers.map((answer) => answer.value);
+    return sourceQuestion.answers.some((answer) => {
+      const targetValue = decision.answers[answer.value];
+      return !targetValue || (
+        targetValue !== this.IGNORE &&
+        !targetValues.includes(targetValue)
+      );
+    });
   }
 
   /**
@@ -427,10 +515,11 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
       tab.questions.forEach((sourceQuestion) => {
         const decision = this.getDecision(tab.key, sourceQuestion.variable);
 
-        // question
+        // question (only compatible questions that aren't linked to another received question)
         if (!decision.target) {
-          const targetQuestion = targetQuestions.find((question) => question.variable === sourceQuestion.variable) ||
-            targetQuestions.find((question) => this.normalize(question.textTranslated) === this.normalize(sourceQuestion.textTranslated));
+          const available = (question: ISyncOutbreakMappingQuestion) => !this.getTargetUnavailableReason(tab.key, sourceQuestion, question);
+          const targetQuestion = targetQuestions.find((question) => question.variable === sourceQuestion.variable && available(question)) ||
+            targetQuestions.find((question) => this.normalize(question.textTranslated) === this.normalize(sourceQuestion.textTranslated) && available(question));
           if (targetQuestion) {
             decision.target = targetQuestion.variable;
             suggested++;
@@ -458,12 +547,24 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
   ignoreRemaining(tab: IQuestionnaireTab): void {
     tab.questions.forEach((sourceQuestion) => {
       const decision = this.getDecision(tab.key, sourceQuestion.variable);
-      if (!decision.target) {
+      const targetQuestion = this.getTargetQuestion(tab.key, decision.target);
+      if (
+        !decision.target ||
+        (decision.target !== this.IGNORE && !this.getConversion(sourceQuestion, targetQuestion))
+      ) {
         decision.target = this.IGNORE;
         decision.answers = {};
-      } else if (decision.target !== this.IGNORE && this.isChoice(sourceQuestion)) {
+      } else if (
+        decision.target !== this.IGNORE &&
+        this.hasAnswersMapping(sourceQuestion, targetQuestion)
+      ) {
+        const targetValues = targetQuestion.answers.map((answer) => answer.value);
         sourceQuestion.answers.forEach((answer) => {
-          if (!decision.answers[answer.value]) {
+          const targetValue = decision.answers[answer.value];
+          if (
+            !targetValue ||
+            (targetValue !== this.IGNORE && !targetValues.includes(targetValue))
+          ) {
             decision.answers[answer.value] = this.IGNORE;
           }
         });
@@ -491,8 +592,9 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
           return;
         }
 
+        // options written as text: the api uses the texts of the options
         const answers = {};
-        if (this.isChoice(sourceQuestion)) {
+        if (this.hasAnswersMapping(sourceQuestion, this.getTargetQuestion(tab.key, decision.target))) {
           sourceQuestion.answers.forEach((answer) => {
             const targetValue = decision.answers[answer.value];
             if (targetValue) {

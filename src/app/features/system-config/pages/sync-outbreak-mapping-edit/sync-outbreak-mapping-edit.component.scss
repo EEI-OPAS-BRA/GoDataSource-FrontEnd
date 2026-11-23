@@ -388,3 +388,20 @@
   color: var(--gd-secondary);
   font-style: italic;
 }
+
+/* reason why a question of this instance can't be chosen (incompatible type / already linked) */
+::ng-deep .gd-mapping-unavailable {
+  font-style: italic;
+}
+
+/* options written as text */
+.gd-mapping-choice-to-text {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.6rem 0 0;
+
+  .material-icons {
+    font-size: 1.8rem;
+  }
+}

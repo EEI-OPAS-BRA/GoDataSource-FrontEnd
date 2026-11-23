@@ -21,6 +21,72 @@ export const SYNC_OUTBREAK_MAPPING_CHOICE_ANSWER_TYPES: string[] = [
   'LNG_REFERENCE_DATA_CATEGORY_QUESTION_ANSWER_TYPE_MULTIPLE_ANSWERS'
 ];
 
+/**
+ * Answer types used by the mapping rules
+ */
+export const SYNC_OUTBREAK_MAPPING_ANSWER_TYPE = {
+  SINGLE: 'LNG_REFERENCE_DATA_CATEGORY_QUESTION_ANSWER_TYPE_SINGLE_ANSWER',
+  MULTIPLE: 'LNG_REFERENCE_DATA_CATEGORY_QUESTION_ANSWER_TYPE_MULTIPLE_ANSWERS',
+  FREE_TEXT: 'LNG_REFERENCE_DATA_CATEGORY_QUESTION_ANSWER_TYPE_FREE_TEXT',
+  MARKUP: 'LNG_REFERENCE_DATA_CATEGORY_QUESTION_ANSWER_TYPE_MARKUP'
+};
+
+/**
+ * How the answers of a received question are converted to a question of this instance
+ * Note: must match the api (components/syncOutbreakMapping.js)
+ */
+export enum SyncOutbreakMappingConversion {
+  // same answer type: values are copied (options are converted)
+  SAME = 'same',
+  // single answer -> multiple answers
+  SINGLE_TO_MULTIPLE = 'singleToMultiple',
+  // single / multiple answers -> free text: the text of the options is written
+  CHOICE_TO_TEXT = 'choiceToText'
+}
+
+/**
+ * Whether a question can have answers (markup questions are only texts displayed in the questionnaire)
+ */
+export function isSyncOutbreakMappingAnswerableQuestion(question: { answerType: string }): boolean {
+  return !!question && question.answerType !== SYNC_OUTBREAK_MAPPING_ANSWER_TYPE.MARKUP;
+}
+
+/**
+ * How the answers of a received question are converted to a question of this instance; null when they aren't compatible
+ * Note: must match the api (components/syncOutbreakMapping.js - getConversion)
+ */
+export function getSyncOutbreakMappingConversion(
+  sourceQuestion: { answerType: string },
+  targetQuestion: { answerType: string }
+): SyncOutbreakMappingConversion | null {
+  if (
+    !isSyncOutbreakMappingAnswerableQuestion(sourceQuestion) ||
+    !isSyncOutbreakMappingAnswerableQuestion(targetQuestion)
+  ) {
+    return null;
+  }
+
+  if (sourceQuestion.answerType === targetQuestion.answerType) {
+    return SyncOutbreakMappingConversion.SAME;
+  }
+
+  if (
+    sourceQuestion.answerType === SYNC_OUTBREAK_MAPPING_ANSWER_TYPE.SINGLE &&
+    targetQuestion.answerType === SYNC_OUTBREAK_MAPPING_ANSWER_TYPE.MULTIPLE
+  ) {
+    return SyncOutbreakMappingConversion.SINGLE_TO_MULTIPLE;
+  }
+
+  if (
+    SYNC_OUTBREAK_MAPPING_CHOICE_ANSWER_TYPES.includes(sourceQuestion.answerType) &&
+    targetQuestion.answerType === SYNC_OUTBREAK_MAPPING_ANSWER_TYPE.FREE_TEXT
+  ) {
+    return SyncOutbreakMappingConversion.CHOICE_TO_TEXT;
+  }
+
+  return null;
+}
+
 export type SyncOutbreakMappingStatus = 'PENDING' | 'APPROVED' | 'REVIEW';
 export type SyncOutbreakMappingMode = 'map' | 'new';
 
@@ -56,6 +122,7 @@ export interface ISyncOutbreakMappingQuestionMappings {
   [questionnaire: string]: {
     [sourceVariable: string]: {
       targetVariable: string | null,
+      conversion?: SyncOutbreakMappingConversion,
       answers?: {
         [sourceValue: string]: string | null
       }
