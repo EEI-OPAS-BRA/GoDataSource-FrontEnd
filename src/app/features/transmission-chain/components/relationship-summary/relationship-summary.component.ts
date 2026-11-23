@@ -135,11 +135,30 @@ export class RelationshipSummaryComponent implements OnInit, OnChanges {
     // get source person
     const sourcePerson = this.relationship.sourcePerson;
 
-    if (sourcePerson) {
+    const sourcePeople = (this.relationship.people || []).find((people) => people.model.id === sourcePerson?.id);
+    if (
+      sourcePerson &&
+      !sourcePeople?.model.masked
+    ) {
       return `/relationships/${sourcePerson.type}/${sourcePerson.id}/contacts/${this.relationship.id}/view`;
     }
 
+    // use the visible target as the relationship anchor when the source is masked
+    const targetPerson = (this.relationship.persons || []).find((person) => person.target);
+    const targetPeople = (this.relationship.people || []).find((people) => people.model.id === targetPerson?.id);
+    if (
+      targetPerson &&
+      !targetPeople?.model.masked
+    ) {
+      return `/relationships/${targetPerson.type}/${targetPerson.id}/exposures/${this.relationship.id}/view`;
+    }
+
     return null;
+  }
+
+  get relationshipIsFullyMasked(): boolean {
+    return this.relationship?.people?.length > 0 &&
+      this.relationship.people.every((people) => people.model?.masked);
   }
 
   /**

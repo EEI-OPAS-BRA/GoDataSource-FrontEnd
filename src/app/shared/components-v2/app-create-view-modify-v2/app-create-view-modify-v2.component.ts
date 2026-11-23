@@ -961,6 +961,11 @@ export class AppCreateViewModifyV2Component implements OnInit, OnDestroy {
           // mark as dirty
           form.controls[name].markAsDirty();
         });
+
+      // the list items are changed in place, so the list control must be validated again
+      if (form.controls[groupName]) {
+        form.controls[groupName].updateValueAndValidity();
+      }
     });
   }
 

@@ -502,6 +502,14 @@ export class ContactsBulkCreateModifyComponent extends BulkCreateModifyComponent
           required: (rowData: EntityModel): boolean => {
             const contact: ContactModel = rowData.model as ContactModel;
 
+            // a new record needs a current address unless the outbreak allows saving without one
+            if (
+              this.isCreate &&
+              !this.selectedOutbreak?.optionalCaseContactAddressFields
+            ) {
+              return true;
+            }
+
             // always required when the outbreak marks location as mandatory
             const visibleMandatoryKey: string = this.personAndRelatedHelperService.contact.visibleMandatoryKey;
             if (this.selectedOutbreak?.visibleAndMandatoryFields?.[visibleMandatoryKey]?.['addresses.locationId']?.mandatory) {

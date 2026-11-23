@@ -61,7 +61,8 @@ export class ListHelperModel {
     addressTypeOptions: ILabelValuePairModel[],
     authUser: UserModel,
     addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses,
-    filterAddressModel?: AddressModel
+    filterAddressModel?: AddressModel,
+    singleAddressField?: string
   ): IV2ColumnToVisibleMandatoryConf[] {
     return (addressTypeOptions || [])
       // the current address already has a dedicated (filterable) location column
@@ -88,7 +89,10 @@ export class ListHelperModel {
           address: filterAddressModel,
           field: 'addresses',
           fieldIsArray: true,
-          addressType: option.value
+          addressType: option.value,
+          // the shared filter model also rebuilds the current-address condition, which must keep matching
+          // records that only have a single address
+          singleAddressField
         } : undefined
       }));
   }

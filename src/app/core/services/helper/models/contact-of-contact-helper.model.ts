@@ -61,6 +61,9 @@ export class ContactOfContactHelperModel {
       }
     }
   ): ICreateViewModifyV2Tab {
+    // addresses the outbreak can forbid deleting: the ones already saved or, on create, the block the form starts with
+    const lockedAddresses: Set<AddressModel> = new Set(data.isCreate ? [] : (data.itemData.addresses || []));
+
     // create tab
     const tab: ICreateViewModifyV2Tab = this.parent.createViewModify.tabFilter(
       {
@@ -373,6 +376,12 @@ export class ContactOfContactHelperModel {
               type: CreateViewModifyV2TabInputType.LIST,
               name: 'addresses',
               items: data.itemData.addresses,
+              // at least one address is needed unless the outbreak allows saving without one;
+              // records saved before without any address can still be edited
+              required: !data.selectedOutbreak?.optionalCaseContactAddressFields && (
+                data.isCreate ||
+                data.itemData.addresses?.length > 0
+              ),
               itemsChanged: (list) => {
                 // update addresses
                 data.itemData.addresses = list.items;
@@ -424,7 +433,12 @@ export class ContactOfContactHelperModel {
                 },
                 remove: {
                   label: 'LNG_COMMON_BUTTON_DELETE',
-                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS'
+                  confirmLabel: 'LNG_DIALOG_CONFIRM_DELETE_ADDRESS',
+                  // the outbreak can forbid removing addresses
+                  visible: AddressModel.removeVisibleWithDeletionLock(
+                    data.selectedOutbreak?.preventAddressDeletion,
+                    lockedAddresses
+                  )
                 },
                 input: {
                   type: CreateViewModifyV2TabInputType.ADDRESS,
@@ -446,6 +460,11 @@ export class ContactOfContactHelperModel {
       this.visibleMandatoryKey,
       useToFilterOutbreak
     );
+
+    // on create the form may start with a pre-filled address block
+    if (data.isCreate) {
+      (data.itemData.addresses || []).forEach((address) => lockedAddresses.add(address));
+    }
 
     // finished
     return tab;
