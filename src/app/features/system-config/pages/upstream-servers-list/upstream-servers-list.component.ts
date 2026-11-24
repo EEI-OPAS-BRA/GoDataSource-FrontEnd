@@ -24,8 +24,6 @@ import { ListHelperService } from '../../../../core/services/helper/list-helper.
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
 import { AppListTableV2Component } from '../../../../shared/components-v2/app-list-table-v2/app-list-table-v2.component';
-import { IV2InfoBannerAccordion, IV2InfoBannerStep } from '../../../../shared/components-v2/app-info-banner-v2/models/info-banner.model';
-import { SYNCED_DATA_INFO_BANNER_ACCORDION } from '../../synced-data-info-banner';
 import {
   IV2SideDialogConfigButtonType,
   IV2SideDialogConfigInputDate,
@@ -74,35 +72,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
 
   // stops the checks that are still running, when the list is refreshed or the page is closed
   private _stopConnectionChecks$: Subject<void> = new Subject<void>();
-
-  // info banner
-  infoBannerSteps: IV2InfoBannerStep[] = [
-    {
-      icon: 'dns',
-      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_1_TITLE',
-      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_1_DESCRIPTION'
-    }, {
-      icon: 'schedule',
-      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_2_TITLE',
-      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_2_DESCRIPTION'
-    }, {
-      icon: 'cloud_upload',
-      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_3_TITLE',
-      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_3_DESCRIPTION'
-    }, {
-      icon: 'assignment_turned_in',
-      title: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_4_TITLE',
-      description: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_STEP_4_DESCRIPTION'
-    }
-  ];
-  infoBannerNotes: string[] = [
-    'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_NOTE_1'
-  ];
-
-  // which data is synchronized
-  infoBannerAccordions: IV2InfoBannerAccordion[] = [
-    SYNCED_DATA_INFO_BANNER_ACCORDION
-  ];
 
   /**
    * Constructor
@@ -227,6 +196,23 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
           type: V2ActionType.MENU,
           icon: 'more_horiz',
           menuOptions: [
+            // Last syncs with this server
+            {
+              label: {
+                get: () => 'LNG_SYNC_ACTIVITY_PANEL_ACTION_VIEW_HISTORY'
+              },
+              action: {
+                link: (): string[] => ['/system-config/upstream-servers/history'],
+                linkQueryParams: (item: SystemUpstreamServerModel) => ({
+                  key: item.url,
+                  name: item.name
+                })
+              },
+              visible: (): boolean => {
+                return SystemSyncLogModel.canList(this.authUser);
+              }
+            },
+
             // Delete
             {
               label: {

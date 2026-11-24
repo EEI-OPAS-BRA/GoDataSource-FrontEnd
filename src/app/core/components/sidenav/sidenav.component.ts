@@ -22,6 +22,7 @@ import { ToastV2Service } from '../../services/helper/toast-v2.service';
 import { MAT_MENU_DEFAULT_OPTIONS, MatMenuTrigger } from '@angular/material/menu';
 import { determineIfTouchDevice } from '../../methods/touch-device';
 import { I18nService } from '../../services/helper/i18n.service';
+import { SyncReviewCountService } from '../../services/helper/sync-review-count.service';
 
 @Component({
   selector: 'app-sidenav',
@@ -53,6 +54,9 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   // language handler
   languageSubscription: Subscription;
+
+  // received outbreaks waiting for review
+  private _syncReviewCountSubscription: Subscription;
 
   // authenticated user
   authUser: UserModel;
@@ -446,14 +450,6 @@ export class SidenavComponent implements OnInit, OnDestroy {
               '/system-config/client-applications'
             ),
             new ChildNavItem(
-              'sync-outbreak-mappings',
-              'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
-              [
-                PERMISSION.CLIENT_APPLICATION_LIST
-              ],
-              '/system-config/sync-outbreak-mappings'
-            ),
-            new ChildNavItem(
               'sync',
               'LNG_LAYOUT_MENU_ITEM_SYNC_LABEL',
               [
@@ -497,7 +493,8 @@ export class SidenavComponent implements OnInit, OnDestroy {
     private toastV2Service: ToastV2Service,
     private systemSettingsDataService: SystemSettingsDataService,
     private changeDetectorRef: ChangeDetectorRef,
-    private i18nService: I18nService
+    private i18nService: I18nService,
+    private syncReviewCountService: SyncReviewCountService
   ) {
     // get the authenticated user
     this.authUser = this.authDataService.getAuthenticatedUser();
@@ -548,6 +545,13 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
     // subscribe to language change
     this.initializeLanguageChangeListener();
+
+    // received outbreaks waiting for review: displayed on the receive menu and on its group
+    this._syncReviewCountSubscription = this.syncReviewCountService.count$
+      .subscribe((count) => {
+        this.setBadge('data-sync', 'client-applications', count);
+      });
+    this.syncReviewCountService.refresh(true);
   }
 
   /**
@@ -571,6 +575,36 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
     // stop refresh language tokens
     this.releaseLanguageChangeListener();
+
+    // received outbreaks waiting for review
+    if (this._syncReviewCountSubscription) {
+      this._syncReviewCountSubscription.unsubscribe();
+      this._syncReviewCountSubscription = undefined;
+    }
+  }
+
+  /**
+   * Number displayed next to a menu option and on its group
+   */
+  private setBadge(
+    menuId: string,
+    childId: string,
+    count: number
+  ): void {
+    // find menu
+    let menu: NavItem;
+    this.menuGroups.forEach((group) => {
+      menu = menu || group.options.find((option) => option.id === menuId);
+    });
+    const child: ChildNavItem = menu?.children.find((item) => item.id === childId);
+    if (!child) {
+      return;
+    }
+
+    // update
+    child.badge = count;
+    menu.badge = menu.children.reduce((sum, item) => sum + (item.badge || 0), 0);
+    this.changeDetectorRef.detectChanges();
   }
 
   /**

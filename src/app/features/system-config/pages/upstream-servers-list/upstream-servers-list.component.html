@@ -28,18 +28,20 @@
   (resetHeaderFilters)="resetFiltersToSideFilters()"
   (advancedFilterBy)="applySideFilters($event)">
 
-  <!-- What this page is for & how it works -->
-  <app-info-banner-v2
-    storageKey="upstream-servers"
-    icon="sync"
-    heading="LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_TITLE"
-    description="LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_INFO_DESCRIPTION"
-    stepsTitle="LNG_INFO_BANNER_STEPS_TITLE"
-    [steps]="infoBannerSteps"
-    [notes]="infoBannerNotes"
-    [accordions]="infoBannerAccordions"
-    (resized)="listTable.resizeTable()">
-  </app-info-banner-v2>
+  <!-- Area menu: each responsibility has its own tab -->
+  <app-sync-area-tabs
+    gdListTop
+    area="send"
+    active="servers">
+  </app-sync-area-tabs>
+
+  <!-- What the table below is -->
+  <app-sync-section-title
+    gdListTop
+    icon="dns"
+    heading="LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_TABLE_TITLE"
+    description="LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_TABLE_DESCRIPTION">
+  </app-sync-section-title>
 
 </app-list-table-v2>
 

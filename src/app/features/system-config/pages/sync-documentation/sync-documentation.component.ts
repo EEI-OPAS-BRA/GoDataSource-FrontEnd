@@ -51,6 +51,7 @@ export class SyncDocumentationComponent implements OnInit {
   receiveLink: ISyncDocumentationLink;
   sendLink: ISyncDocumentationLink;
   trackLink: ISyncDocumentationLink;
+  reviewLink: ISyncDocumentationLink;
 
   // content
   steps: ISyncDocumentationStep[] = [];
@@ -60,6 +61,9 @@ export class SyncDocumentationComponent implements OnInit {
     answer: string
   }[] = [
       {
+        question: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PAGES_QUESTION',
+        answer: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PAGES_ANSWER'
+      }, {
         question: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_DIRECTION_QUESTION',
         answer: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_DIRECTION_ANSWER'
       }, {
@@ -111,6 +115,11 @@ export class SyncDocumentationComponent implements OnInit {
       link: ['/system-config/sync-logs'],
       visible: SystemSyncLogModel.canList(this._authUser)
     };
+    this.reviewLink = {
+      label: 'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
+      link: ['/system-config/sync-outbreak-mappings'],
+      visible: SystemClientApplicationModel.canList(this._authUser)
+    };
 
     // setup, in the order it must be done
     this.steps = [
@@ -132,6 +141,12 @@ export class SyncDocumentationComponent implements OnInit {
         title: 'LNG_PAGE_SYNC_DOCUMENTATION_STEP_3_TITLE',
         description: 'LNG_PAGE_SYNC_DOCUMENTATION_STEP_3_DESCRIPTION',
         link: this.sendLink
+      }, {
+        icon: 'fact_check',
+        where: 'LNG_PAGE_SYNC_DOCUMENTATION_WHERE_RECEIVER',
+        title: 'LNG_PAGE_SYNC_DOCUMENTATION_STEP_REVIEW_TITLE',
+        description: 'LNG_PAGE_SYNC_DOCUMENTATION_STEP_REVIEW_DESCRIPTION',
+        link: this.reviewLink
       }, {
         icon: 'history',
         where: 'LNG_PAGE_SYNC_DOCUMENTATION_WHERE_BOTH',
@@ -162,7 +177,8 @@ export class SyncDocumentationComponent implements OnInit {
           'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_1',
           'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_2',
           'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_3',
-          'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_4'
+          'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_4',
+          'LNG_PAGE_SYNC_DOCUMENTATION_RECEIVE_ITEM_5'
         ],
         link: this.receiveLink
       }, {

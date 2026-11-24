@@ -1,0 +1,10 @@
+<div class="gd-sync-section-title">
+  <span
+    *ngIf="icon"
+    class="material-icons gd-sync-section-title-icon">{{icon}}</span>
+  <div class="gd-sync-section-title-text">
+    <h2>{{heading | translate}}</h2>
+    <p *ngIf="description">{{description | translate}}</p>
+  </div>
+  <ng-content></ng-content>
+</div>

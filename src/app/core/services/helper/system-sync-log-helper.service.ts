@@ -38,6 +38,17 @@ export class SystemSyncLogHelperService {
   }
 
   /**
+   * Received sync with records that wait until the user reviews where the data of their outbreak goes (outbreak / questionnaire mapping)
+   * The api adds this text to the log of the received sync
+   */
+  isWaitingForReview(syncLog: SystemSyncLogModel): boolean {
+    return !!syncLog &&
+      !!syncLog.syncClientId &&
+      _.isString(syncLog.error) &&
+      syncLog.error.indexOf('Records waiting for the approval of the outbreak / questionnaire mapping') > -1;
+  }
+
+  /**
    * View Error details
    */
   viewError(syncLog: SystemSyncLogModel): void {

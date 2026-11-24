@@ -13,6 +13,8 @@ import { NotificationSettingsComponent } from './notification-settings/notificat
 import { SyncDocumentationComponent } from './sync-documentation/sync-documentation.component';
 import { SyncOutbreakMappingsListComponent } from './sync-outbreak-mappings-list/sync-outbreak-mappings-list.component';
 import { SyncOutbreakMappingEditComponent } from './sync-outbreak-mapping-edit/sync-outbreak-mapping-edit.component';
+import { SyncAreaHistoryComponent } from './sync-area-history/sync-area-history.component';
+import { SyncAreaHowItWorksComponent } from './sync-area-how-it-works/sync-area-how-it-works.component';
 
 // export each page component individually
 export * from './upstream-servers-create-view-modify/upstream-servers-create-view-modify.component';
@@ -29,6 +31,8 @@ export * from './system-sync-logs/system-sync-logs.component';
 export * from './sync-documentation/sync-documentation.component';
 export * from './sync-outbreak-mappings-list/sync-outbreak-mappings-list.component';
 export * from './sync-outbreak-mapping-edit/sync-outbreak-mapping-edit.component';
+export * from './sync-area-history/sync-area-history.component';
+export * from './sync-area-how-it-works/sync-area-how-it-works.component';
 
 // export the list of all page components
 export const pageComponents: any[] = [
@@ -43,6 +47,8 @@ export const pageComponents: any[] = [
   SyncDocumentationComponent,
   SyncOutbreakMappingsListComponent,
   SyncOutbreakMappingEditComponent,
+  SyncAreaHistoryComponent,
+  SyncAreaHowItWorksComponent,
   UpstreamServersCreateViewModifyComponent,
   UpstreamServersListComponent,
   ViewHistorySystemDeviceComponent

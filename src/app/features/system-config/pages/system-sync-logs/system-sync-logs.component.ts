@@ -8,6 +8,7 @@ import { RequestQueryBuilder } from '../../../../core/helperClasses/request-quer
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { SystemSyncLogModel } from '../../../../core/models/system-sync-log.model';
+import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
 import { SystemUpstreamServerModel } from '../../../../core/models/system-upstream-server.model';
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
@@ -145,6 +146,20 @@ export class SystemSyncLogsComponent
           visible: (item: SystemSyncLogModel): boolean => {
             return !_.isEmpty(item.error) &&
               SystemSyncLogModel.canView(this.authUser);
+          }
+        },
+
+        // Records waiting for the received data review
+        {
+          type: V2ActionType.ICON,
+          icon: 'fact_check',
+          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_ACTION_REVIEW_RECEIVED',
+          action: {
+            link: (): string[] => ['/system-config/sync-outbreak-mappings']
+          },
+          visible: (item: SystemSyncLogModel): boolean => {
+            return this.systemSyncLogHelperService.isWaitingForReview(item) &&
+              SystemClientApplicationModel.canList(this.authUser);
           }
         },
 

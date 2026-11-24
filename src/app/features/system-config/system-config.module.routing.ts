@@ -87,6 +87,28 @@ const routes: Routes = [
     path: 'upstream-servers',
     children: [
       {
+        path: 'history',
+        component: fromPages.SyncAreaHistoryComponent,
+        canActivate: [AuthGuard],
+        data: {
+          area: 'send',
+          permissions: [
+            PERMISSION.SYNC_LOG_LIST
+          ]
+        }
+      },
+      {
+        path: 'how-it-works',
+        component: fromPages.SyncAreaHowItWorksComponent,
+        canActivate: [AuthGuard],
+        data: {
+          area: 'send',
+          permissions: [
+            PERMISSION.UPSTREAM_SERVER_LIST
+          ]
+        }
+      },
+      {
         path: '',
         component: fromPages.UpstreamServersListComponent,
         canActivate: [AuthGuard],
@@ -141,6 +163,28 @@ const routes: Routes = [
   {
     path: 'client-applications',
     children: [
+      {
+        path: 'history',
+        component: fromPages.SyncAreaHistoryComponent,
+        canActivate: [AuthGuard],
+        data: {
+          area: 'receive',
+          permissions: [
+            PERMISSION.SYNC_LOG_LIST
+          ]
+        }
+      },
+      {
+        path: 'how-it-works',
+        component: fromPages.SyncAreaHowItWorksComponent,
+        canActivate: [AuthGuard],
+        data: {
+          area: 'receive',
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_LIST
+          ]
+        }
+      },
       {
         path: '',
         component: fromPages.ClientApplicationsListComponent,

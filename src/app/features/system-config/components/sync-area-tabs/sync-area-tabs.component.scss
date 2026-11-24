@@ -1,0 +1,58 @@
+@import 'font';
+@import 'mixins';
+
+:host {
+  display: block;
+  padding-bottom: 0.8rem;
+}
+
+.gd-sync-area-tabs {
+  border-bottom: 0.1rem solid rgba(var(--gd-text-rgb), 0.14);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: $gd-font-family;
+  gap: 0.4rem;
+}
+
+.gd-sync-area-tab {
+  align-items: center;
+  border-bottom: 0.3rem solid transparent;
+  @include border-radius(0.6rem 0.6rem 0 0);
+  color: rgba(var(--gd-text-rgb), 0.75);
+  display: inline-flex;
+  font-size: 1.5rem;
+  font-weight: 500;
+  gap: 0.8rem;
+  margin-bottom: -0.1rem;
+  padding: 1rem 1.6rem 0.9rem;
+  text-decoration: none;
+  transition: background-color 0.18s ease-in-out 0s, color 0.18s ease-in-out 0s;
+
+  .material-icons {
+    font-size: 2rem;
+  }
+
+  &:hover {
+    background: rgba(var(--gd-primary-rgb), 0.06);
+    color: var(--gd-text);
+  }
+
+  &.gd-sync-area-tab-active {
+    background: rgba(var(--gd-primary-rgb), 0.08);
+    border-bottom-color: var(--gd-primary);
+    color: var(--gd-primary-alt);
+    font-weight: 600;
+  }
+}
+
+.gd-sync-area-tab-count {
+  background: var(--gd-warning);
+  @include border-radius(1rem);
+  color: #FFFFFF;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.8rem;
+  min-width: 2rem;
+  padding: 0 0.6rem;
+  text-align: center;
+}

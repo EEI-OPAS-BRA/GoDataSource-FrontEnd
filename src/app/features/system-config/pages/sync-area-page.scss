@@ -1,0 +1,33 @@
+// pages of the sync areas (receive / send): same spacing on every tab
+.gd-sync-area-page {
+  display: block;
+  padding: 0 0 2.4rem;
+}
+
+// link to the full documentation
+.gd-sync-area-docs {
+  align-items: center;
+  background: var(--gd-background);
+  border: 0.1rem solid rgba(var(--gd-text-rgb), 0.14);
+  border-radius: 0.8rem;
+  color: var(--gd-text);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 1.6rem;
+  padding: 1.6rem;
+
+  > .material-icons {
+    color: var(--gd-primary);
+    font-size: 3.2rem;
+  }
+
+  > div {
+    flex: 1 1 32rem;
+    min-width: 0;
+  }
+
+  p {
+    color: rgba(var(--gd-text-rgb), 0.75);
+    margin: 0.2rem 0 0;
+  }
+}

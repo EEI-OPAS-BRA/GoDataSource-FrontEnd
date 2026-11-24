@@ -23,6 +23,7 @@ import { SyncOutbreakMappingDataService } from '../../../../core/services/data/s
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
+import { SyncReviewCountService } from '../../../../core/services/helper/sync-review-count.service';
 import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
 import { IV2Breadcrumb } from '../../../../shared/components-v2/app-breadcrumb-v2/models/breadcrumb.model';
 
@@ -131,7 +132,8 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
     private toastV2Service: ToastV2Service,
     private dialogV2Service: DialogV2Service,
     private i18nService: I18nService,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    private syncReviewCountService: SyncReviewCountService
   ) {}
 
   /**
@@ -205,7 +207,12 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
             ['/account/my-profile']
         }
       }, {
-        label: 'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
+        label: 'LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL',
+        action: {
+          link: ['/system-config/client-applications']
+        }
+      }, {
+        label: 'LNG_SYNC_AREA_TAB_REVIEW',
         action: {
           link: ['/system-config/sync-outbreak-mappings']
         }
@@ -732,6 +739,9 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
                 }
               );
             }
+
+            // the menu & tabs display the number of outbreaks still waiting
+            this.syncReviewCountService.refresh(true);
             this.router.navigate(['/system-config/sync-outbreak-mappings']);
           });
       });

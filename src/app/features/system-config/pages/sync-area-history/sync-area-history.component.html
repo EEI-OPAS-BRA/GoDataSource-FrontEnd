@@ -1,0 +1,28 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  [pageTitle]="config.title">
+
+  <div class="gd-sync-area-page">
+
+    <!-- Area menu -->
+    <app-sync-area-tabs
+      [area]="area"
+      active="history">
+    </app-sync-area-tabs>
+
+    <!-- What this tab is for -->
+    <app-sync-section-title
+      icon="history"
+      [heading]="area === 'receive' ? 'LNG_SYNC_AREA_HISTORY_RECEIVED_TITLE' : 'LNG_SYNC_AREA_HISTORY_SENT_TITLE'"
+      [description]="area === 'receive' ? 'LNG_SYNC_AREA_HISTORY_RECEIVED_DESCRIPTION' : 'LNG_SYNC_AREA_HISTORY_SENT_DESCRIPTION'">
+    </app-sync-section-title>
+
+    <!-- Syncs -->
+    <app-sync-activity-panel
+      #activityPanel
+      [direction]="config.direction"
+      [pageSize]="pageSize">
+    </app-sync-activity-panel>
+
+  </div>
+</app-basic-page-v2>

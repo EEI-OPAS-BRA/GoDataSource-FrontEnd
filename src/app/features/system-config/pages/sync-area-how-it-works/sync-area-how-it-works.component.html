@@ -1,0 +1,48 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  [pageTitle]="config.title">
+
+  <div class="gd-sync-area-page">
+
+    <!-- Area menu -->
+    <app-sync-area-tabs
+      [area]="area"
+      active="how-it-works">
+    </app-sync-area-tabs>
+
+    <!-- Step by step -->
+    <app-sync-section-title
+      icon="help_outline"
+      [heading]="config.howItWorks.heading"
+      [description]="config.howItWorks.description">
+    </app-sync-section-title>
+    <app-info-banner-v2
+      [icon]="config.howItWorks.icon"
+      heading="LNG_SYNC_AREA_STEPS_TITLE"
+      [steps]="config.howItWorks.steps"
+      [notes]="config.howItWorks.notes"
+      [accordions]="config.howItWorks.accordions">
+    </app-info-banner-v2>
+
+    <!-- Full documentation -->
+    <app-sync-section-title
+      icon="menu_book"
+      heading="LNG_SYNC_AREA_DOCS_TITLE"
+      description="LNG_SYNC_AREA_DOCS_DESCRIPTION">
+    </app-sync-section-title>
+    <div class="gd-sync-area-docs">
+      <span class="material-icons">menu_book</span>
+      <div>
+        <strong>{{'LNG_LAYOUT_MENU_ITEM_SYNC_DOCUMENTATION_LABEL' | translate}}</strong>
+        <p>{{'LNG_SYNC_AREA_DOCS_CARD' | translate}}</p>
+      </div>
+      <a
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/system-config/sync-documentation']">
+        {{'LNG_SYNC_AREA_DOCS_OPEN' | translate}}
+      </a>
+    </div>
+
+  </div>
+</app-basic-page-v2>

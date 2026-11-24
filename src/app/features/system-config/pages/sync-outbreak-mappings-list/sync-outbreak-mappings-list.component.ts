@@ -74,7 +74,12 @@ export class SyncOutbreakMappingsListComponent implements OnInit, OnDestroy {
             ['/account/my-profile']
         }
       }, {
-        label: 'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
+        label: 'LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL',
+        action: {
+          link: ['/system-config/client-applications']
+        }
+      }, {
+        label: 'LNG_SYNC_AREA_TAB_REVIEW',
         action: null
       }
     ];

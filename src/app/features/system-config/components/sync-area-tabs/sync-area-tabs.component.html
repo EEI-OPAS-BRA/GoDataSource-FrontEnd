@@ -1,0 +1,17 @@
+<nav class="gd-sync-area-tabs">
+  <a
+    *ngFor="let tab of tabs"
+    class="gd-sync-area-tab"
+    [class.gd-sync-area-tab-active]="tab.key === active"
+    [attr.aria-current]="tab.key === active ? 'page' : null"
+    [routerLink]="tab.link">
+    <span class="material-icons">{{tab.icon}}</span>
+    <span>{{tab.label | translate}}</span>
+    <span
+      *ngIf="tab.count"
+      class="gd-sync-area-tab-count"
+      [matTooltip]="'LNG_SYNC_AREA_TAB_REVIEW_COUNT' | translate: {count: tab.count}">
+      {{tab.count}}
+    </span>
+  </a>
+</nav>

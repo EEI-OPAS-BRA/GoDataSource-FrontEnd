@@ -1,17 +1,14 @@
 <app-basic-page-v2
   [breadcrumbs]="breadcrumbs"
-  pageTitle="LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL">
+  pageTitle="LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL">
 
   <div class="gd-mappings">
 
-    <!-- What this page is for -->
-    <div class="gd-mappings-intro">
-      <span class="material-icons">compare_arrows</span>
-      <div>
-        <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_INTRO_TITLE' | translate}}</strong>
-        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_INTRO_DESCRIPTION' | translate}}</p>
-      </div>
-    </div>
+    <!-- Area menu -->
+    <app-sync-area-tabs
+      area="receive"
+      active="review">
+    </app-sync-area-tabs>
 
     <div *ngIf="loading" class="gd-mappings-loading">
       <mat-spinner diameter="36"></mat-spinner>
@@ -19,33 +16,47 @@
 
     <ng-container *ngIf="!loading">
 
-      <!-- Nothing received -->
-      <div *ngIf="!waitingItems.length && !approvedItems.length" class="gd-mappings-empty">
-        <span class="material-icons">inbox</span>
-        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_EMPTY' | translate}}</p>
-      </div>
-
       <!-- Waiting for the user -->
-      <section *ngIf="waitingItems.length">
-        <h3 class="gd-mappings-section-title">
-          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_TITLE' | translate}}
-          <span class="gd-mappings-count gd-mappings-count-warning">{{waitingItems.length}}</span>
-        </h3>
-        <div class="gd-mappings-grid">
-          <ng-container *ngTemplateOutlet="cardTemplate; context: {items: waitingItems}"></ng-container>
+      <app-sync-section-title
+        icon="fact_check"
+        heading="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_DESCRIPTION">
+        <span
+          *ngIf="waitingItems.length"
+          class="gd-mappings-count gd-mappings-count-warning">{{waitingItems.length}}</span>
+      </app-sync-section-title>
+      <div
+        *ngIf="waitingItems.length; else nothingWaiting"
+        class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="cardTemplate; context: {items: waitingItems}"></ng-container>
+      </div>
+      <ng-template #nothingWaiting>
+        <div class="gd-mappings-empty">
+          <span class="material-icons">task_alt</span>
+          <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_EMPTY' | translate}}</p>
         </div>
-      </section>
+      </ng-template>
 
-      <!-- Approved -->
-      <section *ngIf="approvedItems.length">
-        <h3 class="gd-mappings-section-title">
-          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_APPROVED_TITLE' | translate}}
-          <span class="gd-mappings-count">{{approvedItems.length}}</span>
-        </h3>
-        <div class="gd-mappings-grid">
-          <ng-container *ngTemplateOutlet="cardTemplate; context: {items: approvedItems}"></ng-container>
+      <!-- Already reviewed -->
+      <app-sync-section-title
+        icon="task_alt"
+        heading="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_APPROVED_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_APPROVED_DESCRIPTION">
+        <span
+          *ngIf="approvedItems.length"
+          class="gd-mappings-count">{{approvedItems.length}}</span>
+      </app-sync-section-title>
+      <div
+        *ngIf="approvedItems.length; else nothingApproved"
+        class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="cardTemplate; context: {items: approvedItems}"></ng-container>
+      </div>
+      <ng-template #nothingApproved>
+        <div class="gd-mappings-empty">
+          <span class="material-icons">inbox</span>
+          <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_APPROVED_EMPTY' | translate}}</p>
         </div>
-      </section>
+      </ng-template>
 
     </ng-container>
   </div>

@@ -1,32 +1,10 @@
 .gd-mappings {
   color: var(--gd-text);
-  display: flex;
-  flex-direction: column;
-  gap: 2.4rem;
-  margin: 0 auto;
-  max-width: 120rem;
-  padding: 0.8rem 0.8rem 2.4rem;
+  display: block;
+  padding: 0 0 2.4rem;
 
   p {
     margin: 0;
-  }
-}
-
-.gd-mappings-intro {
-  background: rgba(var(--gd-primary-rgb), 0.08);
-  border-radius: 1.2rem;
-  display: flex;
-  gap: 1.4rem;
-  padding: 1.6rem 2rem;
-
-  > .material-icons {
-    color: var(--gd-primary);
-    font-size: 3.2rem;
-  }
-
-  p {
-    line-height: 1.5;
-    margin-top: 0.4rem;
   }
 }
 
@@ -38,25 +16,19 @@
 
 .gd-mappings-empty {
   align-items: center;
+  background: var(--gd-background);
+  border: 0.1rem dashed rgba(var(--gd-text-rgb), 0.2);
+  border-radius: 0.8rem;
   color: var(--gd-secondary);
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  padding: 4rem;
+  padding: 2.4rem;
   text-align: center;
 
   .material-icons {
-    font-size: 4.8rem;
+    font-size: 3.6rem;
   }
-}
-
-.gd-mappings-section-title {
-  align-items: center;
-  display: flex;
-  font-size: 1.8rem;
-  font-weight: 600;
-  gap: 0.8rem;
-  margin: 0 0 1.4rem;
 }
 
 .gd-mappings-count {
@@ -78,6 +50,7 @@
 }
 
 .gd-mappings-card {
+  background: var(--gd-background);
   border: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.35);
   border-left-width: 0.5rem;
   border-radius: 1.2rem;
