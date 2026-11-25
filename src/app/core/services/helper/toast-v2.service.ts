@@ -332,6 +332,27 @@ export class ToastV2Service implements OnDestroy {
   }
 
   /**
+   * Warning message
+   */
+  warning(
+    message: string,
+    translateData?: {
+      [key: string]: string
+    }
+  ): void {
+    this.i18nService
+      .get(message, translateData)
+      .subscribe((messageTranslated) => {
+        this.toastrService.warning(
+          messageTranslated,
+          undefined, {
+            timeOut: ToastV2Service.TIMEOUT
+          }
+        );
+      });
+  }
+
+  /**
    * Notice message
    */
   notice(

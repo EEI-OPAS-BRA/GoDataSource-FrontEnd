@@ -247,6 +247,14 @@
           height: 2rem;
           margin-left: 0.8rem;
           width: 2rem;
+
+          &.gd-form-edit-questionnaire-v2-item-answer-alert-rule-required {
+            color: #d32f2f;
+          }
+
+          &.gd-form-edit-questionnaire-v2-item-answer-alert-rule-counts {
+            color: #f57c00;
+          }
         }
       }
     }

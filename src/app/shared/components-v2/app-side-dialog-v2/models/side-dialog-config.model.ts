@@ -221,7 +221,10 @@ export interface IV2SideDialogConfigInputDate extends IV2SideDialogConfigInput {
   value: string | Moment;
 
   // optional
-  validators?: IV2SideDialogConfigInputValidator;
+  validators?: IV2SideDialogConfigInputValidator | {
+    dateSameOrBefore?: (data: IV2SideDialogData, handler: IV2SideDialogHandler, item: V2SideDialogConfigInput) => string | Moment;
+    dateSameOrAfter?: (data: IV2SideDialogData, handler: IV2SideDialogHandler, item: V2SideDialogConfigInput) => string | Moment;
+  };
   tooltip?: string;
 }
 
@@ -428,6 +431,10 @@ export interface IV2SideDialogConfigInputButton extends IV2SideDialogConfigInput
   placeholder: string;
   color: 'text' | 'secondary' | 'primary' | 'warn' | 'accent' | undefined;
   click: (data: IV2SideDialogData, handler: IV2SideDialogHandler, item: IV2SideDialogConfigInputButton) => void;
+
+  // optional
+  icon?: string;
+  tooltip?: string;
 }
 
 /**

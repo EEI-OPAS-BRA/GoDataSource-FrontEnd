@@ -9,6 +9,11 @@ export class TeamNotificationModel
   extends BaseModel
   implements IPermissionBasic {
   id: string;
+  outbreakId: string;
+  targetType: string;
+  teamIds: string[];
+  locationIds: string[];
+  // deprecated - single recipient team of legacy notifications, replaced by teamIds
   teamId: string;
   title: string;
   message: string;
@@ -40,7 +45,17 @@ export class TeamNotificationModel
 
     // data
     this.id = _.get(data, 'id');
+    this.outbreakId = _.get(data, 'outbreakId');
+    this.targetType = _.get(data, 'targetType') || Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value;
     this.teamId = _.get(data, 'teamId');
+    this.teamIds = _.get(data, 'teamIds') || [];
+    if (
+      this.teamIds.length < 1 &&
+      this.teamId
+    ) {
+      this.teamIds = [this.teamId];
+    }
+    this.locationIds = _.get(data, 'locationIds') || [];
     this.title = _.get(data, 'title');
     this.message = _.get(data, 'message');
     this.severity = _.get(data, 'severity');

@@ -62,7 +62,8 @@ export class ListHelperModel {
     authUser: UserModel,
     addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses,
     filterAddressModel?: AddressModel,
-    singleAddressField?: string
+    singleAddressField?: string,
+    visibleMandatoryIf: () => boolean = () => true
   ): IV2ColumnToVisibleMandatoryConf[] {
     return (addressTypeOptions || [])
       // the current address already has a dedicated (filterable) location column
@@ -70,7 +71,7 @@ export class ListHelperModel {
       .map((option): IV2ColumnToVisibleMandatoryConf => ({
         field: `addressLocation_${option.value}`,
         label: option.label,
-        visibleMandatoryIf: () => true,
+        visibleMandatoryIf,
         format: {
           type: V2ColumnFormat.LINK_LIST
         },
@@ -109,7 +110,8 @@ export class ListHelperModel {
     fieldLabel: string,
     i18nService: I18nService,
     addressesGetter: (item: any) => AddressModel[] = (item) => item?.addresses,
-    filterAddressModel?: AddressModel
+    filterAddressModel?: AddressModel,
+    visibleMandatoryIf: () => boolean = () => true
   ): IV2ColumnToVisibleMandatoryConf[] {
     return (addressTypeOptions || [])
       // the current address already has its own dedicated (filterable) column
@@ -117,7 +119,7 @@ export class ListHelperModel {
       .map((option): IV2ColumnToVisibleMandatoryConf => ({
         field: `address_${field}_${option.value}`,
         label: `${i18nService.instant(fieldLabel)} - ${i18nService.instant(option.label)}`,
-        visibleMandatoryIf: () => true,
+        visibleMandatoryIf,
         notVisible: true,
         format: {
           type: (item: any) => {

@@ -31,6 +31,7 @@ import { AppMessages } from '../../../../core/enums/app-messages.enum';
 import { Location } from '@angular/common';
 import { TeamModel } from '../../../../core/models/team.model';
 import { TeamNotificationDataService } from '../../../../core/services/data/team-notification.data.service';
+import { TopnavComponent } from '../../../../core/components/topnav/topnav.component';
 import { CaseModel } from '../../../../core/models/case.model';
 import { RelationshipType } from '../../../../core/enums/relationship-type.enum';
 import { ClusterModel } from '../../../../core/models/cluster.model';
@@ -498,7 +499,7 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
       type: CreateViewModifyV2TabInputType.TAB,
       name: 'notify_team',
       label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
-      visible: () => this.isCreate,
+      visible: () => this.isCreate && !!this.selectedOutbreak?.allowContactNotifyTeam,
       sections: [{
         type: CreateViewModifyV2TabInputType.SECTION,
         label: 'LNG_PAGE_CREATE_CONTACT_TAB_NOTIFY_TEAM',
@@ -1659,7 +1660,9 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
           ) {
             this.teamNotificationDataService
               .createTeamNotification({
-                teamId: this._notifyTeamId,
+                outbreakId: this.selectedOutbreak.id,
+                targetType: Constants.TEAM_NOTIFICATION_TARGET_TYPE.TEAM.value,
+                teamIds: [this._notifyTeamId],
                 title: 'LNG_PAGE_CREATE_CONTACT_NOTIFY_TEAM_DEFAULT_TITLE',
                 message: item.name,
                 severity: Constants.TEAM_NOTIFICATION_SEVERITY.GREEN.value,
@@ -1672,31 +1675,55 @@ export class ContactsCreateViewModifyComponent extends CreateViewModifyComponent
                   return throwError(err);
                 })
               )
-              .subscribe();
+              .subscribe(() => {
+                TopnavComponent.REFRESH_NOTIFICATIONS();
+              });
           }
 
           // finished
           const finishedProcessingData = () => {
-            // success creating / updating
-            this.toastV2Service.success(
-              type === CreateViewModifyV2ActionType.CREATE ?
-                'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_MESSAGE' :
-                'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_MESSAGE'
-            );
+            this.personAndRelatedHelperService.createViewModify
+              .isPersonVisibleAfterSave(
+                this.selectedOutbreak,
+                EntityType.CONTACT,
+                item.id
+              )
+              .pipe(takeUntil(this.destroyed$))
+              .subscribe((visible) => {
+                // the record view would deny access, so go back to the list
+                if (!visible) {
+                  this.toastV2Service.warning(
+                    type === CreateViewModifyV2ActionType.CREATE ?
+                      'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_OUT_OF_AREA_MESSAGE' :
+                      'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_OUT_OF_AREA_MESSAGE'
+                  );
+                  forms.markFormsAsPristine();
+                  loading.hide();
+                  this.router.navigate(['/contacts']);
+                  return;
+                }
 
-            // finished with success
-            if (!overwriteFinished) {
-              finished(undefined, item);
-            } else {
-              // mark pristine
-              forms.markFormsAsPristine();
+                // success creating / updating
+                this.toastV2Service.success(
+                  type === CreateViewModifyV2ActionType.CREATE ?
+                    'LNG_PAGE_CREATE_CONTACT_ACTION_CREATE_CONTACT_SUCCESS_MESSAGE' :
+                    'LNG_PAGE_MODIFY_CONTACT_ACTION_MODIFY_CONTACT_SUCCESS_MESSAGE'
+                );
 
-              // hide loading
-              loading.hide();
+                // finished with success
+                if (!overwriteFinished) {
+                  finished(undefined, item);
+                } else {
+                  // mark pristine
+                  forms.markFormsAsPristine();
 
-              // call overwrite
-              overwriteFinished(item);
-            }
+                  // hide loading
+                  loading.hide();
+
+                  // call overwrite
+                  overwriteFinished(item);
+                }
+              });
           };
 
           // there are no records marked as NOT duplicates ?
