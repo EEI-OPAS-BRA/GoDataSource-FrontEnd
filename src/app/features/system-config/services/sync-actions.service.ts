@@ -329,7 +329,7 @@ export class SyncActionsService {
         };
       }
 
-      // outbreaks to send; always sent, since nothing chosen means all of them and not the ones configured for the server
+      // outbreaks to send: the ones offered to the server or, in the advanced options, the chosen ones
       syncOptions = {
         ...syncOptions,
         outbreakIDs: this.isAdvanced(response.data) ?
