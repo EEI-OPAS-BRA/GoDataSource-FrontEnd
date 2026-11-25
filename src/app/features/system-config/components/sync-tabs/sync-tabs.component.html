@@ -1,18 +1,22 @@
-<nav class="gd-sync-area-tabs">
-  <a
-    *ngFor="let tab of tabs"
+<nav
+  class="gd-sync-area-tabs"
+  role="tablist">
+  <button
+    *ngFor="let tab of tabs; trackBy: trackByKey"
+    type="button"
+    role="tab"
     class="gd-sync-area-tab"
     [class.gd-sync-area-tab-active]="tab.key === active"
-    [attr.aria-current]="tab.key === active ? 'page' : null"
-    [routerLink]="tab.link">
+    [attr.aria-selected]="tab.key === active"
+    (click)="open(tab)">
     <span class="material-icons">{{tab.icon}}</span>
     <span>{{tab.label | translate}}</span>
     <span
       *ngIf="tab.count"
       class="gd-sync-area-tab-count"
       [class.gd-sync-area-tab-count-info]="tab.countType === 'info'"
-      [matTooltip]="tab.countTooltip | translate: {count: tab.count}">
+      [matTooltip]="tab.countTooltip ? (tab.countTooltip | translate: {count: tab.count}) : ''">
       {{tab.count}}
     </span>
-  </a>
+  </button>
 </nav>

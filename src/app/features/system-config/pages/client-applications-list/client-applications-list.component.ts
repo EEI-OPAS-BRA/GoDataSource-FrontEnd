@@ -7,20 +7,16 @@ import { ListComponent } from '../../../../core/helperClasses/list-component';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
-import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
-import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
 import { V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
 import { IV2Column, IV2ColumnPinned, V2ColumnFormat } from '../../../../shared/components-v2/app-list-table-v2/models/column.model';
 import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
 import { V2FilterTextType, V2FilterType } from '../../../../shared/components-v2/app-list-table-v2/models/filter.model';
 import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-value-pair.model';
 import { UserModel } from '../../../../core/models/user.model';
-import { ClientApplicationHelperService } from '../../../../core/services/helper/client-application-helper.service';
-import { SystemSyncLogModel } from '../../../../core/models/system-sync-log.model';
 import { SyncOutbreakAccessModel, SyncOutbreakAccessStatus } from '../../../../core/models/sync-outbreak-access.model';
 import { SyncOutbreakMappingModel } from '../../../../core/models/sync-outbreak-mapping.model';
 import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sync-outbreak-access.data.service';
@@ -42,8 +38,6 @@ export class ClientApplicationsListComponent
     private toastV2Service: ToastV2Service,
     private i18nService: I18nService,
     private activatedRoute: ActivatedRoute,
-    private dialogV2Service: DialogV2Service,
-    private clientApplicationHelperService: ClientApplicationHelperService,
     private syncOutbreakAccessDataService: SyncOutbreakAccessDataService,
     private syncOutbreakMappingDataService: SyncOutbreakMappingDataService
   ) {
@@ -96,160 +90,6 @@ export class ClientApplicationsListComponent
             return !item.deleted &&
               SystemClientApplicationModel.canView(this.authUser);
           }
-        },
-
-        // Modify Client application
-        {
-          type: V2ActionType.ICON,
-          icon: 'edit',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_MODIFY',
-          action: {
-            link: (item: SystemClientApplicationModel): string[] => {
-              return ['/system-config/client-applications', item.id, 'modify'];
-            }
-          },
-          visible: (item: SystemClientApplicationModel): boolean => {
-            return !item.deleted &&
-              SystemClientApplicationModel.canModify(this.authUser);
-          }
-        },
-
-        // Enable / Disable client application
-        {
-          type: V2ActionType.ICON,
-          icon: 'check',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_ENABLE_DISABLE',
-          action: {
-            click: (item: SystemClientApplicationModel) => {
-              // update
-              this.toggleActiveFlag(item);
-            }
-          },
-          loading: (item: SystemClientApplicationModel): boolean => !!item.loading,
-          cssClasses: (item: SystemClientApplicationModel): string => {
-            return item.active ?
-              'gd-list-table-actions-action-icon-active' :
-              '';
-          },
-          disable: (item: SystemClientApplicationModel): boolean => {
-            return (
-              item.active &&
-              !SystemClientApplicationModel.canDisable(this.authUser)
-            ) || (
-              !item.active &&
-              !SystemClientApplicationModel.canEnable(this.authUser)
-            );
-          }
-        },
-
-        // Download client application config file
-        {
-          type: V2ActionType.ICON,
-          icon: 'file_download',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_DOWNLOAD_CONF_FILE',
-          action: {
-            click: (item: SystemClientApplicationModel) => {
-              this.clientApplicationHelperService.downloadConfFile(item);
-            }
-          },
-          disable: (item: SystemClientApplicationModel): boolean => {
-            return !item.active;
-          },
-          visible: (): boolean => {
-            return SystemClientApplicationModel.canDownloadConfFile(this.authUser);
-          }
-        },
-
-        // Other actions
-        {
-          type: V2ActionType.MENU,
-          icon: 'more_horiz',
-          menuOptions: [
-            // Last syncs received from this client
-            {
-              label: {
-                get: () => 'LNG_SYNC_ACTIVITY_PANEL_ACTION_VIEW_HISTORY'
-              },
-              action: {
-                link: (): string[] => ['/system-config/client-applications/history'],
-                linkQueryParams: (item: SystemClientApplicationModel) => ({
-                  key: item.credentials?.clientId,
-                  name: item.name
-                })
-              },
-              visible: (item: SystemClientApplicationModel): boolean => {
-                return !!item.credentials?.clientId &&
-                  SystemSyncLogModel.canList(this.authUser);
-              }
-            },
-
-            // Delete
-            {
-              label: {
-                get: () => 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_DELETE'
-              },
-              cssClasses: () => 'gd-list-table-actions-action-menu-warning',
-              action: {
-                click: (item: SystemClientApplicationModel): void => {
-                  // determine what we need to delete
-                  this.dialogV2Service.showConfirmDialog({
-                    config: {
-                      title: {
-                        get: () => 'LNG_COMMON_LABEL_DELETE',
-                        data: () => ({
-                          name: item.name
-                        })
-                      },
-                      message: {
-                        get: () => 'LNG_DIALOG_CONFIRM_DELETE_CLIENT_APPLICATION',
-                        data: () => ({
-                          name: item.name
-                        })
-                      }
-                    }
-                  }).subscribe((response) => {
-                    // canceled ?
-                    if (response.button.type === IV2BottomDialogConfigButtonType.CANCEL) {
-                      // finished
-                      return;
-                    }
-
-                    // show loading
-                    const loading = this.dialogV2Service.showLoadingDialog();
-
-                    // delete device
-                    this.clientApplicationDataService
-                      .deleteClientApplication(item.id)
-                      .pipe(
-                        catchError((err) => {
-                          // show error
-                          this.toastV2Service.error(err);
-
-                          // hide loading
-                          loading.close();
-
-                          // send error down the road
-                          return throwError(err);
-                        })
-                      )
-                      .subscribe(() => {
-                        // success
-                        this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_DELETE_SUCCESS_MESSAGE');
-
-                        // hide loading
-                        loading.close();
-
-                        // reload data
-                        this.needsRefreshList(true);
-                      });
-                  });
-                }
-              },
-              visible: (): boolean => {
-                return SystemClientApplicationModel.canDelete(this.authUser);
-              }
-            }
-          ]
         }
       ]
     };
@@ -303,22 +143,6 @@ export class ClientApplicationsListComponent
           type: (item: SystemClientApplicationModel) => item.usesRequests ?
             String(item.acceptedCount || 0) :
             '-'
-        }
-      },
-      {
-        field: 'credentials.clientId',
-        label: 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CREDENTIALS',
-        format: {
-          obfuscated: true,
-          type: (item: SystemClientApplicationModel) => {
-            return `${item.credentials?.clientId}/${item.credentials?.clientSecret}`;
-          }
-        },
-        sortable: true,
-        filter: {
-          type: V2FilterType.TEXT,
-          textType: V2FilterTextType.STARTS_WITH,
-          useLike: true
         }
       },
       {
@@ -486,7 +310,7 @@ export class ClientApplicationsListComponent
   protected initializeAddAction(): void {
     this.addAction = {
       type: V2ActionType.ICON_LABEL,
-      label: 'LNG_COMMON_BUTTON_ADD',
+      label: 'LNG_SYNC_ADD_ORIGIN',
       icon: 'add_circle_outline',
       action: {
         link: (): string[] => ['./create']
@@ -636,48 +460,6 @@ export class ClientApplicationsListComponent
       )
       .subscribe((response) => {
         this.pageCount = response;
-      });
-  }
-
-  /**
-   * Toggle and save active flag
-   */
-  private toggleActiveFlag(clientApplication: SystemClientApplicationModel): void {
-    // show loading
-    clientApplication.loading = true;
-    this.tableV2Component.agTable?.api.redrawRows();
-
-    // save
-    const newValue: boolean = !clientApplication.active;
-    this.clientApplicationDataService
-      .modifyClientApplication(
-        clientApplication.id, {
-          active: newValue
-        }
-      )
-      .pipe(
-        catchError((err) => {
-          // hide loading
-          clientApplication.loading = false;
-          this.tableV2Component.agTable?.api.redrawRows();
-
-          // show error
-          this.toastV2Service.error(err);
-
-          // send error further
-          return throwError(err);
-        })
-      )
-      .subscribe(() => {
-        // finished
-        clientApplication.active = newValue;
-
-        // hide loading
-        clientApplication.loading = false;
-        this.tableV2Component.agTable?.api.redrawRows();
-
-        // display success message
-        this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_TOGGLE_ENABLED_SUCCESS_MESSAGE');
       });
   }
 }

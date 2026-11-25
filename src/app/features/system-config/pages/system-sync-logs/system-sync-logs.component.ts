@@ -155,7 +155,7 @@ export class SystemSyncLogsComponent
           icon: 'fact_check',
           iconTooltip: 'LNG_PAGE_LIST_SYSTEM_SYNC_LOGS_ACTION_REVIEW_RECEIVED',
           action: {
-            link: (): string[] => ['/system-config/sync-outbreak-mappings']
+            link: (): string[] => ['/system-config/client-applications']
           },
           visible: (item: SystemSyncLogModel): boolean => {
             return this.systemSyncLogHelperService.isWaitingForReview(item) &&

@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as _ from 'lodash';
-import { Subject, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import {
@@ -19,6 +19,8 @@ import {
 import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
 import { UserModel } from '../../../../core/models/user.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
+import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
+import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { SyncOutbreakMappingDataService } from '../../../../core/services/data/sync-outbreak-mapping.data.service';
 import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
@@ -118,6 +120,10 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
   // user
   readOnly: boolean = true;
 
+  // page of the client that sent the outbreak (where the user comes from & goes back to)
+  backLink: string[] = ['/system-config/client-applications'];
+  clientName: string;
+
   // release subscriptions
   private _destroyed$: Subject<void> = new Subject<void>();
 
@@ -133,7 +139,8 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
     private dialogV2Service: DialogV2Service,
     private i18nService: I18nService,
     private changeDetectorRef: ChangeDetectorRef,
-    private syncReviewCountService: SyncReviewCountService
+    private syncReviewCountService: SyncReviewCountService,
+    private clientApplicationDataService: ClientApplicationDataService
   ) {}
 
   /**
@@ -149,7 +156,7 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
       .pipe(
         catchError((err) => {
           this.toastV2Service.error(err);
-          this.router.navigate(['/system-config/sync-outbreak-mappings']);
+          this.router.navigate(this.backLink);
           return throwError(err);
         }),
         takeUntil(this._destroyed$)
@@ -157,6 +164,7 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
       .subscribe((details) => {
         this.details = details;
         this.initializeBreadcrumbs(authUser);
+        this.loadClient(authUser);
 
         // questionnaires that have questions with answers (markup questions are only texts, there is nothing to map)
         this.tabs = SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES
@@ -212,15 +220,37 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
           link: ['/system-config/client-applications']
         }
       }, {
-        label: 'LNG_SYNC_AREA_TAB_REVIEW',
+        label: this.clientName || 'LNG_SYNC_CLIENT_TITLE',
         action: {
-          link: ['/system-config/sync-outbreak-mappings']
+          link: this.backLink
         }
       }, {
         label: this.details?.mapping.sourceOutbreakName || 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_TITLE',
         action: null
       }
     ];
+  }
+
+  /**
+   * Client that sent the outbreak
+   */
+  private loadClient(authUser: UserModel): void {
+    const qb = new RequestQueryBuilder();
+    qb.filter.byEquality('credentials.clientId', this.details.mapping.clientId);
+    qb.limit(1);
+    this.clientApplicationDataService
+      .getClientApplicationsList(qb)
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this._destroyed$)
+      )
+      .subscribe((clients: SystemClientApplicationModel[]) => {
+        if (clients[0]) {
+          this.backLink = ['/system-config/client-applications', clients[0].id];
+          this.clientName = clients[0].name;
+          this.initializeBreadcrumbs(authUser);
+        }
+      });
   }
 
   /**
@@ -742,7 +772,7 @@ export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
 
             // the menu & tabs display the number of outbreaks still waiting
             this.syncReviewCountService.refresh(true);
-            this.router.navigate(['/system-config/sync-outbreak-mappings']);
+            this.router.navigate(this.backLink);
           });
       });
   }

@@ -120,7 +120,7 @@ export class SyncDocumentationComponent implements OnInit {
     };
     this.reviewLink = {
       label: 'LNG_LAYOUT_MENU_ITEM_SYNC_OUTBREAK_MAPPINGS_LABEL',
-      link: ['/system-config/sync-outbreak-mappings'],
+      link: ['/system-config/client-applications'],
       visible: SystemClientApplicationModel.canList(this._authUser)
     };
 

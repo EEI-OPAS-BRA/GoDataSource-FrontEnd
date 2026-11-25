@@ -126,7 +126,7 @@
                 *ngIf="counts.staged && canReview"
                 class="gd-sync-activity-count gd-sync-activity-count-staged"
                 [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_COUNT_STAGED_TOOLTIP' | translate"
-                [routerLink]="outbreak.mappingId ? ['/system-config/sync-outbreak-mappings', outbreak.mappingId] : ['/system-config/sync-outbreak-mappings']">
+                [routerLink]="outbreak.mappingId ? ['/system-config/sync-outbreak-mappings', outbreak.mappingId] : ['/system-config/client-applications']">
                 {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_STAGED' | translate: {count: counts.staged} }}
                 <span class="material-icons">arrow_forward</span>
               </a>

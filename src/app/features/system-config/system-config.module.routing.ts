@@ -98,28 +98,6 @@ const routes: Routes = [
         }
       },
       {
-        path: 'history',
-        component: fromPages.SyncAreaHistoryComponent,
-        canActivate: [AuthGuard],
-        data: {
-          area: 'send',
-          permissions: [
-            PERMISSION.SYNC_LOG_LIST
-          ]
-        }
-      },
-      {
-        path: 'how-it-works',
-        component: fromPages.SyncAreaHowItWorksComponent,
-        canActivate: [AuthGuard],
-        data: {
-          area: 'send',
-          permissions: [
-            PERMISSION.UPSTREAM_SERVER_LIST
-          ]
-        }
-      },
-      {
         path: '',
         component: fromPages.UpstreamServersListComponent,
         canActivate: [AuthGuard],
@@ -174,28 +152,6 @@ const routes: Routes = [
   {
     path: 'client-applications',
     children: [
-      {
-        path: 'history',
-        component: fromPages.SyncAreaHistoryComponent,
-        canActivate: [AuthGuard],
-        data: {
-          area: 'receive',
-          permissions: [
-            PERMISSION.SYNC_LOG_LIST
-          ]
-        }
-      },
-      {
-        path: 'how-it-works',
-        component: fromPages.SyncAreaHowItWorksComponent,
-        canActivate: [AuthGuard],
-        data: {
-          area: 'receive',
-          permissions: [
-            PERMISSION.CLIENT_APPLICATION_LIST
-          ]
-        }
-      },
       {
         path: '',
         component: fromPages.ClientApplicationsListComponent,
@@ -370,17 +326,10 @@ const routes: Routes = [
     path: 'sync-outbreak-mappings',
     children: [
       {
+        // what waits for a decision is displayed on the page of each client
         path: '',
-        component: fromPages.SyncOutbreakMappingsListComponent,
-        canActivate: [AuthGuard],
-        data: {
-          permissions: [
-            PERMISSION.CLIENT_APPLICATION_LIST
-          ]
-        },
-        resolve: {
-          outbreak: OutbreakDataResolver
-        }
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
       },
       {
         path: ':mappingId',

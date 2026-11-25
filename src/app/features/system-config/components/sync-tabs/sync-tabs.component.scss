@@ -3,7 +3,7 @@
 
 :host {
   display: block;
-  padding-bottom: 0.8rem;
+  padding-bottom: 0.4rem;
 }
 
 .gd-sync-area-tabs {
@@ -16,6 +16,12 @@
 
 .gd-sync-area-tab {
   align-items: center;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  cursor: pointer;
+  font-family: $gd-font-family;
   border-bottom: 0.3rem solid transparent;
   @include border-radius(0.6rem 0.6rem 0 0);
   color: rgba(var(--gd-text-rgb), 0.75);

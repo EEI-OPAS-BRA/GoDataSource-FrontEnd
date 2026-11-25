@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import * as _ from 'lodash';
 import { forkJoin, Observable, of, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
@@ -67,6 +67,9 @@ export class SyncOutbreakRequestsComponent implements OnChanges, OnDestroy {
 
   // only the outbreaks of a client (client id of its key)
   @Input() clientId: string;
+
+  // number of outbreaks waiting for the user (to be asked / reviewed), after each load
+  @Output() waitingChange: EventEmitter<number> = new EventEmitter<number>();
 
   // data
   loading: boolean = true;
@@ -378,6 +381,7 @@ export class SyncOutbreakRequestsComponent implements OnChanges, OnDestroy {
           .filter((item) => item.access.status === SyncOutbreakAccessStatus.REFUSED)
           .sort(byName);
         this.loading = false;
+        this.waitingChange.emit(this.waitingItems.length + this.reviewItems.length);
       });
   }
 }

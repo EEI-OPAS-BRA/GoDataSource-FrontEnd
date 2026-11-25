@@ -1,13 +1,22 @@
 import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { ISyncProgressDialogData, SyncProgressDialogComponent } from '../../components/sync-progress-dialog/sync-progress-dialog.component';
 import * as _ from 'lodash';
-import { forkJoin, merge, Observable, of, Subject, throwError } from 'rxjs';
-import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import {
+  forkJoin,
+  merge,
+  Observable,
+  of,
+  Subject
+} from 'rxjs';
+import {
+  catchError,
+  map,
+  switchMap,
+  takeUntil,
+  tap
+} from 'rxjs/operators';
 import { ListComponent } from '../../../../core/helperClasses/list-component';
 import { RequestQueryBuilder, RequestSortDirection } from '../../../../core/helperClasses/request-query-builder';
-import { Constants } from '../../../../core/models/constants';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
 import { SystemSyncLogModel } from '../../../../core/models/system-sync-log.model';
@@ -17,25 +26,12 @@ import { SystemUpstreamServerModel } from '../../../../core/models/system-upstre
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
 import { SystemSyncDataService } from '../../../../core/services/data/system-sync.data.service';
-import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { SystemSyncLogHelperService } from '../../../../core/services/helper/system-sync-log-helper.service';
 import { UpstreamServerCheckHelperService } from '../../../../core/services/helper/upstream-server-check-helper.service';
 import { SystemUpstreamServerConnectionStatus } from '../../../../core/models/system-upstream-server-check.model';
 import { ListHelperService } from '../../../../core/services/helper/list-helper.service';
-import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
-import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
 import { AppListTableV2Component } from '../../../../shared/components-v2/app-list-table-v2/app-list-table-v2.component';
-import {
-  IV2SideDialogConfigButtonType,
-  IV2SideDialogConfigInputDate,
-  IV2SideDialogConfigInputMultiDropdown,
-  IV2SideDialogConfigInputSingleDropdown,
-  IV2SideDialogData,
-  V2SideDialogConfigInput,
-  V2SideDialogConfigInputType
-} from '../../../../shared/components-v2/app-side-dialog-v2/models/side-dialog-config.model';
-import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
@@ -61,14 +57,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
       unknown: { icon: 'info_outline', label: 'LNG_UPSTREAM_SERVER_CONNECTION_UNKNOWN' }
     };
 
-  // sync dialog - which data is sent
-  private static readonly SYNC_DIALOG_MODE_INPUT: string = 'sendMode';
-  private static readonly SYNC_DIALOG_FROM_DATE_INPUT: string = 'fromDate';
-  private static readonly SYNC_DIALOG_OUTBREAKS_INPUT: string = 'outbreakIDs';
-  private static readonly SYNC_MODE_SINCE_LAST: string = 'sinceLast';
-  private static readonly SYNC_MODE_FROM_DATE: string = 'fromDate';
-  private static readonly SYNC_MODE_ALL: string = 'all';
-
   // table
   @ViewChild('listTable', { static: true }) listTable: AppListTableV2Component;
 
@@ -81,15 +69,12 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   constructor(
     protected listHelperService: ListHelperService,
     private systemSettingsDataService: SystemSettingsDataService,
-    private toastV2Service: ToastV2Service,
     private systemSyncDataService: SystemSyncDataService,
     private systemSyncLogDataService: SystemSyncLogDataService,
-    private dialogV2Service: DialogV2Service,
     private i18nService: I18nService,
     private systemSyncLogHelperService: SystemSyncLogHelperService,
     private upstreamServerCheckHelperService: UpstreamServerCheckHelperService,
     private activatedRoute: ActivatedRoute,
-    private matDialog: MatDialog,
     private syncOutbreakAccessDataService: SyncOutbreakAccessDataService
   ) {
     super(
@@ -142,195 +127,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
           visible: (): boolean => {
             return SystemUpstreamServerModel.canList(this.authUser);
           }
-        },
-
-        // Modify
-        {
-          type: V2ActionType.ICON,
-          icon: 'edit',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_MODIFY_SERVER',
-          action: {
-            link: (): string[] => ['/system-config/upstream-servers/modify'],
-            linkQueryParams: (item: SystemUpstreamServerModel) => ({
-              url: item.url
-            })
-          },
-          visible: (): boolean => {
-            return SystemUpstreamServerModel.canModify(this.authUser);
-          }
-        },
-
-        // Start sync
-        {
-          type: V2ActionType.ICON,
-          icon: 'sync',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_START_SYNC',
-          action: {
-            click: (item: SystemUpstreamServerModel) => {
-              this.startSync(item);
-            }
-          },
-          visible: (): boolean => {
-            return SystemUpstreamServerModel.canSync(this.authUser);
-          }
-        },
-
-        // Disable sync
-        {
-          type: V2ActionType.ICON,
-          icon: 'sync_disabled',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_DISABLE_SYNC',
-          action: {
-            click: (item: SystemUpstreamServerModel) => {
-              this.toggleSyncEnableFlag(item);
-            }
-          },
-          visible: (item: SystemUpstreamServerModel): boolean => {
-            return item.syncEnabled &&
-              SystemUpstreamServerModel.canDisableSync(this.authUser);
-          }
-        },
-
-        // Enable sync
-        {
-          type: V2ActionType.ICON,
-          icon: 'alarm_on',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_ENABLE_SYNC',
-          action: {
-            click: (item: SystemUpstreamServerModel) => {
-              this.toggleSyncEnableFlag(item);
-            }
-          },
-          visible: (item: SystemUpstreamServerModel): boolean => {
-            return !item.syncEnabled &&
-              SystemUpstreamServerModel.canEnableSync(this.authUser);
-          }
-        },
-
-        // Other actions
-        {
-          type: V2ActionType.MENU,
-          icon: 'more_horiz',
-          menuOptions: [
-            // Last syncs with this server
-            {
-              label: {
-                get: () => 'LNG_SYNC_ACTIVITY_PANEL_ACTION_VIEW_HISTORY'
-              },
-              action: {
-                link: (): string[] => ['/system-config/upstream-servers/history'],
-                linkQueryParams: (item: SystemUpstreamServerModel) => ({
-                  key: item.url,
-                  name: item.name
-                })
-              },
-              visible: (): boolean => {
-                return SystemSyncLogModel.canList(this.authUser);
-              }
-            },
-
-            // Delete
-            {
-              label: {
-                get: () => 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_DELETE_SERVER'
-              },
-              cssClasses: () => 'gd-list-table-actions-action-menu-warning',
-              action: {
-                click: (item: SystemUpstreamServerModel): void => {
-                  let systemSettings: SystemSettingsModel;
-
-                  // determine what we need to delete
-                  this.dialogV2Service.showConfirmDialog({
-                    config: {
-                      title: {
-                        get: () => 'LNG_COMMON_LABEL_DELETE',
-                        data: () => ({
-                          name: item.name
-                        })
-                      },
-                      message: {
-                        get: () => 'LNG_DIALOG_CONFIRM_DELETE_SYSTEM_UPSTREAM_SERVER',
-                        data: () => ({
-                          name: item.name
-                        })
-                      }
-                    },
-                    initialized: (handler) => {
-                      // display loading
-                      handler.loading.show();
-
-                      // determine if case has exposed contacts
-                      this.systemSettingsDataService
-                        .getSystemSettings()
-                        .pipe(
-                          catchError((err) => {
-                            // show error
-                            this.toastV2Service.error(err);
-
-                            // hide loading
-                            handler.loading.hide();
-
-                            // send error down the road
-                            return throwError(err);
-                          })
-                        )
-                        .subscribe((settings: SystemSettingsModel) => {
-                          systemSettings = settings;
-
-                          // hide loading
-                          handler.loading.hide();
-                        });
-                    }
-                  }).subscribe((response) => {
-                    // canceled ?
-                    if (response.button.type === IV2BottomDialogConfigButtonType.CANCEL) {
-                      // finished
-                      return;
-                    }
-
-                    // show loading
-                    const loading = this.dialogV2Service.showLoadingDialog();
-
-                    // filter upstream servers
-                    const upstreamServers = systemSettings.upstreamServers.filter((server: SystemUpstreamServerModel) => {
-                      return server.url !== item.url;
-                    });
-
-                    // save upstream servers
-                    this.systemSettingsDataService
-                      .modifySystemSettings({
-                        upstreamServers
-                      })
-                      .pipe(
-                        catchError((err) => {
-                          // show error
-                          this.toastV2Service.error(err);
-
-                          // hide loading
-                          loading.close();
-
-                          // send error down the road
-                          return throwError(err);
-                        })
-                      )
-                      .subscribe(() => {
-                        // success
-                        this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_DELETE_SUCCESS_MESSAGE');
-
-                        // hide loading
-                        loading.close();
-
-                        // reload data
-                        this.needsRefreshList(true);
-                      });
-                  });
-                }
-              },
-              visible: (): boolean => {
-                return SystemUpstreamServerModel.canDelete(this.authUser);
-              }
-            }
-          ]
         }
       ]
     };
@@ -389,29 +185,26 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         }
       },
       {
-        field: 'credentials',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_CREDENTIALS',
-        format: {
-          obfuscated: true,
-          type: (item: SystemUpstreamServerModel) => {
-            return `${item.credentials?.clientId}/${item.credentials?.clientSecret}`;
-          }
-        }
-      },
-      {
         field: 'description',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_DESCRIPTION'
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_DESCRIPTION',
+        // on the page of the server (settings)
+        notVisible: true
       },
       {
         field: 'timeout',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT'
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT',
+        // on the page of the server (settings)
+        notVisible: true
       },
       {
         field: 'syncInterval',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL'
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL',
+        // on the page of the server (settings)
+        notVisible: true
       },
       {
         field: 'syncOnEveryChange',
+        notVisible: true,
         label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE',
         format: {
           type: V2ColumnFormat.BOOLEAN
@@ -419,6 +212,7 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
       },
       {
         field: 'syncEnabled',
+        notVisible: true,
         label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ENABLED',
         format: {
           type: V2ColumnFormat.BOOLEAN
@@ -448,32 +242,6 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
               this.i18nService.instant(item.lastSyncLog.status);
           }
         }
-      },
-      {
-        field: 'lastSyncLog.error',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_LAST_SYNC_LOGS',
-        exclude: () => !SystemSyncLogModel.canList(this.authUser),
-        format: {
-          type: V2ColumnFormat.BUTTON
-        },
-        cssCellClass: 'gd-cell-button',
-        color: 'text',
-        buttonLabel: (item: SystemUpstreamServerModel) => {
-          if (this.systemSyncLogHelperService.hasError(item.lastSyncLog)) {
-            return this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_VIEW_LOGS');
-          }
-
-          if (this.systemSyncLogHelperService.isNoDataToSync(item.lastSyncLog)) {
-            return this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_NO_NEW_DATA');
-          }
-
-          return item.lastSyncLog?.status === Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS.value ?
-            this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_NO_MESSAGES') :
-            '';
-        },
-        disabled: (item: SystemUpstreamServerModel) => !this.systemSyncLogHelperService.hasError(item.lastSyncLog) ||
-          !SystemSyncLogModel.canView(this.authUser),
-        click: (item: SystemUpstreamServerModel) => this.systemSyncLogHelperService.viewError(item.lastSyncLog)
       }
     ];
   }
@@ -509,7 +277,7 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
   protected initializeAddAction(): void {
     this.addAction = {
       type: V2ActionType.ICON_LABEL,
-      label: 'LNG_COMMON_BUTTON_ADD',
+      label: 'LNG_SYNC_ADD_DESTINATION',
       icon: 'add_circle_outline',
       action: {
         link: (): string[] => ['./create']
@@ -750,363 +518,4 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
    * Get total number of items
    */
   refreshListCount() {}
-
-  /**
-   * Toggle sync enabled flag
-   * @param upstreamServer
-   */
-  toggleSyncEnableFlag(upstreamServer: SystemUpstreamServerModel) {
-    // toggle flag
-    upstreamServer.syncEnabled = !upstreamServer.syncEnabled;
-
-    // save sync
-    this.systemSettingsDataService
-      .getSystemSettings()
-      .pipe(
-        catchError((err) => {
-          this.toastV2Service.error(err);
-          return throwError(err);
-        })
-      )
-      .subscribe((settings: SystemSettingsModel) => {
-        // upstream server
-        const upstreamItem: SystemUpstreamServerModel = _.find(settings.upstreamServers, { url: upstreamServer.url });
-        if (upstreamItem) {
-          // set flag
-          upstreamItem.syncEnabled = upstreamServer.syncEnabled;
-
-          // save upstream servers
-          this.systemSettingsDataService
-            .modifySystemSettings({
-              upstreamServers: settings.upstreamServers
-            })
-            .pipe(
-              catchError((err) => {
-                this.toastV2Service.error(err);
-                return throwError(err);
-              })
-            )
-            .subscribe(() => {
-              // display success message
-              this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_TOGGLE_SYNC_ENABLED_SUCCESS_MESSAGE');
-            });
-          this.needsRefreshList(false, false, true);
-        }
-      });
-  }
-
-  /**
-   * Which data was chosen in the sync dialog
-   */
-  private getSyncMode(data: IV2SideDialogData): string {
-    return (data.map[UpstreamServersListComponent.SYNC_DIALOG_MODE_INPUT] as IV2SideDialogConfigInputSingleDropdown)?.value;
-  }
-
-  /**
-   * Outbreaks chosen in the sync dialog; nothing means all of them
-   */
-  private getSyncOutbreakIDs(data: IV2SideDialogData): string[] {
-    return (data.map[UpstreamServersListComponent.SYNC_DIALOG_OUTBREAKS_INPUT] as IV2SideDialogConfigInputMultiDropdown)?.values || [];
-  }
-
-  /**
-   * Sync dialog - label of the outbreaks field; nothing chosen means all the outbreaks
-   */
-  private getSyncOutbreaksPlaceholder(outbreakIDs: string[]): string {
-    return outbreakIDs?.length > 0 ?
-      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS' :
-      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_ALL';
-  }
-
-  /**
-   * The chosen outbreaks don't include all the ones configured for the server
-   */
-  private isPartialSync(
-    upstreamServer: SystemUpstreamServerModel,
-    outbreakIDs: string[]
-  ): boolean {
-    // all outbreaks
-    if (!outbreakIDs.length) {
-      return false;
-    }
-
-    // configured to sync all outbreaks
-    const configuredOutbreakIDs: string[] = upstreamServer.outbreakIDs || [];
-    if (!configuredOutbreakIDs.length) {
-      return true;
-    }
-
-    return configuredOutbreakIDs.some((outbreakId) => !outbreakIDs.includes(outbreakId));
-  }
-
-  /**
-   * Sync dialog - server that receives the data & its last sync
-   */
-  private getSyncDialogServerHtml(upstreamServer: SystemUpstreamServerModel): string {
-    // last sync
-    let lastSyncHtml: string;
-    const lastSyncLog: SystemSyncLogModel = upstreamServer.lastSyncLog;
-    if (!lastSyncLog) {
-      lastSyncHtml = `<span>${_.escape(this.i18nService.instant('LNG_UPSTREAM_SERVER_LAST_SYNC_NEVER'))}</span>`;
-    } else {
-      // status
-      let statusClass: string;
-      let statusLabel: string;
-      if (this.systemSyncLogHelperService.isNoDataToSync(lastSyncLog)) {
-        statusClass = 'success';
-        statusLabel = 'LNG_UPSTREAM_SERVER_LAST_SYNC_UP_TO_DATE';
-      } else {
-        switch (lastSyncLog.status) {
-          case Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS.value:
-            statusClass = 'success';
-            break;
-          case Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS_WITH_WARNINGS.value:
-            statusClass = 'warning';
-            break;
-          case Constants.SYSTEM_SYNC_LOG_STATUS.FAILED.value:
-            statusClass = 'danger';
-            break;
-          default:
-            statusClass = 'secondary';
-        }
-        statusLabel = lastSyncLog.status;
-      }
-
-      lastSyncHtml = `<span>${_.escape(this.i18nService.instant('LNG_UPSTREAM_SERVER_FIELD_LABEL_LAST_SYNC_DATE'))}: ` +
-        `<strong>${_.escape(LocalizationHelper.displayDateTime(lastSyncLog.actionStartDate))}</strong></span>` +
-        `<span class="gd-sync-dialog-status gd-sync-dialog-status-${statusClass}">${_.escape(this.i18nService.instant(statusLabel))}</span>`;
-    }
-
-    // render
-    return '<div class="gd-sync-dialog-server">' +
-      '<span class="material-icons gd-sync-dialog-server-icon">cloud_upload</span>' +
-      '<div class="gd-sync-dialog-server-info">' +
-      `<div class="gd-sync-dialog-server-name">${_.escape(upstreamServer.name)}</div>` +
-      `<div class="gd-sync-dialog-server-url">${_.escape(upstreamServer.url)}</div>` +
-      '</div>' +
-      '</div>' +
-      '<div class="gd-sync-dialog-last">' +
-      '<span class="material-icons">history</span>' +
-      lastSyncHtml +
-      '</div>';
-  }
-
-  /**
-   * Sync dialog - box with an explanation
-   */
-  private getSyncDialogHintHtml(
-    type: 'info' | 'warning',
-    icon: string,
-    message: string
-  ): string {
-    return `<div class="gd-sync-dialog-hint gd-sync-dialog-hint-${type}">` +
-      `<span class="material-icons">${icon}</span>` +
-      `<span>${_.escape(this.i18nService.instant(message))}</span>` +
-      '</div>';
-  }
-
-  /**
-   * Sync dialog - explanation visible only for an option
-   */
-  private getSyncDialogHint(
-    syncMode: string,
-    type: 'info' | 'warning',
-    icon: string,
-    message: string
-  ): V2SideDialogConfigInput {
-    return {
-      type: V2SideDialogConfigInputType.HTML,
-      name: `hint-${syncMode}`,
-      placeholder: this.getSyncDialogHintHtml(
-        type,
-        icon,
-        message
-      ),
-      visible: (data) => this.getSyncMode(data) === syncMode
-    };
-  }
-
-  /**
-   * Start sync
-   * @param upstreamServer
-   */
-  startSync(upstreamServer: SystemUpstreamServerModel) {
-    this.dialogV2Service.showSideDialog({
-      title: {
-        get: () => 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_TITLE'
-      },
-      hideInputFilter: true,
-      width: '55rem',
-      inputs: [
-        {
-          // server that receives the data & its last sync
-          type: V2SideDialogConfigInputType.HTML,
-          name: 'server',
-          placeholder: this.getSyncDialogServerHtml(upstreamServer)
-        }, {
-          type: V2SideDialogConfigInputType.DROPDOWN_SINGLE,
-          name: UpstreamServersListComponent.SYNC_DIALOG_MODE_INPUT,
-          placeholder: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE',
-          tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE_TOOLTIP',
-          options: [
-            {
-              label: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE_SINCE_LAST',
-              value: UpstreamServersListComponent.SYNC_MODE_SINCE_LAST
-            }, {
-              label: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE_FROM_DATE',
-              value: UpstreamServersListComponent.SYNC_MODE_FROM_DATE
-            }, {
-              label: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE_ALL',
-              value: UpstreamServersListComponent.SYNC_MODE_ALL
-            }
-          ],
-          value: UpstreamServersListComponent.SYNC_MODE_SINCE_LAST,
-          validators: {
-            required: () => true
-          }
-        }, {
-          type: V2SideDialogConfigInputType.DATE,
-          name: UpstreamServersListComponent.SYNC_DIALOG_FROM_DATE_INPUT,
-          placeholder: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_FROM_DATE',
-          tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_FROM_DATE_TOOLTIP',
-          value: undefined,
-          visible: (data) => this.getSyncMode(data) === UpstreamServersListComponent.SYNC_MODE_FROM_DATE,
-          validators: {
-            required: (data) => this.getSyncMode(data) === UpstreamServersListComponent.SYNC_MODE_FROM_DATE
-          }
-        }, {
-          type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
-          name: UpstreamServersListComponent.SYNC_DIALOG_OUTBREAKS_INPUT,
-          // nothing chosen means all the outbreaks
-          placeholder: this.getSyncOutbreaksPlaceholder(upstreamServer.outbreakIDs),
-          tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_TOOLTIP',
-          options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options,
-          // outbreaks configured for the server
-          values: [...(upstreamServer.outbreakIDs || [])],
-          change: (_data, _handler, item) => {
-            item.placeholder = this.getSyncOutbreaksPlaceholder((item as IV2SideDialogConfigInputMultiDropdown).values);
-          }
-        },
-
-        // what is sent with the chosen option
-        this.getSyncDialogHint(
-          UpstreamServersListComponent.SYNC_MODE_SINCE_LAST,
-          'info',
-          'update',
-          'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_SINCE_LAST'
-        ),
-        this.getSyncDialogHint(
-          UpstreamServersListComponent.SYNC_MODE_FROM_DATE,
-          'info',
-          'event',
-          'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_FROM_DATE'
-        ),
-        this.getSyncDialogHint(
-          UpstreamServersListComponent.SYNC_MODE_ALL,
-          'warning',
-          'warning',
-          'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_ALL'
-        ),
-
-        // only some outbreaks
-        {
-          type: V2SideDialogConfigInputType.HTML,
-          name: 'partialSync',
-          placeholder: this.getSyncDialogHintHtml(
-            'warning',
-            'filter_alt',
-            'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_PARTIAL'
-          ),
-          visible: (data) => this.isPartialSync(
-            upstreamServer,
-            this.getSyncOutbreakIDs(data)
-          )
-        },
-
-        // without a successful sync everything is sent, whatever the option
-        {
-          type: V2SideDialogConfigInputType.HTML,
-          name: 'firstSync',
-          placeholder: this.getSyncDialogHintHtml(
-            'warning',
-            'new_releases',
-            'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_FIRST_SYNC'
-          ),
-          visible: (data) => !upstreamServer.lastSyncLog &&
-            this.getSyncMode(data) !== UpstreamServersListComponent.SYNC_MODE_ALL
-        }
-      ],
-      bottomButtons: [
-        {
-          type: IV2SideDialogConfigButtonType.OTHER,
-          label: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_START_BUTTON',
-          color: 'primary',
-          key: 'start',
-          disabled: (_data, handler): boolean => {
-            return !handler.form || handler.form.invalid;
-          }
-        }, {
-          type: IV2SideDialogConfigButtonType.CANCEL,
-          label: 'LNG_COMMON_BUTTON_CANCEL',
-          color: 'text'
-        }
-      ]
-    }).subscribe((response) => {
-      // canceled ?
-      if (response.button.type === IV2SideDialogConfigButtonType.CANCEL) {
-        // finished
-        return;
-      }
-
-      // what should be sent; nothing means only what changed since the last sync
-      const syncMode: string = this.getSyncMode(response.data);
-      let syncOptions: {
-        fromDate?: string,
-        fullSync?: boolean,
-        outbreakIDs?: string[]
-      };
-      if (syncMode === UpstreamServersListComponent.SYNC_MODE_ALL) {
-        syncOptions = {
-          fullSync: true
-        };
-      } else if (syncMode === UpstreamServersListComponent.SYNC_MODE_FROM_DATE) {
-        syncOptions = {
-          fromDate: LocalizationHelper
-            .toMoment((response.data.map[UpstreamServersListComponent.SYNC_DIALOG_FROM_DATE_INPUT] as IV2SideDialogConfigInputDate).value)
-            .startOf('day')
-            .toISOString()
-        };
-      }
-
-      // outbreaks to send; always sent, since nothing chosen means all of them and not the ones configured for the server
-      syncOptions = {
-        ...syncOptions,
-        outbreakIDs: this.getSyncOutbreakIDs(response.data)
-      };
-
-      // close dialog
-      response.handler.hide();
-
-      // display the progress of each step; the list is refreshed when the dialog is closed, even if the sync continues in background
-      this.matDialog
-        .open<SyncProgressDialogComponent, ISyncProgressDialogData, boolean>(
-        SyncProgressDialogComponent, {
-          data: {
-            upstreamServer,
-            syncOptions
-          },
-          width: '64rem',
-          maxWidth: '95vw',
-          disableClose: true,
-          autoFocus: false,
-          restoreFocus: false,
-          panelClass: 'gd-sync-progress-dialog-panel'
-        }
-      )
-        .afterClosed()
-        .subscribe(() => {
-          this.needsRefreshList(true);
-        });
-    });
-  }
 }

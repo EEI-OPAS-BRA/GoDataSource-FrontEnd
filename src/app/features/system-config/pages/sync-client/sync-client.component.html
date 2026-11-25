@@ -1,6 +1,6 @@
 <app-basic-page-v2
   [breadcrumbs]="breadcrumbs"
-  [pageTitle]="client?.name || 'LNG_SYNC_AREA_TAB_KEYS'"
+  [pageTitle]="client?.name || 'LNG_SYNC_CLIENT_TITLE'"
   [actionButton]="actionButton">
 
   <div class="gd-sync-area-page">
@@ -11,63 +11,53 @@
 
     <ng-container *ngIf="!loading && client">
 
-      <!-- The key -->
-      <app-sync-section-title
-        icon="vpn_key"
-        heading="LNG_SYNC_CLIENT_KEY_TITLE"
-        description="LNG_SYNC_CLIENT_KEY_DESCRIPTION">
-      </app-sync-section-title>
-      <div class="gd-sync-client-card">
-        <div class="gd-sync-client-fact">
-          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE' | translate}}</small>
-          <strong>{{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}</strong>
-        </div>
-        <div class="gd-sync-client-fact">
-          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ACTIVE' | translate}}</small>
-          <strong
-            class="gd-sync-client-status"
-            [class.gd-sync-client-status-off]="!client.active">
-            <span class="material-icons" aria-hidden="true">{{client.active ? 'check_circle' : 'block'}}</span>
-            {{(client.active ? 'LNG_SYNC_CLIENT_ACTIVE' : 'LNG_SYNC_CLIENT_INACTIVE') | translate}}
-          </strong>
-        </div>
-        <div
-          *ngIf="client.usesRequests"
-          class="gd-sync-client-fact">
-          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_AUTO_ACCEPT' | translate}}</small>
-          <strong>{{(client.autoAcceptSameIdOutbreaks ? 'LNG_COMMON_LABEL_YES' : 'LNG_COMMON_LABEL_NO') | translate}}</strong>
-        </div>
-        <div
-          *ngIf="!client.usesRequests"
-          class="gd-sync-client-fact">
-          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' | translate}}</small>
-          <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS' | translate)}}</strong>
-        </div>
-        <div class="gd-sync-client-fact">
-          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CLIENT_ID' | translate}}</small>
-          <strong class="gd-sync-client-mono">{{client.credentials?.clientId}}</strong>
-        </div>
+      <!-- Summary: what matters at a glance -->
+      <div class="gd-sync-entity-summary">
+        <span
+          class="gd-sync-entity-pill"
+          [class.gd-sync-entity-pill-success]="client.active"
+          [class.gd-sync-entity-pill-danger]="!client.active">
+          <span class="material-icons" aria-hidden="true">{{client.active ? 'check_circle' : 'block'}}</span>
+          {{(client.active ? 'LNG_SYNC_CLIENT_ACTIVE' : 'LNG_SYNC_CLIENT_INACTIVE') | translate}}
+        </span>
+        <span class="gd-sync-entity-pill">
+          <span class="material-icons" aria-hidden="true">{{client.usesRequests ? 'dns' : 'smartphone'}}</span>
+          {{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}
+        </span>
+        <button
+          *ngIf="waitingCount && tab !== 'outbreaks'"
+          type="button"
+          class="gd-sync-entity-pill gd-sync-entity-pill-warning gd-sync-entity-pill-link"
+          (click)="openTab('outbreaks')">
+          <span class="material-icons" aria-hidden="true">hourglass_top</span>
+          {{'LNG_SYNC_TAB_WAITING_COUNT' | translate: {count: waitingCount} }}
+        </button>
       </div>
 
-      <!-- Outbreaks of the client -->
-      <ng-container *ngIf="client.usesRequests; else noRequests">
+      <!-- Tabs -->
+      <app-sync-tabs
+        [tabs]="tabs"
+        [active]="tab"
+        (activeChange)="openTab($event)">
+      </app-sync-tabs>
+
+      <!-- Outbreaks: always loaded, so the tab displays what waits for a decision -->
+      <div [hidden]="tab !== 'outbreaks'">
+        <ng-container *ngIf="!client.usesRequests">
+          <app-sync-section-title
+            icon="folder_open"
+            heading="LNG_SYNC_CLIENT_OUTBREAKS_TITLE"
+            description="LNG_SYNC_CLIENT_NO_REQUESTS">
+          </app-sync-section-title>
+        </ng-container>
         <app-sync-outbreak-requests
-          [clientId]="client.credentials?.clientId">
+          [clientId]="client.credentials?.clientId"
+          (waitingChange)="setWaitingCount($event)">
         </app-sync-outbreak-requests>
-      </ng-container>
-      <ng-template #noRequests>
-        <app-sync-section-title
-          icon="folder_open"
-          heading="LNG_SYNC_CLIENT_OUTBREAKS_TITLE"
-          description="LNG_SYNC_CLIENT_NO_REQUESTS">
-        </app-sync-section-title>
-        <app-sync-outbreak-requests
-          [clientId]="client.credentials?.clientId">
-        </app-sync-outbreak-requests>
-      </ng-template>
+      </div>
 
       <!-- What it sent -->
-      <ng-container *ngIf="canListSyncs">
+      <ng-container *ngIf="tab === 'history' && canListSyncs">
         <app-sync-section-title
           icon="history"
           heading="LNG_SYNC_CLIENT_HISTORY_TITLE"
@@ -80,6 +70,149 @@
           [focusLabel]="client.name"
           [focusLocked]="true">
         </app-sync-activity-panel>
+      </ng-container>
+
+      <!-- The key & what can be done with it -->
+      <ng-container *ngIf="tab === 'settings'">
+        <app-sync-section-title
+          icon="vpn_key"
+          heading="LNG_SYNC_CLIENT_KEY_TITLE"
+          description="LNG_SYNC_CLIENT_KEY_DESCRIPTION">
+        </app-sync-section-title>
+        <div class="gd-sync-client-card">
+          <div class="gd-sync-client-fact">
+            <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE' | translate}}</small>
+            <strong>{{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}</strong>
+          </div>
+          <div
+            *ngIf="client.usesRequests"
+            class="gd-sync-client-fact">
+            <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_AUTO_ACCEPT' | translate}}</small>
+            <strong>{{(client.autoAcceptSameIdOutbreaks ? 'LNG_COMMON_LABEL_YES' : 'LNG_COMMON_LABEL_NO') | translate}}</strong>
+          </div>
+          <div
+            *ngIf="!client.usesRequests"
+            class="gd-sync-client-fact">
+            <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' | translate}}</small>
+            <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS' | translate)}}</strong>
+          </div>
+          <div class="gd-sync-client-fact">
+            <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CLIENT_ID' | translate}}</small>
+            <span class="gd-sync-secret">
+              <strong class="gd-sync-client-mono">{{client.credentials?.clientId}}</strong>
+              <button
+                type="button"
+                mat-icon-button
+                [matTooltip]="'LNG_SYNC_CREDENTIALS_COPY' | translate"
+                (click)="copy(client.credentials?.clientId)">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </span>
+          </div>
+          <div class="gd-sync-client-fact">
+            <small>{{'LNG_SYNC_CREDENTIALS_SECRET' | translate}}</small>
+            <span class="gd-sync-secret">
+              <strong class="gd-sync-client-mono">{{showSecret ? client.credentials?.clientSecret : '••••••••••••'}}</strong>
+              <button
+                type="button"
+                mat-icon-button
+                [matTooltip]="(showSecret ? 'LNG_SYNC_CREDENTIALS_HIDE' : 'LNG_SYNC_CREDENTIALS_SHOW') | translate"
+                (click)="showSecret = !showSecret">
+                <mat-icon>{{showSecret ? 'visibility_off' : 'visibility'}}</mat-icon>
+              </button>
+              <button
+                type="button"
+                mat-icon-button
+                [matTooltip]="'LNG_SYNC_CREDENTIALS_COPY' | translate"
+                (click)="copy(client.credentials?.clientSecret)">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <app-sync-section-title
+          icon="build"
+          heading="LNG_SYNC_ACTIONS_TITLE"
+          description="LNG_SYNC_CLIENT_ACTIONS_DESCRIPTION">
+        </app-sync-section-title>
+        <div class="gd-sync-actions">
+          <div
+            *ngIf="canToggle"
+            class="gd-sync-action">
+            <span class="material-icons gd-sync-action-icon">{{client.active ? 'block' : 'check_circle'}}</span>
+            <div class="gd-sync-action-text">
+              <strong>{{(client.active ? 'LNG_SYNC_CLIENT_ACTION_DISABLE_TITLE' : 'LNG_SYNC_CLIENT_ACTION_ENABLE_TITLE') | translate}}</strong>
+              <span>{{(client.active ? 'LNG_SYNC_CLIENT_ACTION_DISABLE_DESCRIPTION' : 'LNG_SYNC_CLIENT_ACTION_ENABLE_DESCRIPTION') | translate}}</span>
+            </div>
+            <button
+              type="button"
+              mat-flat-button
+              [color]="client.active ? 'secondary' : 'primary'"
+              [disabled]="saving"
+              (click)="toggleActive()">
+              {{(client.active ? 'LNG_SYNC_ACTION_BUTTON_DISABLE' : 'LNG_SYNC_ACTION_BUTTON_ENABLE') | translate}}
+            </button>
+          </div>
+          <div
+            *ngIf="canModify"
+            class="gd-sync-action">
+            <span class="material-icons gd-sync-action-icon">edit</span>
+            <div class="gd-sync-action-text">
+              <strong>{{'LNG_SYNC_CLIENT_ACTION_EDIT_TITLE' | translate}}</strong>
+              <span>{{'LNG_SYNC_CLIENT_ACTION_EDIT_DESCRIPTION' | translate}}</span>
+            </div>
+            <a
+              mat-flat-button
+              color="secondary"
+              [routerLink]="['/system-config/client-applications', client.id, 'modify']">
+              {{'LNG_SYNC_ACTION_BUTTON_EDIT' | translate}}
+            </a>
+          </div>
+          <div
+            *ngIf="canDownloadConfFile && !client.usesRequests"
+            class="gd-sync-action">
+            <span class="material-icons gd-sync-action-icon">file_download</span>
+            <div class="gd-sync-action-text">
+              <strong>{{'LNG_SYNC_CLIENT_ACTION_DOWNLOAD_TITLE' | translate}}</strong>
+              <span>{{'LNG_SYNC_CLIENT_ACTION_DOWNLOAD_DESCRIPTION' | translate}}</span>
+            </div>
+            <button
+              type="button"
+              mat-flat-button
+              color="secondary"
+              [disabled]="!client.active"
+              (click)="downloadConfFile()">
+              {{'LNG_SYNC_ACTION_BUTTON_DOWNLOAD' | translate}}
+            </button>
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <ng-container *ngIf="canDelete">
+          <app-sync-section-title
+            icon="report_gmailerrorred"
+            heading="LNG_SYNC_DANGER_TITLE"
+            description="LNG_SYNC_DANGER_DESCRIPTION">
+          </app-sync-section-title>
+          <div class="gd-sync-actions gd-sync-actions-danger">
+            <div class="gd-sync-action">
+              <span class="material-icons gd-sync-action-icon">delete_outline</span>
+              <div class="gd-sync-action-text">
+                <strong>{{'LNG_SYNC_CLIENT_ACTION_DELETE_TITLE' | translate}}</strong>
+                <span>{{'LNG_SYNC_CLIENT_ACTION_DELETE_DESCRIPTION' | translate}}</span>
+              </div>
+              <button
+                type="button"
+                mat-flat-button
+                color="warn"
+                (click)="delete()">
+                {{'LNG_SYNC_ACTION_BUTTON_DELETE' | translate}}
+              </button>
+            </div>
+          </div>
+        </ng-container>
       </ng-container>
 
     </ng-container>
