@@ -1,0 +1,802 @@
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import * as _ from 'lodash';
+import { of, Subject, throwError } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
+import { DashboardModel } from '../../../../core/models/dashboard.model';
+import {
+  getSyncOutbreakMappingConversion,
+  isSyncOutbreakMappingAnswerableQuestion,
+  ISyncOutbreakMappingDetails,
+  ISyncOutbreakMappingQuestion,
+  ISyncOutbreakMappingQuestionMappings,
+  ISyncOutbreakMappingQuestionnaires,
+  SYNC_OUTBREAK_MAPPING_CHOICE_ANSWER_TYPES,
+  SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES,
+  SyncOutbreakMappingConversion,
+  SyncOutbreakMappingMode
+} from '../../../../core/models/sync-outbreak-mapping.model';
+import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
+import { UserModel } from '../../../../core/models/user.model';
+import { AuthDataService } from '../../../../core/services/data/auth.data.service';
+import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
+import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
+import { SyncOutbreakMappingDataService } from '../../../../core/services/data/sync-outbreak-mapping.data.service';
+import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
+import { I18nService } from '../../../../core/services/helper/i18n.service';
+import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
+import { SyncReviewCountService } from '../../../../core/services/helper/sync-review-count.service';
+import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
+import { IV2Breadcrumb } from '../../../../shared/components-v2/app-breadcrumb-v2/models/breadcrumb.model';
+
+/**
+ * Decision for a received question / answer being edited
+ * undefined - not decided yet; IGNORE - ignored (stays blank); other - question / answer of this instance
+ */
+interface IQuestionDecision {
+  target: string;
+  answers: {
+    [sourceValue: string]: string
+  };
+}
+
+/**
+ * Questionnaire tab
+ */
+interface IQuestionnaireTab {
+  key: string;
+  label: string;
+  questions: ISyncOutbreakMappingQuestion[];
+}
+
+@Component({
+  selector: 'app-sync-outbreak-mapping-edit',
+  templateUrl: './sync-outbreak-mapping-edit.component.html',
+  styleUrls: ['./sync-outbreak-mapping-edit.component.scss']
+})
+export class SyncOutbreakMappingEditComponent implements OnInit, OnDestroy {
+  // value of an ignored question / answer in the dropdowns
+  static readonly IGNORE: string = '__ignore__';
+
+  // labels of the questionnaires
+  private static readonly QUESTIONNAIRE_LABELS: {
+    [questionnaire: string]: string
+  } = {
+      caseInvestigationTemplate: 'LNG_OUTBREAK_FIELD_LABEL_CASE_INVESTIGATION_TEMPLATE',
+      contactInvestigationTemplate: 'LNG_OUTBREAK_FIELD_LABEL_CONTACT_INVESTIGATION_TEMPLATE',
+      eventInvestigationTemplate: 'LNG_OUTBREAK_FIELD_LABEL_EVENT_INVESTIGATION_TEMPLATE',
+      caseFollowUpTemplate: 'LNG_OUTBREAK_FIELD_LABEL_CASE_FOLLOWUP_TEMPLATE',
+      contactFollowUpTemplate: 'LNG_OUTBREAK_FIELD_LABEL_CONTACT_FOLLOWUP_TEMPLATE',
+      labResultsTemplate: 'LNG_OUTBREAK_FIELD_LABEL_LAB_RESULTS_TEMPLATE'
+    };
+
+  // used by the template
+  readonly IGNORE: string = SyncOutbreakMappingEditComponent.IGNORE;
+
+  // breadcrumbs
+  breadcrumbs: IV2Breadcrumb[] = [];
+
+  // data
+  loading: boolean = true;
+  loadingTarget: boolean = false;
+  details: ISyncOutbreakMappingDetails;
+  tabs: IQuestionnaireTab[] = [];
+  targetQuestionnaires: ISyncOutbreakMappingQuestionnaires = {};
+  private _targetQuestionsMap: {
+    [questionnaire: string]: {
+      [variable: string]: ISyncOutbreakMappingQuestion
+    }
+  } = {};
+
+  // what the user chose
+  mode: SyncOutbreakMappingMode = 'map';
+  targetOutbreakId: string;
+  decisions: {
+    [questionnaire: string]: {
+      [sourceVariable: string]: IQuestionDecision
+    }
+  } = {};
+  onlyPending: boolean = false;
+
+  // full rules of the questions step (collapsed by default, the guide shows the summary)
+  showRules: boolean = false;
+
+  // automatic suggestion: running state, questions linked by it (highlighted until the user changes them) & result summary
+  suggesting: boolean = false;
+  suggestResult: {
+    questions: number,
+    answers: number
+  } = null;
+  private _suggestedQuestions: {
+    [key: string]: number
+  } = {};
+  private _suggestTimer: ReturnType<typeof setTimeout>;
+
+  // received questions that are new since the last approval
+  private _newQuestions: {
+    [key: string]: true
+  } = {};
+
+  // user
+  readOnly: boolean = true;
+
+  // page of the client that sent the outbreak (where the user comes from & goes back to)
+  backLink: string[] = ['/system-config/client-applications'];
+  clientName: string;
+
+  // release subscriptions
+  private _destroyed$: Subject<void> = new Subject<void>();
+
+  /**
+   * Constructor
+   */
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private router: Router,
+    private authDataService: AuthDataService,
+    private syncOutbreakMappingDataService: SyncOutbreakMappingDataService,
+    private toastV2Service: ToastV2Service,
+    private dialogV2Service: DialogV2Service,
+    private i18nService: I18nService,
+    private changeDetectorRef: ChangeDetectorRef,
+    private syncReviewCountService: SyncReviewCountService,
+    private clientApplicationDataService: ClientApplicationDataService
+  ) {}
+
+  /**
+   * Initialized
+   */
+  ngOnInit(): void {
+    const authUser: UserModel = this.authDataService.getAuthenticatedUser();
+    this.readOnly = !SystemClientApplicationModel.canModify(authUser);
+    this.initializeBreadcrumbs(authUser);
+
+    this.syncOutbreakMappingDataService
+      .getMappingDetails(this.activatedRoute.snapshot.params.mappingId)
+      .pipe(
+        catchError((err) => {
+          this.toastV2Service.error(err);
+          this.router.navigate(this.backLink);
+          return throwError(err);
+        }),
+        takeUntil(this._destroyed$)
+      )
+      .subscribe((details) => {
+        this.details = details;
+        this.initializeBreadcrumbs(authUser);
+        this.loadClient(authUser);
+
+        // questionnaires that have questions with answers (markup questions are only texts, there is nothing to map)
+        this.tabs = SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES
+          .map((questionnaire) => ({
+            key: questionnaire,
+            label: SyncOutbreakMappingEditComponent.QUESTIONNAIRE_LABELS[questionnaire],
+            questions: (details.sourceQuestionnaires[questionnaire] || []).filter((question) => isSyncOutbreakMappingAnswerableQuestion(question))
+          }))
+          .filter((tab) => tab.questions.length > 0);
+
+        // new questions
+        details.mapping.pendingQuestions.forEach((question) => {
+          this._newQuestions[`${question.questionnaire}.${question.variable}`] = true;
+        });
+
+        // what was decided before
+        this.mode = details.mapping.mode || 'map';
+        this.decisions = this.decisionsFromMappings(details.mapping.questionMappings);
+        this.loading = false;
+
+        if (details.mapping.targetOutbreakId) {
+          this.changeTargetOutbreak(details.mapping.targetOutbreakId, true);
+        }
+      });
+  }
+
+  /**
+   * Release resources
+   */
+  ngOnDestroy(): void {
+    if (this._suggestTimer) {
+      clearTimeout(this._suggestTimer);
+    }
+    this._destroyed$.next();
+    this._destroyed$.complete();
+  }
+
+  /**
+   * Breadcrumbs
+   */
+  private initializeBreadcrumbs(authUser: UserModel): void {
+    this.breadcrumbs = [
+      {
+        label: 'LNG_COMMON_LABEL_HOME',
+        action: {
+          link: DashboardModel.canViewDashboard(authUser) ?
+            ['/dashboard'] :
+            ['/account/my-profile']
+        }
+      }, {
+        label: 'LNG_LAYOUT_MENU_ITEM_CLIENT_APPLICATIONS_LABEL',
+        action: {
+          link: ['/system-config/client-applications']
+        }
+      }, {
+        label: this.clientName || 'LNG_SYNC_CLIENT_TITLE',
+        action: {
+          link: this.backLink
+        }
+      }, {
+        label: this.details?.mapping.sourceOutbreakName || 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_TITLE',
+        action: null
+      }
+    ];
+  }
+
+  /**
+   * Client that sent the outbreak
+   */
+  private loadClient(authUser: UserModel): void {
+    const qb = new RequestQueryBuilder();
+    qb.filter.byEquality('credentials.clientId', this.details.mapping.clientId);
+    qb.limit(1);
+    this.clientApplicationDataService
+      .getClientApplicationsList(qb)
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this._destroyed$)
+      )
+      .subscribe((clients: SystemClientApplicationModel[]) => {
+        if (clients[0]) {
+          this.backLink = ['/system-config/client-applications', clients[0].id];
+          this.clientName = clients[0].name;
+          this.initializeBreadcrumbs(authUser);
+        }
+      });
+  }
+
+  /**
+   * Decisions from the saved mappings
+   */
+  private decisionsFromMappings(questionMappings: ISyncOutbreakMappingQuestionMappings): {
+    [questionnaire: string]: {
+      [sourceVariable: string]: IQuestionDecision
+    }
+  } {
+    const result = {};
+    SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES.forEach((questionnaire) => {
+      result[questionnaire] = {};
+      _.each(questionMappings?.[questionnaire] || {}, (questionMapping, sourceVariable) => {
+        const answers = {};
+        _.each(questionMapping.answers || {}, (targetValue, sourceValue) => {
+          answers[sourceValue] = targetValue === null ? this.IGNORE : targetValue;
+        });
+        result[questionnaire][sourceVariable] = {
+          target: questionMapping.targetVariable === null ? this.IGNORE : questionMapping.targetVariable,
+          answers
+        };
+      });
+    });
+    return result;
+  }
+
+  /**
+   * The outbreak of this instance changed
+   */
+  changeTargetOutbreak(outbreakId: string, keepDecisions?: boolean): void {
+    this.targetOutbreakId = outbreakId;
+    this.targetQuestionnaires = {};
+    this._targetQuestionsMap = {};
+
+    // suggestions were made for another outbreak
+    if (!keepDecisions) {
+      this._suggestedQuestions = {};
+      this.suggestResult = null;
+    }
+    if (!outbreakId) {
+      return;
+    }
+
+    this.loadingTarget = true;
+    this.syncOutbreakMappingDataService
+      .getTargetQuestionnaires(outbreakId)
+      .pipe(
+        catchError((err) => {
+          this.loadingTarget = false;
+          this.toastV2Service.error(err);
+          return throwError(err);
+        }),
+        takeUntil(this._destroyed$)
+      )
+      .subscribe((questionnaires) => {
+        this.targetQuestionnaires = questionnaires;
+        SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES.forEach((questionnaire) => {
+          this._targetQuestionsMap[questionnaire] = _.keyBy(questionnaires[questionnaire] || [], 'variable');
+        });
+
+        // decisions that don't apply to the questionnaires of this outbreak (question / option removed, answer type changed, question used twice) must be taken again
+        SYNC_OUTBREAK_MAPPING_QUESTIONNAIRES.forEach((questionnaire) => {
+          const sourceQuestions = _.keyBy(this.details?.sourceQuestionnaires[questionnaire] || [], 'variable');
+          const usedTargets: { [targetVariable: string]: true } = {};
+          _.each(this.decisions[questionnaire], (decision, sourceVariable) => {
+            if (!keepDecisions) {
+              delete this.decisions[questionnaire][sourceVariable];
+              return;
+            }
+
+            if (!decision.target || decision.target === this.IGNORE) {
+              return;
+            }
+
+            const targetQuestion = this._targetQuestionsMap[questionnaire][decision.target];
+            const conversion = getSyncOutbreakMappingConversion(sourceQuestions[sourceVariable], targetQuestion);
+            if (
+              !conversion ||
+              usedTargets[decision.target]
+            ) {
+              delete this.decisions[questionnaire][sourceVariable];
+              return;
+            }
+            usedTargets[decision.target] = true;
+
+            // options of this outbreak that don't exist anymore
+            if (conversion !== SyncOutbreakMappingConversion.CHOICE_TO_TEXT) {
+              const targetValues = (targetQuestion.answers || []).map((answer) => answer.value);
+              _.each(decision.answers, (targetValue, sourceValue) => {
+                if (
+                  targetValue !== this.IGNORE &&
+                  !targetValues.includes(targetValue)
+                ) {
+                  delete decision.answers[sourceValue];
+                }
+              });
+            }
+          });
+        });
+
+        this.loadingTarget = false;
+        this.changeDetectorRef.markForCheck();
+      });
+  }
+
+  /**
+   * Decision for a question
+   */
+  getDecision(questionnaire: string, variable: string): IQuestionDecision {
+    if (!this.decisions[questionnaire]) {
+      this.decisions[questionnaire] = {};
+    }
+    if (!this.decisions[questionnaire][variable]) {
+      this.decisions[questionnaire][variable] = {
+        target: undefined,
+        answers: {}
+      };
+    }
+    return this.decisions[questionnaire][variable];
+  }
+
+  /**
+   * The question of this instance changed
+   */
+  changeTargetQuestion(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion, target: string): void {
+    const decision = this.getDecision(questionnaire, sourceQuestion.variable);
+    decision.target = target;
+    decision.answers = {};
+
+    // chosen by the user => not a suggestion anymore
+    delete this._suggestedQuestions[`${questionnaire}.${sourceQuestion.variable}`];
+
+    // options with the same value / text are mapped automatically
+    const targetQuestion = this.getTargetQuestion(questionnaire, target);
+    if (this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
+      this.suggestAnswers(sourceQuestion, targetQuestion, decision);
+    }
+  }
+
+  /**
+   * How the answers of a received question are converted to a question of this instance; null when they aren't compatible
+   */
+  getConversion(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): SyncOutbreakMappingConversion | null {
+    return getSyncOutbreakMappingConversion(sourceQuestion, targetQuestion);
+  }
+
+  /**
+   * Received question that already uses a question of this instance (each question of this instance receives the answers of only one received question)
+   */
+  private getSourceUsingTarget(questionnaire: string, targetVariable: string, exceptSourceVariable: string): string {
+    return _.findKey(
+      this.decisions[questionnaire] || {},
+      (decision, sourceVariable) => sourceVariable !== exceptSourceVariable && decision.target === targetVariable
+    );
+  }
+
+  /**
+   * Why a question of this instance can't be chosen for a received question (translation token), null when it can
+   */
+  getTargetUnavailableReason(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): string {
+    if (!this.getConversion(sourceQuestion, targetQuestion)) {
+      return 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_INCOMPATIBLE_TYPE';
+    }
+
+    if (this.getSourceUsingTarget(questionnaire, targetQuestion.variable, sourceQuestion.variable)) {
+      return 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_ALREADY_LINKED';
+    }
+
+    return null;
+  }
+
+  /**
+   * The options of the received question are written as text in the question of this instance
+   */
+  isChoiceToText(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion): boolean {
+    const targetQuestion = this.getTargetQuestion(questionnaire, this.decisions[questionnaire]?.[sourceQuestion.variable]?.target);
+    return this.getConversion(sourceQuestion, targetQuestion) === SyncOutbreakMappingConversion.CHOICE_TO_TEXT;
+  }
+
+  /**
+   * Question of this instance
+   */
+  getTargetQuestion(questionnaire: string, variable: string): ISyncOutbreakMappingQuestion {
+    return variable && variable !== this.IGNORE ?
+      this._targetQuestionsMap[questionnaire]?.[variable] :
+      undefined;
+  }
+
+  /**
+   * Whether a question has options
+   */
+  isChoice(question: ISyncOutbreakMappingQuestion): boolean {
+    return !!question && SYNC_OUTBREAK_MAPPING_CHOICE_ANSWER_TYPES.includes(question.answerType);
+  }
+
+  /**
+   * The options must be mapped
+   */
+  hasAnswersMapping(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion): boolean {
+    const conversion = this.getConversion(sourceQuestion, targetQuestion);
+    return this.isChoice(sourceQuestion) && (
+      conversion === SyncOutbreakMappingConversion.SAME ||
+      conversion === SyncOutbreakMappingConversion.SINGLE_TO_MULTIPLE
+    );
+  }
+
+  /**
+   * Whether the user still needs to decide something about a question
+   */
+  isPending(questionnaire: string, sourceQuestion: ISyncOutbreakMappingQuestion): boolean {
+    const decision = this.decisions[questionnaire]?.[sourceQuestion.variable];
+    if (!decision || !decision.target) {
+      return true;
+    }
+
+    if (decision.target === this.IGNORE) {
+      return false;
+    }
+
+    // a question that doesn't exist anymore / isn't compatible must be chosen again
+    const targetQuestion = this.getTargetQuestion(questionnaire, decision.target);
+    if (
+      !targetQuestion ||
+      !this.getConversion(sourceQuestion, targetQuestion)
+    ) {
+      return true;
+    }
+
+    // options (written as text => nothing to decide)
+    if (!this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
+      return false;
+    }
+    const targetValues = targetQuestion.answers.map((answer) => answer.value);
+    return sourceQuestion.answers.some((answer) => {
+      const targetValue = decision.answers[answer.value];
+      return !targetValue || (
+        targetValue !== this.IGNORE &&
+        !targetValues.includes(targetValue)
+      );
+    });
+  }
+
+  /**
+   * Received question that is new since the last approval
+   */
+  isNewQuestion(questionnaire: string, variable: string): boolean {
+    return !!this._newQuestions[`${questionnaire}.${variable}`];
+  }
+
+  /**
+   * Number of questions the user still needs to decide
+   */
+  getPendingCount(tab: IQuestionnaireTab): number {
+    return tab.questions.filter((question) => this.isPending(tab.key, question)).length;
+  }
+
+  /**
+   * Total number of questions the user still needs to decide
+   */
+  get totalPending(): number {
+    return this.tabs.reduce((total, tab) => total + this.getPendingCount(tab), 0);
+  }
+
+  /**
+   * Questions displayed in a tab
+   */
+  getVisibleQuestions(tab: IQuestionnaireTab): ISyncOutbreakMappingQuestion[] {
+    return this.onlyPending ?
+      tab.questions.filter((question) => this.isPending(tab.key, question)) :
+      tab.questions;
+  }
+
+  /**
+   * Whether the mapping can be approved
+   */
+  get canApprove(): boolean {
+    if (this.readOnly || !this.details) {
+      return false;
+    }
+
+    return this.mode === 'new' || (
+      !!this.targetOutbreakId &&
+      !this.loadingTarget &&
+      this.totalPending === 0
+    );
+  }
+
+  /**
+   * Text used to compare questions & answers
+   */
+  private normalize(text: string): string {
+    return (text || '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  /**
+   * Map the options with the same value / text
+   */
+  private suggestAnswers(sourceQuestion: ISyncOutbreakMappingQuestion, targetQuestion: ISyncOutbreakMappingQuestion, decision: IQuestionDecision): number {
+    let linked: number = 0;
+    sourceQuestion.answers.forEach((sourceAnswer) => {
+      if (decision.answers[sourceAnswer.value]) {
+        return;
+      }
+
+      const targetAnswer = targetQuestion.answers.find((answer) => answer.value === sourceAnswer.value) ||
+        targetQuestion.answers.find((answer) => this.normalize(answer.labelTranslated) === this.normalize(sourceAnswer.labelTranslated));
+      if (targetAnswer) {
+        decision.answers[sourceAnswer.value] = targetAnswer.value;
+        linked++;
+      }
+    });
+    return linked;
+  }
+
+  /**
+   * Received question linked by the automatic suggestion (and not changed by the user since)
+   */
+  isSuggested(questionnaire: string, variable: string): boolean {
+    return this._suggestedQuestions[`${questionnaire}.${variable}`] !== undefined;
+  }
+
+  /**
+   * Delay of the highlight of a suggested question, so they light up one after the other
+   */
+  getSuggestedDelay(questionnaire: string, variable: string): number {
+    return Math.min(this._suggestedQuestions[`${questionnaire}.${variable}`] || 0, 20) * 60;
+  }
+
+  /**
+   * Map the questions (and options) with the same variable / text that weren't decided yet
+   */
+  suggest(): void {
+    if (this.suggesting) {
+      return;
+    }
+
+    // short "searching" state, so the user perceives the work being done before the results light up
+    this.suggesting = true;
+    this.suggestResult = null;
+    this._suggestTimer = setTimeout(() => {
+      this._suggestTimer = undefined;
+      let suggestedQuestions: number = 0;
+      let suggestedAnswers: number = 0;
+      this.tabs.forEach((tab) => {
+        const targetQuestions = this.targetQuestionnaires[tab.key] || [];
+        tab.questions.forEach((sourceQuestion) => {
+          const decision = this.getDecision(tab.key, sourceQuestion.variable);
+
+          // question (only compatible questions that aren't linked to another received question)
+          if (!decision.target) {
+            const available = (question: ISyncOutbreakMappingQuestion) => !this.getTargetUnavailableReason(tab.key, sourceQuestion, question);
+            const targetQuestion = targetQuestions.find((question) => question.variable === sourceQuestion.variable && available(question)) ||
+              targetQuestions.find((question) => this.normalize(question.textTranslated) === this.normalize(sourceQuestion.textTranslated) && available(question));
+            if (targetQuestion) {
+              decision.target = targetQuestion.variable;
+              this._suggestedQuestions[`${tab.key}.${sourceQuestion.variable}`] = suggestedQuestions;
+              suggestedQuestions++;
+            }
+          }
+
+          // options
+          const targetQuestion = this.getTargetQuestion(tab.key, decision.target);
+          if (this.hasAnswersMapping(sourceQuestion, targetQuestion)) {
+            suggestedAnswers += this.suggestAnswers(sourceQuestion, targetQuestion, decision);
+          }
+        });
+      });
+
+      this.suggesting = false;
+      this.suggestResult = {
+        questions: suggestedQuestions,
+        answers: suggestedAnswers
+      };
+      this.changeDetectorRef.markForCheck();
+    }, 700);
+  }
+
+  /**
+   * Ignore every question that wasn't decided yet in a tab
+   */
+  ignoreRemaining(tab: IQuestionnaireTab): void {
+    tab.questions.forEach((sourceQuestion) => {
+      const decision = this.getDecision(tab.key, sourceQuestion.variable);
+      const targetQuestion = this.getTargetQuestion(tab.key, decision.target);
+      if (
+        !decision.target ||
+        (decision.target !== this.IGNORE && !this.getConversion(sourceQuestion, targetQuestion))
+      ) {
+        decision.target = this.IGNORE;
+        decision.answers = {};
+      } else if (
+        decision.target !== this.IGNORE &&
+        this.hasAnswersMapping(sourceQuestion, targetQuestion)
+      ) {
+        const targetValues = targetQuestion.answers.map((answer) => answer.value);
+        sourceQuestion.answers.forEach((answer) => {
+          const targetValue = decision.answers[answer.value];
+          if (
+            !targetValue ||
+            (targetValue !== this.IGNORE && !targetValues.includes(targetValue))
+          ) {
+            decision.answers[answer.value] = this.IGNORE;
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Mappings sent to the api
+   */
+  private buildQuestionMappings(): ISyncOutbreakMappingQuestionMappings {
+    const result: ISyncOutbreakMappingQuestionMappings = {};
+    this.tabs.forEach((tab) => {
+      result[tab.key] = {};
+      tab.questions.forEach((sourceQuestion) => {
+        const decision = this.decisions[tab.key]?.[sourceQuestion.variable];
+        if (!decision?.target) {
+          return;
+        }
+
+        if (decision.target === this.IGNORE) {
+          result[tab.key][sourceQuestion.variable] = {
+            targetVariable: null
+          };
+          return;
+        }
+
+        // options written as text: the api uses the texts of the options
+        const answers = {};
+        if (this.hasAnswersMapping(sourceQuestion, this.getTargetQuestion(tab.key, decision.target))) {
+          sourceQuestion.answers.forEach((answer) => {
+            const targetValue = decision.answers[answer.value];
+            if (targetValue) {
+              answers[answer.value] = targetValue === this.IGNORE ? null : targetValue;
+            }
+          });
+        }
+        result[tab.key][sourceQuestion.variable] = {
+          targetVariable: decision.target,
+          answers
+        };
+      });
+    });
+    return result;
+  }
+
+  /**
+   * Approve the mapping & import the records that were waiting for it
+   */
+  approve(): void {
+    if (!this.canApprove) {
+      return;
+    }
+
+    this.dialogV2Service
+      .showConfirmDialog({
+        config: {
+          title: {
+            get: () => 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_APPROVE_DIALOG_TITLE'
+          },
+          message: {
+            get: () => 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_APPROVE_DIALOG_MESSAGE',
+            data: () => ({
+              count: (this.details.stagedRecordsCount || 0).toString()
+            })
+          }
+        }
+      })
+      .subscribe((response) => {
+        if (response.button.type === IV2BottomDialogConfigButtonType.CANCEL) {
+          return;
+        }
+
+        const loading = this.dialogV2Service.showLoadingDialog();
+        this.syncOutbreakMappingDataService
+          .approveMapping(
+            this.details.mapping.id,
+            this.mode === 'new' ? {
+              mode: 'new'
+            } : {
+              mode: 'map',
+              targetOutbreakId: this.targetOutbreakId,
+              questionMappings: this.buildQuestionMappings()
+            }
+          )
+          .pipe(
+            catchError((err) => {
+              loading.close();
+              this.toastV2Service.error(err);
+              return throwError(err);
+            }),
+            takeUntil(this._destroyed$)
+          )
+          .subscribe((result) => {
+            loading.close();
+            if (result.failed?.length) {
+              this.toastV2Service.error(
+                'LNG_PAGE_SYNC_OUTBREAK_MAPPING_APPROVE_PARTIAL_MESSAGE', {
+                  imported: result.imported.toString(),
+                  failed: result.failed.length.toString()
+                },
+                undefined,
+                result.failed.join('\n')
+              );
+            } else {
+              this.toastV2Service.success(
+                'LNG_PAGE_SYNC_OUTBREAK_MAPPING_APPROVE_SUCCESS_MESSAGE', {
+                  count: result.imported.toString()
+                }
+              );
+            }
+
+            // the menu & tabs display the number of outbreaks still waiting
+            this.syncReviewCountService.refresh(true);
+            this.router.navigate(this.backLink);
+          });
+      });
+  }
+
+  /**
+   * Text of a question of this instance in the dropdown
+   */
+  getQuestionLabel(question: ISyncOutbreakMappingQuestion): string {
+    return `${'— '.repeat(question.depth)}${question.textTranslated}`;
+  }
+
+  /**
+   * Translated name of the type of a question
+   */
+  getAnswerTypeLabel(question: ISyncOutbreakMappingQuestion): string {
+    return question.answerType ?
+      this.i18nService.instant(question.answerType) :
+      '';
+  }
+
+  /**
+   * Track by
+   */
+  trackByVariable(_index: number, question: ISyncOutbreakMappingQuestion): string {
+    return question.variable;
+  }
+}

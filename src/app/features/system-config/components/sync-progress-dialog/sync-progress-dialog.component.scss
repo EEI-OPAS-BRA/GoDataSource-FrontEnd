@@ -409,6 +409,12 @@
     }
   }
 
+  &.gd-sync-progress-bar-waiting {
+    ::ng-deep .mat-progress-bar-fill::after {
+      background: var(--gd-primary);
+    }
+  }
+
   &.gd-sync-progress-bar-warning {
     ::ng-deep .mat-progress-bar-fill::after {
       background: var(--gd-warning);

@@ -1,0 +1,231 @@
+<div
+  *ngIf="canList"
+  class="gd-sync-activity">
+
+  <!-- Toolbar -->
+  <div class="gd-sync-activity-toolbar">
+    <span class="gd-sync-activity-toolbar-text">
+      <ng-container *ngIf="total !== undefined">
+        {{'LNG_SYNC_ACTIVITY_PANEL_TOTAL' | translate: {count: total} }}
+      </ng-container>
+    </span>
+
+    <!-- Syncs without new data -->
+    <mat-slide-toggle
+      class="gd-sync-activity-toggle-empty"
+      [checked]="showEmpty"
+      (change)="toggleEmpty()">
+      {{(direction === 'sent' ? 'LNG_SYNC_ACTIVITY_PANEL_SHOW_EMPTY_SENT' : 'LNG_SYNC_ACTIVITY_PANEL_SHOW_EMPTY_RECEIVED') | translate}}
+    </mat-slide-toggle>
+
+    <!-- Only one server / client -->
+    <span
+      *ngIf="focusKey && !focusLocked"
+      class="gd-sync-activity-focus">
+      {{'LNG_SYNC_ACTIVITY_PANEL_ONLY' | translate: {name: focusLabel} }}
+      <button
+        type="button"
+        [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_SHOW_ALL' | translate"
+        (click)="clearFocus()">
+        <span class="material-icons">close</span>
+      </button>
+    </span>
+
+    <button
+      type="button"
+      mat-icon-button
+      [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_REFRESH' | translate"
+      (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <mat-progress-bar
+    *ngIf="loading"
+    mode="indeterminate"></mat-progress-bar>
+
+  <p
+    *ngIf="!loading && !items.length"
+    class="gd-sync-activity-empty">
+    {{(direction === 'sent' ? 'LNG_SYNC_ACTIVITY_PANEL_SENT_EMPTY' : 'LNG_SYNC_ACTIVITY_PANEL_RECEIVED_EMPTY') | translate}}
+  </p>
+
+  <!-- Columns -->
+  <div
+    *ngIf="items.length"
+    class="gd-sync-activity-row gd-sync-activity-head"
+    role="row">
+    <span role="columnheader">{{'LNG_SYNC_ACTIVITY_PANEL_COLUMN_DATE' | translate}}</span>
+    <span role="columnheader">{{(direction === 'sent' ? 'LNG_SYNC_ACTIVITY_PANEL_COLUMN_TO' : 'LNG_SYNC_ACTIVITY_PANEL_COLUMN_FROM') | translate}}</span>
+    <span role="columnheader">{{'LNG_SYNC_ACTIVITY_PANEL_COLUMN_RESULT' | translate}}</span>
+    <span role="columnheader"></span>
+  </div>
+
+  <!-- Syncs -->
+  <ul
+    *ngIf="items.length"
+    class="gd-sync-activity-list"
+    [class.gd-sync-activity-list-loading]="loading">
+    <li
+      *ngFor="let item of items; trackBy: trackByItem"
+      class="gd-sync-activity-row gd-sync-activity-item gd-sync-activity-item-{{item.status}}">
+
+      <!-- When -->
+      <span class="gd-sync-activity-date">
+        <strong>{{item.day}}</strong>
+        <span>{{item.time}}</span>
+      </span>
+
+      <!-- Who -->
+      <span
+        class="gd-sync-activity-who"
+        [title]="direction === 'sent' ? item.log.syncServerUrl : item.log.syncClientId">
+        <span class="material-icons">{{direction === 'sent' ? 'cloud_upload' : 'cloud_download'}}</span>
+        <span>{{item.who}}</span>
+      </span>
+
+      <!-- What happened -->
+      <div class="gd-sync-activity-main">
+        <div class="gd-sync-activity-title">
+          <span
+            class="material-icons gd-sync-activity-icon"
+            [matTooltip]="item.log.status | translate">
+            {{item.status === 'success' ? 'check_circle' : (item.status === 'warning' ? 'warning' : (item.status === 'progress' ? 'sync' : (item.status === 'waiting' ? 'hourglass_top' : 'error')))}}
+          </span>
+          <strong>{{item.result | translate}}</strong>
+        </div>
+
+        <!-- Outbreaks -->
+        <div
+          *ngIf="item.outbreaks.length || item.allOutbreaks || item.otherImported || item.failedRecords"
+          class="gd-sync-activity-outbreaks">
+          <span
+            *ngIf="item.allOutbreaks"
+            class="gd-sync-activity-outbreak">
+            <span class="material-icons">folder_open</span>
+            {{'LNG_SYNC_ACTIVITY_PANEL_ALL_OUTBREAKS' | translate}}
+          </span>
+          <span
+            *ngFor="let outbreak of (item.showAllOutbreaks ? item.outbreaks : item.outbreaks.slice(0, OUTBREAKS_LIMIT))"
+            class="gd-sync-activity-outbreak">
+            <span class="material-icons">folder_open</span>
+            <strong>{{outbreak.name}}</strong>
+            <ng-container *ngIf="outbreak.localName">
+              <span class="material-icons gd-sync-activity-arrow">arrow_forward</span>
+              <span [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_SAVED_IN' | translate">{{outbreak.localName}}</span>
+            </ng-container>
+
+            <!-- What happened to its records -->
+            <ng-container *ngIf="outbreak.counts as counts">
+              <span
+                *ngIf="counts.imported"
+                class="gd-sync-activity-count gd-sync-activity-count-imported">
+                {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_IMPORTED' | translate: {count: counts.imported} }}
+              </span>
+              <a
+                *ngIf="counts.staged && canReview"
+                class="gd-sync-activity-count gd-sync-activity-count-staged"
+                [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_COUNT_STAGED_TOOLTIP' | translate"
+                [routerLink]="outbreak.mappingId ? ['/system-config/sync-outbreak-mappings', outbreak.mappingId] : ['/system-config/client-applications']">
+                {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_STAGED' | translate: {count: counts.staged} }}
+                <span class="material-icons">arrow_forward</span>
+              </a>
+              <span
+                *ngIf="counts.staged && !canReview"
+                class="gd-sync-activity-count gd-sync-activity-count-staged">
+                {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_STAGED' | translate: {count: counts.staged} }}
+              </span>
+              <span
+                *ngIf="counts.failed"
+                class="gd-sync-activity-count gd-sync-activity-count-failed"
+                [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_COUNT_FAILED_TOOLTIP' | translate">
+                {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_FAILED' | translate: {count: counts.failed} }}
+              </span>
+              <span
+                *ngIf="counts.notAllowed"
+                class="gd-sync-activity-count gd-sync-activity-count-failed"
+                [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_COUNT_NOT_ALLOWED_TOOLTIP' | translate">
+                {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_NOT_ALLOWED' | translate: {count: counts.notAllowed} }}
+              </span>
+            </ng-container>
+          </span>
+          <button
+            *ngIf="item.outbreaks.length > OUTBREAKS_LIMIT"
+            type="button"
+            class="gd-sync-activity-more"
+            (click)="item.showAllOutbreaks = !item.showAllOutbreaks">
+            {{(item.showAllOutbreaks ? 'LNG_SYNC_ACTIVITY_PANEL_FEWER_OUTBREAKS' : 'LNG_SYNC_ACTIVITY_PANEL_MORE_OUTBREAKS') | translate: {count: item.outbreaks.length - OUTBREAKS_LIMIT} }}
+          </button>
+
+          <!-- Records with errors that can't be placed in an outbreak (older syncs) -->
+          <span
+            *ngIf="item.partialDetails && item.failedRecords"
+            class="gd-sync-activity-outbreak">
+            <span
+              class="gd-sync-activity-count gd-sync-activity-count-failed"
+              [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_COUNT_FAILED_TOOLTIP' | translate">
+              {{'LNG_SYNC_ACTIVITY_PANEL_COUNT_FAILED' | translate: {count: item.failedRecords} }}
+            </span>
+          </span>
+          <span
+            *ngIf="item.otherImported"
+            class="gd-sync-activity-other"
+            [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_OTHER_TOOLTIP' | translate">
+            {{'LNG_SYNC_ACTIVITY_PANEL_OTHER' | translate: {count: item.otherImported} }}
+          </span>
+        </div>
+
+        <!-- Older syncs: the number of imported records wasn't saved -->
+        <small
+          *ngIf="item.partialDetails"
+          class="gd-sync-activity-other">
+          {{'LNG_SYNC_ACTIVITY_PANEL_PARTIAL_DETAILS' | translate}}
+        </small>
+      </div>
+
+      <!-- Details -->
+      <span class="gd-sync-activity-actions">
+        <button
+          *ngIf="item.hasError && canViewError"
+          type="button"
+          mat-button
+          (click)="viewError(item)">
+          {{'LNG_SYNC_ACTIVITY_PANEL_DETAILS' | translate}}
+        </button>
+      </span>
+    </li>
+  </ul>
+
+  <!-- Pages -->
+  <div
+    *ngIf="items.length || pageIndex > 0"
+    class="gd-sync-activity-footer">
+    <span>
+      {{'LNG_SYNC_ACTIVITY_PANEL_PAGE' | translate: {first: firstOnPage, last: lastOnPage, total: total !== undefined ? total : '?'} }}
+    </span>
+    <button
+      type="button"
+      mat-icon-button
+      [disabled]="loading || pageIndex === 0"
+      [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_PREVIOUS' | translate"
+      (click)="changePage(pageIndex - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button
+      type="button"
+      mat-icon-button
+      [disabled]="loading || !hasNextPage"
+      [matTooltip]="'LNG_SYNC_ACTIVITY_PANEL_NEXT' | translate"
+      (click)="changePage(pageIndex + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <span class="gd-sync-activity-footer-spacer"></span>
+    <a
+      mat-button
+      color="primary"
+      [routerLink]="['/system-config/sync-logs']">
+      {{'LNG_SYNC_ACTIVITY_PANEL_FULL_HISTORY' | translate}}
+      <mat-icon>arrow_forward</mat-icon>
+    </a>
+  </div>
+</div>

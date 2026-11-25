@@ -87,6 +87,28 @@ const routes: Routes = [
     path: 'upstream-servers',
     children: [
       {
+        // older pages (history & how it works are on the page of each destination now)
+        path: 'history',
+        pathMatch: 'full',
+        redirectTo: '/system-config/upstream-servers'
+      },
+      {
+        path: 'how-it-works',
+        pathMatch: 'full',
+        redirectTo: '/system-config/upstream-servers'
+      },
+      {
+        // page of a destination server: which outbreaks it accepts & what was sent to it
+        path: 'server/:serverUrl',
+        component: fromPages.SyncUpstreamServerComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.UPSTREAM_SERVER_LIST
+          ]
+        }
+      },
+      {
         path: '',
         component: fromPages.UpstreamServersListComponent,
         canActivate: [AuthGuard],
@@ -142,6 +164,17 @@ const routes: Routes = [
     path: 'client-applications',
     children: [
       {
+        // older pages (history & how it works are on the page of each origin now)
+        path: 'history',
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
+      },
+      {
+        path: 'how-it-works',
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
+      },
+      {
         path: '',
         component: fromPages.ClientApplicationsListComponent,
         canActivate: [AuthGuard],
@@ -189,6 +222,17 @@ const routes: Routes = [
         canDeactivate: [
           PageChangeConfirmationGuard
         ]
+      },
+      {
+        // page of a client: its key, its outbreaks & what it sent
+        path: ':clientApplicationId',
+        component: fromPages.SyncClientComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_VIEW
+          ]
+        }
       }
     ]
   },
@@ -297,6 +341,29 @@ const routes: Routes = [
       syncLogsModule: SyncPackageModuleDataResolver,
       syncLogsType: SyncPackageExportTypeDataResolver
     }
+  },
+
+  // Outbreak mappings of the instances that send data
+  {
+    path: 'sync-outbreak-mappings',
+    children: [
+      {
+        // what waits for a decision is displayed on the page of each client
+        path: '',
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
+      },
+      {
+        path: ':mappingId',
+        component: fromPages.SyncOutbreakMappingEditComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_VIEW
+          ]
+        }
+      }
+    ]
   }
 ];
 

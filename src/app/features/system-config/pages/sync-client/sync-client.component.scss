@@ -1,0 +1,193 @@
+// key of the client / destination server
+.gd-sync-client-loading {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+}
+
+.gd-sync-client-card {
+  background: var(--gd-background);
+  border: 0.1rem solid rgba(var(--gd-text-rgb), 0.14);
+  border-radius: 0.8rem;
+  color: var(--gd-text);
+  display: grid;
+  gap: 1.6rem 2.4rem;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  padding: 1.6rem 2rem;
+}
+
+.gd-sync-client-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+
+  small {
+    color: rgba(var(--gd-text-rgb), 0.65);
+    font-size: 1.2rem;
+  }
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+}
+
+.gd-sync-client-status {
+  align-items: center;
+  color: var(--gd-success);
+  display: inline-flex;
+  gap: 0.4rem;
+
+  .material-icons {
+    font-size: 1.8rem;
+  }
+
+  &.gd-sync-client-status-off {
+    color: var(--gd-danger);
+  }
+}
+
+.gd-sync-client-mono {
+  font-family: monospace;
+  font-size: 1.4rem !important;
+}
+
+// summary under the title: what matters at a glance
+.gd-sync-entity-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0 0 1.6rem;
+}
+
+.gd-sync-entity-pill {
+  align-items: center;
+  background: rgba(var(--gd-text-rgb), 0.06);
+  border: 0;
+  border-radius: 1.6rem;
+  color: rgba(var(--gd-text-rgb), 0.85);
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 1.3rem;
+  font-weight: 500;
+  gap: 0.6rem;
+  line-height: 1.8rem;
+  padding: 0.5rem 1.2rem;
+
+  .material-icons {
+    font-size: 1.8rem;
+  }
+
+  &.gd-sync-entity-pill-success {
+    background: rgba(var(--gd-success-rgb), 0.12);
+    color: var(--gd-success);
+  }
+
+  &.gd-sync-entity-pill-danger {
+    background: rgba(var(--gd-danger-rgb), 0.1);
+    color: var(--gd-danger);
+  }
+
+  &.gd-sync-entity-pill-warning {
+    background: rgba(var(--gd-warning-rgb), 0.16);
+    color: rgba(var(--gd-text-rgb), 0.9);
+
+    .material-icons {
+      color: var(--gd-warning);
+    }
+  }
+
+  &.gd-sync-entity-pill-link {
+    cursor: pointer;
+
+    &:hover {
+      filter: brightness(0.95);
+    }
+  }
+}
+
+// secret of the credentials
+.gd-sync-secret {
+  align-items: center;
+  display: flex;
+  gap: 0.2rem;
+  min-width: 0;
+
+  strong {
+    overflow-wrap: anywhere;
+  }
+
+  .mat-icon-button {
+    flex: 0 0 auto;
+    height: 3.2rem;
+    line-height: 3.2rem;
+    width: 3.2rem;
+
+    .mat-icon {
+      font-size: 1.8rem;
+      height: 1.8rem;
+      line-height: 1.8rem;
+      width: 1.8rem;
+    }
+  }
+}
+
+// what can be done (one row for each action)
+.gd-sync-actions {
+  background: var(--gd-background);
+  border: 0.1rem solid rgba(var(--gd-text-rgb), 0.14);
+  border-radius: 0.8rem;
+  color: var(--gd-text);
+  overflow: hidden;
+
+  &.gd-sync-actions-danger {
+    border-color: rgba(var(--gd-danger-rgb), 0.4);
+
+    .gd-sync-action-icon {
+      color: var(--gd-danger);
+    }
+  }
+}
+
+.gd-sync-action {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 1.6rem;
+  padding: 1.6rem 2rem;
+
+  & + .gd-sync-action {
+    border-top: 0.1rem solid rgba(var(--gd-text-rgb), 0.1);
+  }
+
+  > .mat-flat-button {
+    flex: 0 0 auto;
+    min-width: 12rem;
+  }
+}
+
+.gd-sync-action-icon {
+  color: var(--gd-primary);
+  flex: 0 0 auto;
+  font-size: 2.4rem;
+}
+
+.gd-sync-action-text {
+  display: flex;
+  flex: 1 1 28rem;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  span {
+    color: rgba(var(--gd-text-rgb), 0.7);
+    font-size: 1.3rem;
+  }
+}

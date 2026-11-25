@@ -1,0 +1,123 @@
+<ng-container *ngIf="canList && !loading && items.length">
+
+  <!-- What this section is for -->
+  <app-sync-section-title
+    icon="how_to_reg"
+    heading="LNG_SYNC_UPSTREAM_ACCESS_TITLE"
+    description="LNG_SYNC_UPSTREAM_ACCESS_DESCRIPTION">
+  </app-sync-section-title>
+
+  <div class="gd-upstream-access">
+    <div
+      *ngFor="let item of items; trackBy: trackByItem"
+      class="gd-upstream-access-server"
+      [class.gd-upstream-access-server-pending]="item.pending.length"
+      [class.gd-upstream-access-server-legacy]="item.state?.mode === 'legacy'">
+
+      <!-- Server -->
+      <div class="gd-upstream-access-header">
+        <span class="material-icons">dns</span>
+        <div class="gd-upstream-access-header-text">
+          <strong>{{item.server.name}}</strong>
+          <small>
+            <ng-container *ngIf="item.checkedAt">{{'LNG_SYNC_UPSTREAM_ACCESS_CHECKED_AT' | translate: {date: item.checkedAt} }}</ng-container>
+            <ng-container *ngIf="!item.checkedAt">{{'LNG_SYNC_UPSTREAM_ACCESS_NOT_CHECKED' | translate}}</ng-container>
+          </small>
+        </div>
+        <mat-spinner
+          *ngIf="item.checking"
+          diameter="20"></mat-spinner>
+        <button
+          type="button"
+          mat-icon-button
+          [disabled]="item.checking"
+          [matTooltip]="'LNG_SYNC_UPSTREAM_ACCESS_REFRESH' | translate"
+          (click)="check(item)">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+
+      <!-- Couldn't ask the server -->
+      <p
+        *ngIf="item.state?.error"
+        class="gd-upstream-access-error">
+        <span class="material-icons">cloud_off</span>
+        <span>
+          {{'LNG_SYNC_UPSTREAM_ACCESS_ERROR' | translate}}
+          <strong *ngIf="item.errorReason">{{item.errorReason}}</strong>
+        </span>
+      </p>
+
+      <!-- The server receives everything without approval -->
+      <p
+        *ngIf="item.state?.mode === 'legacy'"
+        class="gd-upstream-access-note">
+        <span class="material-icons">info_outline</span>
+        {{'LNG_SYNC_UPSTREAM_ACCESS_LEGACY' | translate}}
+      </p>
+
+      <!-- Decisions -->
+      <div
+        *ngIf="item.state?.mode === 'request'"
+        class="gd-upstream-access-groups">
+
+        <!-- Waiting -->
+        <div
+          *ngIf="item.pending.length"
+          class="gd-upstream-access-group gd-upstream-access-group-pending">
+          <span class="gd-upstream-access-group-label">
+            <span class="material-icons">hourglass_top</span>
+            {{'LNG_SYNC_UPSTREAM_ACCESS_PENDING' | translate: {count: item.pending.length} }}
+          </span>
+          <span class="gd-upstream-access-chips">
+            <span
+              *ngFor="let outbreak of item.pending"
+              class="gd-upstream-access-chip">{{outbreak.name}}</span>
+          </span>
+          <small>{{'LNG_SYNC_UPSTREAM_ACCESS_PENDING_HINT' | translate}}</small>
+        </div>
+
+        <!-- Sent -->
+        <div
+          *ngIf="item.accepted.length"
+          class="gd-upstream-access-group gd-upstream-access-group-accepted">
+          <span class="gd-upstream-access-group-label">
+            <span class="material-icons">check_circle</span>
+            {{'LNG_SYNC_UPSTREAM_ACCESS_ACCEPTED' | translate: {count: item.accepted.length} }}
+          </span>
+          <span class="gd-upstream-access-chips">
+            <span
+              *ngFor="let outbreak of item.accepted"
+              class="gd-upstream-access-chip">{{outbreak.name}}</span>
+          </span>
+        </div>
+
+        <!-- Not sent -->
+        <div
+          *ngIf="item.refused.length || item.paused.length"
+          class="gd-upstream-access-group gd-upstream-access-group-refused">
+          <span class="gd-upstream-access-group-label">
+            <span class="material-icons">block</span>
+            {{'LNG_SYNC_UPSTREAM_ACCESS_REFUSED' | translate: {count: item.refused.length + item.paused.length} }}
+          </span>
+          <span class="gd-upstream-access-chips">
+            <span
+              *ngFor="let outbreak of item.refused"
+              class="gd-upstream-access-chip">{{outbreak.name}}</span>
+            <span
+              *ngFor="let outbreak of item.paused"
+              class="gd-upstream-access-chip"
+              [matTooltip]="'LNG_SYNC_OUTBREAK_ACCESS_STATUS_PAUSED' | translate">{{outbreak.name}} ⏸</span>
+          </span>
+        </div>
+
+        <p
+          *ngIf="!item.pending.length && !item.accepted.length && !item.refused.length && !item.paused.length"
+          class="gd-upstream-access-note">
+          <span class="material-icons">info_outline</span>
+          {{'LNG_SYNC_UPSTREAM_ACCESS_NO_OUTBREAKS' | translate}}
+        </p>
+      </div>
+    </div>
+  </div>
+</ng-container>

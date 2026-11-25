@@ -279,6 +279,8 @@ export interface ICreateViewModifyV2TabInputSingleSelect extends Omit<ICreateVie
 
   // optional
   clearable?: boolean;
+  // keep the order of the options (e.g. a scale), instead of sorting them by label
+  sortDisabled?: boolean;
   validators?: {
     required?: () => boolean,
     validateOther?: () => string,

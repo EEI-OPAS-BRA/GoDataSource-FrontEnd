@@ -22,6 +22,7 @@ import { ToastV2Service } from '../../services/helper/toast-v2.service';
 import { MAT_MENU_DEFAULT_OPTIONS, MatMenuTrigger } from '@angular/material/menu';
 import { determineIfTouchDevice } from '../../methods/touch-device';
 import { I18nService } from '../../services/helper/i18n.service';
+import { SyncReviewCountService } from '../../services/helper/sync-review-count.service';
 
 @Component({
   selector: 'app-sidenav',
@@ -53,6 +54,10 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   // language handler
   languageSubscription: Subscription;
+
+  // received outbreaks waiting for the user & outbreaks waiting for the decision of an upstream server
+  private _syncReviewCountSubscription: Subscription;
+  private _syncSendCountSubscription: Subscription;
 
   // authenticated user
   authUser: UserModel;
@@ -489,7 +494,8 @@ export class SidenavComponent implements OnInit, OnDestroy {
     private toastV2Service: ToastV2Service,
     private systemSettingsDataService: SystemSettingsDataService,
     private changeDetectorRef: ChangeDetectorRef,
-    private i18nService: I18nService
+    private i18nService: I18nService,
+    private syncReviewCountService: SyncReviewCountService
   ) {
     // get the authenticated user
     this.authUser = this.authDataService.getAuthenticatedUser();
@@ -540,6 +546,17 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
     // subscribe to language change
     this.initializeLanguageChangeListener();
+
+    // received outbreaks waiting for review: displayed on the receive menu and on its group
+    this._syncReviewCountSubscription = this.syncReviewCountService.count$
+      .subscribe((count) => {
+        this.setBadge('data-sync', 'client-applications', count, 'warning');
+      });
+    this._syncSendCountSubscription = this.syncReviewCountService.sendCount$
+      .subscribe((count) => {
+        this.setBadge('data-sync', 'upstream-servers', count, 'info');
+      });
+    this.syncReviewCountService.refresh(true);
   }
 
   /**
@@ -563,6 +580,47 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
     // stop refresh language tokens
     this.releaseLanguageChangeListener();
+
+    // received outbreaks waiting for review
+    if (this._syncReviewCountSubscription) {
+      this._syncReviewCountSubscription.unsubscribe();
+      this._syncReviewCountSubscription = undefined;
+    }
+    if (this._syncSendCountSubscription) {
+      this._syncSendCountSubscription.unsubscribe();
+      this._syncSendCountSubscription = undefined;
+    }
+  }
+
+  /**
+   * Number displayed next to a menu option and on its group
+   */
+  private setBadge(
+    menuId: string,
+    childId: string,
+    count: number,
+    badgeType: 'warning' | 'info'
+  ): void {
+    // find menu
+    let menu: NavItem;
+    this.menuGroups.forEach((group) => {
+      menu = menu || group.options.find((option) => option.id === menuId);
+    });
+    const child: ChildNavItem = menu?.children.find((item) => item.id === childId);
+    if (!child) {
+      return;
+    }
+
+    // update
+    child.badge = count;
+    child.badgeType = badgeType;
+    menu.badge = menu.children.reduce((sum, item) => sum + (item.badge || 0), 0);
+
+    // the group is highlighted as a warning when something waits for the user
+    menu.badgeType = menu.children.some((item) => item.badge && item.badgeType === 'warning') ?
+      'warning' :
+      'info';
+    this.changeDetectorRef.detectChanges();
   }
 
   /**

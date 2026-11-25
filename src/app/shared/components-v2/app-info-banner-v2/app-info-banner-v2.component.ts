@@ -34,6 +34,13 @@ export class AppInfoBannerV2Component implements AfterViewInit, OnDestroy {
     this.expanded = !this.readCollapsed();
   }
 
+  // details start hidden until the user opens them (the choice is remembered when there is a storage key)
+  private _collapsedByDefault: boolean = false;
+  @Input() set collapsedByDefault(collapsedByDefault: boolean) {
+    this._collapsedByDefault = !!collapsedByDefault;
+    this.expanded = !this.readCollapsed();
+  }
+
   // height changed
   @Output() resized = new EventEmitter<void>();
 
@@ -102,13 +109,17 @@ export class AppInfoBannerV2Component implements AfterViewInit, OnDestroy {
    */
   private readCollapsed(): boolean {
     if (!this._storageKey) {
-      return false;
+      return this._collapsedByDefault;
     }
 
     try {
-      return this.storageService.getAny(`${AppInfoBannerV2Component.STORAGE_PREFIX}${this._storageKey}`) === true;
+      // the user didn't choose yet ?
+      const collapsed: boolean = this.storageService.getAny(`${AppInfoBannerV2Component.STORAGE_PREFIX}${this._storageKey}`);
+      return collapsed === true || collapsed === false ?
+        collapsed :
+        this._collapsedByDefault;
     } catch (e) {
-      return false;
+      return this._collapsedByDefault;
     }
   }
 

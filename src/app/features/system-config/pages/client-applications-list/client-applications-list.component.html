@@ -28,17 +28,12 @@
   (resetHeaderFilters)="resetFiltersToSideFilters()"
   (advancedFilterBy)="applySideFilters($event)">
 
-  <!-- What this page is for & how it works -->
-  <app-info-banner-v2
-    storageKey="client-applications"
+  <!-- What the table below is -->
+  <app-sync-section-title
+    gdListTop
     icon="vpn_key"
-    heading="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_TITLE"
-    description="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_INFO_DESCRIPTION"
-    stepsTitle="LNG_INFO_BANNER_STEPS_TITLE"
-    [steps]="infoBannerSteps"
-    [notes]="infoBannerNotes"
-    [accordions]="infoBannerAccordions"
-    (resized)="listTable.resizeTable()">
-  </app-info-banner-v2>
+    heading="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_TABLE_TITLE"
+    description="LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_TABLE_DESCRIPTION">
+  </app-sync-section-title>
 
 </app-list-table-v2>

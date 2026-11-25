@@ -3,6 +3,12 @@ import { PermissionExpression, UserModel } from '../../models/user.model';
 import { MatMenuTrigger } from '@angular/material/menu';
 
 export class AbstractNavItem {
+  // number displayed next to the label (e.g. items waiting for the user)
+  badge?: number;
+
+  // warning: waits for the user; info: waits for someone else
+  badgeType?: 'warning' | 'info';
+
   /**
    * Constructor
    */

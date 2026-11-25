@@ -4,6 +4,38 @@ import { IPermissionBasic, IPermissionBasicBulk, IPermissionSyncLog } from './pe
 import { UserModel } from './user.model';
 import { PERMISSION } from './permission.model';
 
+/**
+ * Received sync - what happened to the records of one outbreak of the sender
+ */
+export interface ISystemSyncLogReceivedOutbreak {
+  // outbreak of the sender
+  sourceOutbreakId: string;
+  sourceOutbreakName?: string;
+
+  // outbreak of this instance where the records were saved
+  outbreakId?: string;
+
+  // review of where the data goes (outbreak / questionnaire mapping)
+  mappingId?: string;
+
+  // number of records
+  imported: number;
+  staged: number;
+  failed: number;
+  notAllowed: number;
+}
+
+/**
+ * Received sync - what happened to the received records
+ */
+export interface ISystemSyncLogReceivedSummary {
+  outbreaks: ISystemSyncLogReceivedOutbreak[];
+
+  // records that don't belong to an outbreak (e.g. locations, reference data)
+  otherImported: number;
+  otherFailed: number;
+}
+
 export class SystemSyncLogModel
 implements
         IPermissionBasic,
@@ -22,6 +54,9 @@ implements
   syncStep: string;
   syncStepErrorCode: string;
   syncStepErrorDetail: string;
+
+  // received syncs - what happened to the records of each outbreak
+  receivedSummary: ISystemSyncLogReceivedSummary;
 
   outbreakIDs: string[];
   outbreaks: OutbreakModel[];
@@ -67,6 +102,7 @@ implements
     this.syncStep = _.get(data, 'syncStep');
     this.syncStepErrorCode = _.get(data, 'syncStepErrorCode');
     this.syncStepErrorDetail = _.get(data, 'syncStepErrorDetail');
+    this.receivedSummary = _.get(data, 'receivedSummary');
   }
 
   /**

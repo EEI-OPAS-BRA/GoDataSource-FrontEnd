@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { UpstreamOutbreakAccessModel } from './sync-outbreak-access.model';
 import { SystemUpstreamServerCredentialsModel } from './system-upstream-server-credentials.model';
 import { IPermissionBasic, IPermissionUpstreamServer } from './permission.interface';
 import { UserModel } from './user.model';
@@ -28,6 +29,9 @@ implements
 
   // not stored in settings; filled by the list page with the most recent sync log of this server
   lastSyncLog: SystemSyncLogModel;
+
+  // decisions of the server about the outbreaks of this instance (servers tab)
+  access: UpstreamOutbreakAccessModel;
 
   // not stored in settings; filled by the list page with the result of checking the server with its credentials
   connection: ISystemUpstreamServerConnection;

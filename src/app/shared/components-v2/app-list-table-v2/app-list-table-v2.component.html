@@ -190,6 +190,9 @@
   <!-- Info banner -->
   <ng-content select="app-info-banner-v2"></ng-content>
 
+  <!-- Page specific content displayed above the table -->
+  <ng-content select="[gdListTop]"></ng-content>
+
   <!-- Grouped data -->
   <div
     *ngIf="groupedDataExpanded && !isSmallScreenMode"

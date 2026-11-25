@@ -1,0 +1,313 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  pageTitle="LNG_PAGE_SYNC_OUTBREAK_MAPPING_TITLE">
+
+  <div *ngIf="loading" class="gd-mapping-loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && details" class="gd-mapping">
+
+    <!-- Received outbreak -->
+    <section class="gd-mapping-header">
+      <span class="material-icons gd-mapping-header-icon">cloud_download</span>
+      <div class="gd-mapping-header-text">
+        <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_RECEIVED_FROM' | translate}} {{details.clientApplication?.name || details.mapping.clientId}}</small>
+        <h2>{{details.mapping.sourceOutbreakName || ('LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UNKNOWN_OUTBREAK' | translate)}}</h2>
+      </div>
+      <span class="gd-mapping-status gd-mapping-status-{{details.mapping.status | lowercase}}">
+        {{('LNG_SYNC_OUTBREAK_MAPPING_STATUS_' + details.mapping.status) | translate}}
+      </span>
+    </section>
+
+    <!-- Records waiting -->
+    <div *ngIf="details.stagedRecordsCount > 0" class="gd-mapping-callout gd-mapping-callout-warning">
+      <span class="material-icons">hourglass_empty</span>
+      <span>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STAGED_RECORDS' | translate: {count: details.stagedRecordsCount} }}</span>
+    </div>
+
+    <!-- The questionnaire wasn't received yet -->
+    <div *ngIf="!tabs.length" class="gd-mapping-callout">
+      <span class="material-icons">info</span>
+      <span>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_NO_QUESTIONNAIRE' | translate}}</span>
+    </div>
+
+    <!-- 1 - Outbreak -->
+    <section class="gd-mapping-section">
+      <h3><span class="gd-mapping-step">1</span> {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_OUTBREAK' | translate}}</h3>
+
+      <mat-radio-group
+        class="gd-mapping-mode"
+        [(ngModel)]="mode"
+        [disabled]="readOnly">
+        <mat-radio-button value="map">
+          <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_MODE_MAP' | translate}}</strong>
+          <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_MODE_MAP_DESCRIPTION' | translate}}</small>
+        </mat-radio-button>
+        <mat-radio-button value="new">
+          <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_MODE_NEW' | translate}}</strong>
+          <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_MODE_NEW_DESCRIPTION' | translate}}</small>
+        </mat-radio-button>
+      </mat-radio-group>
+
+      <mat-form-field *ngIf="mode === 'map'" appearance="outline" class="gd-mapping-outbreak">
+        <mat-label>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_TARGET_OUTBREAK' | translate}}</mat-label>
+        <mat-select
+          [ngModel]="targetOutbreakId"
+          [disabled]="readOnly"
+          (ngModelChange)="changeTargetOutbreak($event)">
+          <mat-option *ngFor="let outbreak of details.outbreaks" [value]="outbreak.id">{{outbreak.name}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    <!-- 2 - Questions -->
+    <section *ngIf="mode === 'map' && targetOutbreakId && tabs.length" class="gd-mapping-section">
+      <h3><span class="gd-mapping-step">2</span> {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_QUESTIONS' | translate}}</h3>
+      <p class="gd-mapping-lead">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_QUESTIONS_SHORT' | translate}}</p>
+
+      <!-- Guide: what each decision means -->
+      <div class="gd-mapping-guide">
+        <div class="gd-mapping-guide-item">
+          <span class="material-icons gd-mapping-guide-icon">link</span>
+          <div>
+            <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_LINK_TITLE' | translate}}</strong>
+            <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_LINK_TEXT' | translate}}</small>
+          </div>
+        </div>
+        <div class="gd-mapping-guide-item">
+          <span class="material-icons gd-mapping-guide-icon gd-mapping-guide-icon-ignore">block</span>
+          <div>
+            <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_IGNORE_TITLE' | translate}}</strong>
+            <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_IGNORE_TEXT' | translate}}</small>
+          </div>
+        </div>
+        <div class="gd-mapping-guide-item">
+          <span class="material-icons gd-mapping-guide-icon gd-mapping-guide-icon-types">rule</span>
+          <div>
+            <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_TYPES_TITLE' | translate}}</strong>
+            <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_GUIDE_TYPES_TEXT' | translate}}</small>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="gd-mapping-rules-toggle" [attr.aria-expanded]="showRules" (click)="showRules = !showRules">
+        <span class="material-icons">{{showRules ? 'expand_less' : 'expand_more'}}</span>
+        {{(showRules ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_RULES_HIDE' : 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_RULES_SHOW') | translate}}
+      </button>
+      <div *ngIf="showRules" class="gd-mapping-rules">
+        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_STEP_QUESTIONS_DESCRIPTION' | translate}}</p>
+        <p>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_COMPATIBILITY_HINT' | translate}}</p>
+      </div>
+
+      <div *ngIf="loadingTarget" class="gd-mapping-loading">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!loadingTarget">
+        <!-- Automatic suggestion -->
+        <div *ngIf="!readOnly" class="gd-mapping-suggest" [class.gd-mapping-suggest-running]="suggesting">
+          <span class="material-icons gd-mapping-suggest-icon">auto_awesome</span>
+          <div class="gd-mapping-suggest-text">
+            <strong>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_TITLE' | translate}}</strong>
+            <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_DESCRIPTION' | translate}}</small>
+          </div>
+          <button
+            type="button"
+            mat-flat-button
+            class="gd-mapping-suggest-button"
+            [disabled]="suggesting"
+            (click)="suggest()">
+            <span class="material-icons">auto_awesome</span>
+            {{(suggesting ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_RUNNING' : 'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_BUTTON') | translate}}
+          </button>
+        </div>
+
+        <!-- Result of the suggestion -->
+        <div
+          *ngIf="suggestResult"
+          class="gd-mapping-suggest-result"
+          [class.gd-mapping-suggest-result-none]="!suggestResult.questions && !suggestResult.answers"
+          role="status">
+          <span class="material-icons">{{suggestResult.questions || suggestResult.answers ? 'auto_awesome' : 'info_outline'}}</span>
+          <span *ngIf="suggestResult.questions || suggestResult.answers; else noSuggestionTemplate">
+            {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_SUMMARY' | translate: {questions: suggestResult.questions, answers: suggestResult.answers} }}
+          </span>
+          <ng-template #noSuggestionTemplate>
+            <span>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGEST_NONE' | translate}}</span>
+          </ng-template>
+        </div>
+
+        <!-- Tools -->
+        <div class="gd-mapping-tools">
+          <mat-slide-toggle [(ngModel)]="onlyPending">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_ONLY_PENDING' | translate}}</mat-slide-toggle>
+          <span
+            class="material-icons gd-mapping-help"
+            tabindex="0"
+            [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_HELP_ONLY_PENDING' | translate">help_outline</span>
+        </div>
+
+        <mat-tab-group animationDuration="0ms">
+          <mat-tab *ngFor="let tab of tabs">
+            <ng-template mat-tab-label>
+              {{tab.label | translate}}
+              <span
+                class="gd-mapping-tab-badge"
+                [class.gd-mapping-tab-badge-done]="getPendingCount(tab) === 0">
+                <ng-container *ngIf="getPendingCount(tab) > 0; else doneTemplate">{{getPendingCount(tab)}}</ng-container>
+                <ng-template #doneTemplate><span class="material-icons">check</span></ng-template>
+              </span>
+            </ng-template>
+
+            <div class="gd-mapping-questions">
+              <div class="gd-mapping-questions-header">
+                <span>
+                  {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_COLUMN_RECEIVED' | translate}}
+                  <span
+                    class="material-icons gd-mapping-help"
+                    tabindex="0"
+                    [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_HELP_COLUMN_RECEIVED' | translate">help_outline</span>
+                </span>
+                <span>
+                  {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_COLUMN_HERE' | translate}}
+                  <span
+                    class="material-icons gd-mapping-help"
+                    tabindex="0"
+                    [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_HELP_COLUMN_HERE' | translate">help_outline</span>
+                </span>
+              </div>
+
+              <div
+                *ngFor="let question of getVisibleQuestions(tab); trackBy: trackByVariable"
+                class="gd-mapping-question"
+                [class.gd-mapping-question-pending]="isPending(tab.key, question)"
+                [class.gd-mapping-question-suggested]="isSuggested(tab.key, question.variable)"
+                [style.animation-delay.ms]="isSuggested(tab.key, question.variable) ? getSuggestedDelay(tab.key, question.variable) : null">
+
+                <div class="gd-mapping-question-row">
+                  <!-- received question -->
+                  <div class="gd-mapping-question-source" [style.padding-left.rem]="question.depth * 2.4">
+                    <span *ngIf="question.depth > 0" class="material-icons gd-mapping-question-nested">subdirectory_arrow_right</span>
+                    <div>
+                      <div class="gd-mapping-question-text">
+                        {{question.textTranslated}}
+                        <span *ngIf="isNewQuestion(tab.key, question.variable)" class="gd-mapping-new">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_NEW' | translate}}</span>
+                        <span
+                          *ngIf="isSuggested(tab.key, question.variable)"
+                          class="gd-mapping-suggested-badge"
+                          [style.animation-delay.ms]="getSuggestedDelay(tab.key, question.variable)">
+                          <span class="material-icons">auto_awesome</span>
+                          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_SUGGESTED_BADGE' | translate}}
+                        </span>
+                      </div>
+                      <small class="gd-mapping-question-meta">{{question.variable}} &middot; {{getAnswerTypeLabel(question)}}</small>
+                    </div>
+                  </div>
+
+                  <span class="material-icons gd-mapping-question-arrow">arrow_forward</span>
+
+                  <!-- question of this instance -->
+                  <mat-form-field appearance="outline" class="gd-mapping-question-target">
+                    <mat-select
+                      [placeholder]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_CHOOSE_QUESTION' | translate"
+                      [ngModel]="getDecision(tab.key, question.variable).target"
+                      [disabled]="readOnly"
+                      (ngModelChange)="changeTargetQuestion(tab.key, question, $event)">
+                      <mat-option [value]="IGNORE" class="gd-mapping-ignore-option">
+                        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_IGNORE' | translate}}
+                      </mat-option>
+                      <mat-option
+                        *ngFor="let targetQuestion of targetQuestionnaires[tab.key]"
+                        [value]="targetQuestion.variable"
+                        [disabled]="!!getTargetUnavailableReason(tab.key, question, targetQuestion)">
+                        {{getQuestionLabel(targetQuestion)}}
+                        <small *ngIf="getTargetUnavailableReason(tab.key, question, targetQuestion) as reason" class="gd-mapping-unavailable">
+                          ({{reason | translate}})
+                        </small>
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <!-- options written as text -->
+                <p *ngIf="isChoiceToText(tab.key, question)" class="gd-mapping-hint gd-mapping-choice-to-text">
+                  <span class="material-icons">notes</span>
+                  {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_CHOICE_TO_TEXT' | translate}}
+                </p>
+
+                <!-- options -->
+                <div
+                  *ngIf="hasAnswersMapping(question, getTargetQuestion(tab.key, getDecision(tab.key, question.variable).target))"
+                  class="gd-mapping-answers">
+                  <div class="gd-mapping-answers-title">
+                    {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_ANSWERS' | translate}}
+                    <span
+                      class="material-icons gd-mapping-help"
+                      tabindex="0"
+                      [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_HELP_ANSWERS' | translate">help_outline</span>
+                  </div>
+                  <div *ngFor="let answer of question.answers" class="gd-mapping-answer">
+                    <span class="gd-mapping-answer-source">{{answer.labelTranslated}}</span>
+                    <span class="material-icons">arrow_forward</span>
+                    <mat-form-field appearance="outline" class="gd-mapping-answer-target">
+                      <mat-select
+                        [placeholder]="'LNG_PAGE_SYNC_OUTBREAK_MAPPING_CHOOSE_ANSWER' | translate"
+                        [(ngModel)]="getDecision(tab.key, question.variable).answers[answer.value]"
+                        [disabled]="readOnly">
+                        <mat-option [value]="IGNORE" class="gd-mapping-ignore-option">
+                          {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_IGNORE' | translate}}
+                        </mat-option>
+                        <mat-option
+                          *ngFor="let targetAnswer of getTargetQuestion(tab.key, getDecision(tab.key, question.variable).target).answers"
+                          [value]="targetAnswer.value">
+                          {{targetAnswer.labelTranslated}}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+              <p *ngIf="!getVisibleQuestions(tab).length" class="gd-mapping-hint gd-mapping-all-done">
+                <span class="material-icons">check_circle</span>
+                {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_TAB_DONE' | translate}}
+              </p>
+
+              <button
+                *ngIf="!readOnly && getPendingCount(tab) > 0"
+                type="button"
+                mat-stroked-button
+                class="gd-mapping-ignore-remaining"
+                (click)="ignoreRemaining(tab)">
+                <span class="material-icons">block</span>
+                {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_IGNORE_REMAINING' | translate}}
+              </button>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </ng-container>
+    </section>
+
+    <!-- Approve -->
+    <div *ngIf="!readOnly" class="gd-mapping-footer">
+      <span *ngIf="mode === 'map' && targetOutbreakId && totalPending > 0" class="gd-mapping-footer-pending">
+        <span class="material-icons">assignment_late</span>
+        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_PENDING_COUNT' | translate: {count: totalPending} }}
+      </span>
+      <span *ngIf="canApprove" class="gd-mapping-footer-ready">
+        <span class="material-icons">check_circle</span>
+        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_READY' | translate}}
+      </span>
+      <a mat-button color="text" [routerLink]="backLink">{{'LNG_COMMON_BUTTON_CANCEL' | translate}}</a>
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        [disabled]="!canApprove"
+        (click)="approve()">
+        {{'LNG_PAGE_SYNC_OUTBREAK_MAPPING_APPROVE_BUTTON' | translate}}
+      </button>
+    </div>
+  </div>
+
+</app-basic-page-v2>

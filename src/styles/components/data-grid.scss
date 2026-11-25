@@ -455,6 +455,63 @@
             }
           }
 
+          /* Sync - outbreaks waiting for a decision */
+          .gd-list-table-sync-pending {
+            @include border-radius(1rem);
+            background: var(--gd-warning);
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.8rem;
+            padding: 0.1rem 0.8rem;
+          }
+
+          .gd-list-table-sync-none {
+            color: rgba(var(--gd-text-rgb), 0.5);
+          }
+
+          /* Sync - last data received is late / failed */
+          .gd-list-table-sync-late {
+            color: var(--gd-warning);
+            font-weight: 600;
+          }
+
+          .gd-list-table-sync-failed {
+            color: var(--gd-danger);
+            font-weight: 600;
+          }
+
+          /* Sync - decisions of a destination server */
+          .gd-list-table-sync-approval {
+            @include flex(inline-flex);
+            flex-wrap: wrap;
+            gap: 0.4rem;
+
+            > span {
+              @include border-radius(1rem);
+              font-size: 1.2rem;
+              font-weight: 600;
+              line-height: 1.8rem;
+              padding: 0.1rem 0.8rem;
+              white-space: nowrap;
+            }
+
+            .gd-list-table-sync-approval-pending {
+              background: rgba(var(--gd-primary-rgb), 0.14);
+              color: var(--gd-primary);
+            }
+
+            .gd-list-table-sync-approval-accepted {
+              background: rgba(var(--gd-success-rgb), 0.14);
+              color: var(--gd-success);
+            }
+
+            .gd-list-table-sync-approval-refused {
+              background: rgba(var(--gd-text-rgb), 0.08);
+              color: rgba(var(--gd-text-rgb), 0.75);
+            }
+          }
+
           @keyframes gd-connection-status-spin {
             from {
               transform: rotate(0deg);

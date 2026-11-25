@@ -11,6 +11,9 @@ export class SystemClientApplicationModel
   implements
     IPermissionBasic,
     IPermissionClientApplication {
+  // types of key
+  static readonly TYPE_INSTANCE: string = 'instance';
+  static readonly TYPE_MOBILE: string = 'mobile';
 
   // data
   id: string;
@@ -19,8 +22,25 @@ export class SystemClientApplicationModel
   active: boolean;
   outbreakIDs: string[];
 
+  // instance: another Go.Data instance, that asks to send each outbreak; mobile: the mobile app (or an older key), limited by outbreakIDs
+  type: string;
+  autoAcceptSameIdOutbreaks: boolean;
+
+  // keys of other instances: when the instance sends its data (told by it when it syncs)
+  senderSyncInterval: number;
+  senderSyncEnabled: boolean;
+  senderScheduleReportedAt: string;
+
+  // when data was sent with this key the last time & how it went
+  lastSyncAt: string;
+  lastSyncStatus: string;
+
   // used by ui
   loading: boolean;
+
+  // outbreaks of the client waiting for a decision / accepted (clients tab)
+  pendingCount: number;
+  acceptedCount: number;
 
   /**
    * Static Permissions - IPermissionBasic
@@ -49,6 +69,71 @@ export class SystemClientApplicationModel
     this.credentials = new SystemUpstreamServerCredentialsModel(_.get(data, 'credentials'));
     this.active = _.get(data, 'active', true);
     this.outbreakIDs = _.get(data, 'outbreakIDs', []);
+    this.type = _.get(data, 'type');
+    this.autoAcceptSameIdOutbreaks = _.get(data, 'autoAcceptSameIdOutbreaks', false);
+    this.senderSyncInterval = _.get(data, 'senderSyncInterval');
+    this.senderSyncEnabled = _.get(data, 'senderSyncEnabled');
+    this.senderScheduleReportedAt = _.get(data, 'senderScheduleReportedAt');
+    this.lastSyncAt = _.get(data, 'lastSyncAt');
+    this.lastSyncStatus = _.get(data, 'lastSyncStatus');
+  }
+
+  /**
+   * When the data is sent with this key (text to translate & its data)
+   */
+  get schedule(): { token: string, data?: { [key: string]: any } } {
+    // the mobile app sends its data when the user syncs it
+    if (!this.usesRequests) {
+      return { token: 'LNG_SYNC_CLIENT_SCHEDULE_MOBILE' };
+    }
+
+    // older versions don't tell when they send their data, neither an instance that didn't sync yet
+    if (
+      this.senderSyncInterval === undefined ||
+      this.senderSyncInterval === null
+    ) {
+      return { token: 'LNG_SYNC_CLIENT_SCHEDULE_UNKNOWN' };
+    }
+
+    // paused at the instance that sends the data
+    if (this.senderSyncEnabled === false) {
+      return { token: 'LNG_SYNC_CLIENT_SCHEDULE_PAUSED' };
+    }
+
+    return this.senderSyncInterval > 0 ?
+      { token: 'LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS', data: { hours: this.senderSyncInterval } } :
+      { token: 'LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL' };
+  }
+
+  /**
+   * The data should have arrived already ? (more than twice the time between the syncs of the instance)
+   */
+  get isLate(): boolean {
+    if (
+      !this.usesRequests ||
+      !this.active ||
+      this.senderSyncEnabled === false ||
+      !(this.senderSyncInterval > 0) ||
+      !this.lastSyncAt
+    ) {
+      return false;
+    }
+
+    return Date.now() - new Date(this.lastSyncAt).getTime() > this.senderSyncInterval * 2 * 3600000;
+  }
+
+  /**
+   * The last data sent with this key failed ?
+   */
+  get lastSyncFailed(): boolean {
+    return this.lastSyncStatus === 'LNG_SYNC_STATUS_FAILED';
+  }
+
+  /**
+   * The key asks for each outbreak ? (key of another Go.Data instance)
+   */
+  get usesRequests(): boolean {
+    return this.type === SystemClientApplicationModel.TYPE_INSTANCE;
   }
 
   /**

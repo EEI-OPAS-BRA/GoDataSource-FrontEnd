@@ -163,6 +163,10 @@
           <circle cx="160" cy="70" r="48" class="art-final art-final-info"/>
           <path d="M140 70 l14 14 l28 -28" class="art-final-mark art-draw"/>
         </g>
+        <g *ngSwitchCase="'waiting'" class="art-pop">
+          <circle cx="160" cy="70" r="48" class="art-final art-final-info"/>
+          <path d="M160 44 v28 l18 12" class="art-final-mark art-draw"/>
+        </g>
         <g *ngSwitchDefault class="art-pop">
           <circle cx="160" cy="70" r="48" class="art-final art-final-success"/>
           <path d="M140 70 l14 14 l28 -28" class="art-final-mark art-draw"/>
@@ -182,11 +186,13 @@
         <div *ngSwitchCase="'success'" class="gd-sync-progress-status-title gd-sync-progress-status-title-success">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_SUCCESS' | translate}}</div>
         <div *ngSwitchCase="'warning'" class="gd-sync-progress-status-title gd-sync-progress-status-title-warning">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WARNING' | translate}}</div>
         <div *ngSwitchCase="'upToDate'" class="gd-sync-progress-status-title gd-sync-progress-status-title-success">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_UP_TO_DATE' | translate}}</div>
+        <div *ngSwitchCase="'waiting'" class="gd-sync-progress-status-title gd-sync-progress-status-title-warning">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WAITING' | translate}}</div>
         <div *ngSwitchDefault class="gd-sync-progress-status-title gd-sync-progress-status-title-error">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_ERROR' | translate}}</div>
       </ng-container>
       <div *ngIf="result === 'success'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_SUCCESS_MESSAGE' | translate}}</div>
       <div *ngIf="result === 'warning'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WARNING_MESSAGE' | translate}}</div>
       <div *ngIf="result === 'upToDate'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_UP_TO_DATE_MESSAGE' | translate}}</div>
+      <div *ngIf="result === 'waiting'" class="gd-sync-progress-status-message">{{'LNG_SYNC_PROGRESS_DIALOG_RESULT_WAITING_MESSAGE' | translate: {name: data.upstreamServer.name} }}</div>
     </ng-template>
   </div>
 
