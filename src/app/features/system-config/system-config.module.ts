@@ -10,6 +10,7 @@ import { SyncProgressDialogComponent } from './components/sync-progress-dialog/s
 import { SyncActivityPanelComponent } from './components/sync-activity-panel/sync-activity-panel.component';
 import { SyncSectionTitleComponent } from './components/sync-section-title/sync-section-title.component';
 import { SyncAreaTabsComponent } from './components/sync-area-tabs/sync-area-tabs.component';
+import { SyncUpstreamAccessPanelComponent } from './components/sync-upstream-access-panel/sync-upstream-access-panel.component';
 
 @NgModule({
   imports: [
@@ -22,7 +23,8 @@ import { SyncAreaTabsComponent } from './components/sync-area-tabs/sync-area-tab
     SyncProgressDialogComponent,
     SyncActivityPanelComponent,
     SyncSectionTitleComponent,
-    SyncAreaTabsComponent
+    SyncAreaTabsComponent,
+    SyncUpstreamAccessPanelComponent
   ]
 })
 export class SystemConfigModule {

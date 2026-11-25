@@ -307,6 +307,11 @@ app-sidenav {
   padding: 0 0.6rem;
   text-align: center;
 
+  /* waits for someone else (e.g. the decision of another instance) */
+  &.gd-main-menu-option-badge-info {
+    background: var(--gd-primary);
+  }
+
   /* collapsed menu: on the corner of the icon */
   &.gd-main-menu-option-badge-on-icon {
     border: 0.2rem solid var(--gd-background);

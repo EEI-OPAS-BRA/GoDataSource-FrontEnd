@@ -11,6 +11,9 @@ export class SystemClientApplicationModel
   implements
     IPermissionBasic,
     IPermissionClientApplication {
+  // types of key
+  static readonly TYPE_INSTANCE: string = 'instance';
+  static readonly TYPE_MOBILE: string = 'mobile';
 
   // data
   id: string;
@@ -18,6 +21,10 @@ export class SystemClientApplicationModel
   credentials: SystemUpstreamServerCredentialsModel;
   active: boolean;
   outbreakIDs: string[];
+
+  // instance: another Go.Data instance, that asks to send each outbreak; mobile: the mobile app (or an older key), limited by outbreakIDs
+  type: string;
+  autoAcceptSameIdOutbreaks: boolean;
 
   // used by ui
   loading: boolean;
@@ -49,6 +56,15 @@ export class SystemClientApplicationModel
     this.credentials = new SystemUpstreamServerCredentialsModel(_.get(data, 'credentials'));
     this.active = _.get(data, 'active', true);
     this.outbreakIDs = _.get(data, 'outbreakIDs', []);
+    this.type = _.get(data, 'type');
+    this.autoAcceptSameIdOutbreaks = _.get(data, 'autoAcceptSameIdOutbreaks', false);
+  }
+
+  /**
+   * The key asks for each outbreak ? (key of another Go.Data instance)
+   */
+  get usesRequests(): boolean {
+    return this.type === SystemClientApplicationModel.TYPE_INSTANCE;
   }
 
   /**

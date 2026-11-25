@@ -82,7 +82,7 @@
           <span
             class="material-icons gd-sync-activity-icon"
             [matTooltip]="item.log.status | translate">
-            {{item.status === 'success' ? 'check_circle' : (item.status === 'warning' ? 'warning' : (item.status === 'progress' ? 'sync' : 'error'))}}
+            {{item.status === 'success' ? 'check_circle' : (item.status === 'warning' ? 'warning' : (item.status === 'progress' ? 'sync' : (item.status === 'waiting' ? 'hourglass_top' : 'error')))}}
           </span>
           <strong>{{item.result | translate}}</strong>
         </div>

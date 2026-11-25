@@ -47,6 +47,11 @@
 
 .gd-sync-area-tab-count {
   background: var(--gd-warning);
+
+  &.gd-sync-area-tab-count-info {
+    background: var(--gd-primary);
+  }
+
   @include border-radius(1rem);
   color: #FFFFFF;
   font-size: 1.2rem;

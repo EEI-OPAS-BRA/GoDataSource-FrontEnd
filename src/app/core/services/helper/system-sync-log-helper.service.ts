@@ -38,6 +38,16 @@ export class SystemSyncLogHelperService {
   }
 
   /**
+   * Sync with an upstream server that couldn't send anything yet: the upstream server didn't accept any outbreak of this instance
+   */
+  isWaitingForAccess(syncLog: SystemSyncLogModel): boolean {
+    return !!syncLog &&
+      !!syncLog.syncServerUrl &&
+      syncLog.syncStep === 'ACCESS' &&
+      syncLog.status === Constants.SYSTEM_SYNC_LOG_STATUS.FAILED.value;
+  }
+
+  /**
    * Received sync with records that wait until the user reviews where the data of their outbreak goes (outbreak / questionnaire mapping)
    * The api adds this text to the log of the received sync
    */

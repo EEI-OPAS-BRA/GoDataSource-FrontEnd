@@ -15,6 +15,10 @@ import { ISyncAreaTab, SYNC_AREAS, SyncArea } from '../../sync-area';
 interface ISyncAreaTabItem extends ISyncAreaTab {
   // number displayed next to the label (e.g. received outbreaks waiting for review)
   count?: number;
+
+  // warning: waits for the user; info: waits for another instance
+  countType?: 'warning' | 'info';
+  countTooltip?: string;
 }
 
 /**
@@ -68,10 +72,24 @@ export class SyncAreaTabsComponent implements OnInit, OnDestroy {
     // received outbreaks waiting for review
     const reviewTab: ISyncAreaTabItem = this.tabs.find((tab) => tab.key === 'review');
     if (reviewTab) {
+      reviewTab.countType = 'warning';
+      reviewTab.countTooltip = 'LNG_SYNC_AREA_TAB_REVIEW_COUNT';
       this.syncReviewCountService.count$
         .pipe(takeUntil(this._destroyed$))
         .subscribe((count) => {
           reviewTab.count = count;
+        });
+    }
+
+    // outbreaks of this instance waiting for the decision of an upstream server
+    const serversTab: ISyncAreaTabItem = this.tabs.find((tab) => tab.key === 'servers');
+    if (serversTab) {
+      serversTab.countType = 'info';
+      serversTab.countTooltip = 'LNG_SYNC_AREA_TAB_SERVERS_COUNT';
+      this.syncReviewCountService.sendCount$
+        .pipe(takeUntil(this._destroyed$))
+        .subscribe((count) => {
+          serversTab.count = count;
         });
     }
   }

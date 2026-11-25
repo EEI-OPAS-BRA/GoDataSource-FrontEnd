@@ -64,6 +64,9 @@ export class SyncDocumentationComponent implements OnInit {
         question: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PAGES_QUESTION',
         answer: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PAGES_ANSWER'
       }, {
+        question: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PENDING_QUESTION',
+        answer: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_PENDING_ANSWER'
+      }, {
         question: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_DIRECTION_QUESTION',
         answer: 'LNG_PAGE_SYNC_DOCUMENTATION_FAQ_DIRECTION_ANSWER'
       }, {

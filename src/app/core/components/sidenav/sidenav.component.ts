@@ -55,8 +55,9 @@ export class SidenavComponent implements OnInit, OnDestroy {
   // language handler
   languageSubscription: Subscription;
 
-  // received outbreaks waiting for review
+  // received outbreaks waiting for the user & outbreaks waiting for the decision of an upstream server
   private _syncReviewCountSubscription: Subscription;
+  private _syncSendCountSubscription: Subscription;
 
   // authenticated user
   authUser: UserModel;
@@ -549,7 +550,11 @@ export class SidenavComponent implements OnInit, OnDestroy {
     // received outbreaks waiting for review: displayed on the receive menu and on its group
     this._syncReviewCountSubscription = this.syncReviewCountService.count$
       .subscribe((count) => {
-        this.setBadge('data-sync', 'client-applications', count);
+        this.setBadge('data-sync', 'client-applications', count, 'warning');
+      });
+    this._syncSendCountSubscription = this.syncReviewCountService.sendCount$
+      .subscribe((count) => {
+        this.setBadge('data-sync', 'upstream-servers', count, 'info');
       });
     this.syncReviewCountService.refresh(true);
   }
@@ -581,6 +586,10 @@ export class SidenavComponent implements OnInit, OnDestroy {
       this._syncReviewCountSubscription.unsubscribe();
       this._syncReviewCountSubscription = undefined;
     }
+    if (this._syncSendCountSubscription) {
+      this._syncSendCountSubscription.unsubscribe();
+      this._syncSendCountSubscription = undefined;
+    }
   }
 
   /**
@@ -589,7 +598,8 @@ export class SidenavComponent implements OnInit, OnDestroy {
   private setBadge(
     menuId: string,
     childId: string,
-    count: number
+    count: number,
+    badgeType: 'warning' | 'info'
   ): void {
     // find menu
     let menu: NavItem;
@@ -603,7 +613,13 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
     // update
     child.badge = count;
+    child.badgeType = badgeType;
     menu.badge = menu.children.reduce((sum, item) => sum + (item.badge || 0), 0);
+
+    // the group is highlighted as a warning when something waits for the user
+    menu.badgeType = menu.children.some((item) => item.badge && item.badgeType === 'warning') ?
+      'warning' :
+      'info';
     this.changeDetectorRef.detectChanges();
   }
 

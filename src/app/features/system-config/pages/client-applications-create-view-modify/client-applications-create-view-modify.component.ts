@@ -76,7 +76,10 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
    * Create new item model if needed
    */
   protected createNewItem(): SystemClientApplicationModel {
-    return new SystemClientApplicationModel();
+    // new keys are for other Go.Data instances by default: they ask for each outbreak
+    return new SystemClientApplicationModel({
+      type: SystemClientApplicationModel.TYPE_INSTANCE
+    });
   }
 
   /**
@@ -253,6 +256,30 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                 required: () => true
               }
             }, {
+              type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
+              name: 'type',
+              placeholder: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE',
+              description: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE_DESCRIPTION',
+              options: [
+                {
+                  label: 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE',
+                  value: SystemClientApplicationModel.TYPE_INSTANCE
+                }, {
+                  label: 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE',
+                  value: SystemClientApplicationModel.TYPE_MOBILE
+                }
+              ],
+              value: {
+                get: () => this.itemData.type,
+                set: (value) => {
+                  // set data
+                  this.itemData.type = value;
+                }
+              },
+              validators: {
+                required: () => true
+              }
+            }, {
               type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
               name: 'active',
               placeholder: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ACTIVE',
@@ -274,8 +301,23 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
           label: 'LNG_PAGE_CREATE_SYSTEM_CLIENT_APPLICATION_SECTION_ACCESS',
           inputs: [
             {
+              // keys of other instances: each outbreak is asked by the instance & accepted / refused in "Requests"
+              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
+              name: 'autoAcceptSameIdOutbreaks',
+              placeholder: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_AUTO_ACCEPT',
+              description: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_AUTO_ACCEPT_DESCRIPTION',
+              value: {
+                get: () => this.itemData.autoAcceptSameIdOutbreaks,
+                set: (value) => {
+                  // set data
+                  this.itemData.autoAcceptSameIdOutbreaks = value;
+                }
+              },
+              visible: () => this.itemData.usesRequests
+            }, {
               type: CreateViewModifyV2TabInputType.SELECT_MULTIPLE,
               name: 'outbreakIDs',
+              visible: () => !this.itemData.usesRequests,
               placeholder: () => this.itemData.outbreakIDs?.length > 0 ? 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' : 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS',
               description: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS_DESCRIPTION',
               value: {

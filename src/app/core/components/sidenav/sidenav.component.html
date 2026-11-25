@@ -25,6 +25,7 @@
     <span
       *ngIf="option.badge"
       class="gd-main-menu-option-badge"
+      [class.gd-main-menu-option-badge-info]="option.badgeType === 'info'"
       [class.gd-main-menu-option-badge-on-icon]="!expanded && option.icon">{{option.badge}}</span>
   </div>
 </ng-template>

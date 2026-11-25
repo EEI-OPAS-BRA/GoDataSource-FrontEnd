@@ -2,15 +2,17 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject, Observable, of, Subscription } from 'rxjs';
 import { catchError, filter } from 'rxjs/operators';
-import { RequestQueryBuilder } from '../../helperClasses/request-query-builder';
-import { SyncOutbreakMappingModel } from '../../models/sync-outbreak-mapping.model';
+import { ISyncOutbreakAccessWaitingCount, SyncOutbreakAccessStatus, UpstreamOutbreakAccessModel } from '../../models/sync-outbreak-access.model';
 import { SystemClientApplicationModel } from '../../models/system-client-application.model';
+import { SystemUpstreamServerModel } from '../../models/system-upstream-server.model';
+import { UserModel } from '../../models/user.model';
 import { AuthDataService } from '../data/auth.data.service';
-import { SyncOutbreakMappingDataService } from '../data/sync-outbreak-mapping.data.service';
+import { SyncOutbreakAccessDataService } from '../data/sync-outbreak-access.data.service';
 
 /**
- * Number of outbreaks received from other instances that wait for the user to review where their data goes
- * Shared by the main menu and the tabs of the receive area, so they always display the same number
+ * What waits for someone in the sync areas, shared by the main menu and the tabs, so they always display the same numbers
+ * - receive: outbreaks other instances asked to send & received outbreaks whose questions must be reviewed (waiting for this user)
+ * - send: outbreaks of this instance waiting for the decision of an upstream server (waiting for the other instance)
  */
 @Injectable({
   providedIn: 'root'
@@ -19,12 +21,13 @@ export class SyncReviewCountService implements OnDestroy {
   // don't ask the api again when the user navigates quickly between pages
   private static readonly MIN_REFRESH_INTERVAL: number = 15000;
 
-  // number
+  // numbers
   private _count$: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+  private _sendCount$: BehaviorSubject<number> = new BehaviorSubject<number>(0);
   private _lastRefresh: number = 0;
 
   // subscriptions
-  private _request: Subscription;
+  private _requests: Subscription[] = [];
   private _navigation: Subscription;
 
   /**
@@ -33,9 +36,9 @@ export class SyncReviewCountService implements OnDestroy {
   constructor(
     private router: Router,
     private authDataService: AuthDataService,
-    private syncOutbreakMappingDataService: SyncOutbreakMappingDataService
+    private syncOutbreakAccessDataService: SyncOutbreakAccessDataService
   ) {
-    // received data might arrive at any time, so the number is checked again when the user changes page
+    // received data / decisions might arrive at any time, so the numbers are checked again when the user changes page
     this._navigation = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -51,29 +54,28 @@ export class SyncReviewCountService implements OnDestroy {
       this._navigation.unsubscribe();
       this._navigation = undefined;
     }
-    this.stopRequest();
+    this.stopRequests();
   }
 
   /**
-   * Number of received outbreaks waiting for review
+   * Received outbreaks waiting for this user (requests & reviews)
    */
   get count$(): Observable<number> {
     return this._count$.asObservable();
   }
 
   /**
-   * Ask the api for the number
-   * @param force Don't wait for the minimum interval (e.g. a review was just approved)
+   * Outbreaks of this instance waiting for the decision of an upstream server
+   */
+  get sendCount$(): Observable<number> {
+    return this._sendCount$.asObservable();
+  }
+
+  /**
+   * Ask the api for the numbers
+   * @param force Don't wait for the minimum interval (e.g. a request was just decided)
    */
   refresh(force?: boolean): void {
-    // only users that can review received data
-    if (!SystemClientApplicationModel.canList(this.authDataService.getAuthenticatedUser())) {
-      if (this._count$.value) {
-        this._count$.next(0);
-      }
-      return;
-    }
-
     // asked recently ?
     const now: number = Date.now();
     if (
@@ -83,40 +85,68 @@ export class SyncReviewCountService implements OnDestroy {
       return;
     }
     this._lastRefresh = now;
+    this.stopRequests();
 
-    // retrieve
-    const qb = new RequestQueryBuilder();
-    qb.fields('id');
-    qb.filter.where({
-      status: {
-        neq: 'APPROVED'
-      }
-    });
-    this.stopRequest();
-    this._request = this.syncOutbreakMappingDataService
-      .getMappingsList(qb)
-      .pipe(
-        // the number is only a convenience
-        catchError(() => of(undefined))
-      )
-      .subscribe((mappings: SyncOutbreakMappingModel[]) => {
-        this._request = undefined;
-        if (
-          mappings &&
-          mappings.length !== this._count$.value
-        ) {
-          this._count$.next(mappings.length);
-        }
-      });
+    // receive - only users that can decide about received data
+    const authUser: UserModel = this.authDataService.getAuthenticatedUser();
+    if (SystemClientApplicationModel.canList(authUser)) {
+      this._requests.push(
+        this.syncOutbreakAccessDataService
+          .getWaitingCount()
+          .pipe(
+            // the number is only a convenience
+            catchError(() => of(undefined))
+          )
+          .subscribe((count: ISyncOutbreakAccessWaitingCount) => {
+            if (count) {
+              this.emit(this._count$, count.total || 0);
+            }
+          })
+      );
+    } else {
+      this.emit(this._count$, 0);
+    }
+
+    // send - only users that can see the upstream servers
+    if (SystemUpstreamServerModel.canList(authUser)) {
+      this._requests.push(
+        this.syncOutbreakAccessDataService
+          .getUpstreamAccessList()
+          .pipe(
+            // the number is only a convenience
+            catchError(() => of(undefined))
+          )
+          .subscribe((states: UpstreamOutbreakAccessModel[]) => {
+            if (states) {
+              this.emit(
+                this._sendCount$,
+                states.reduce((sum, state) => sum + state.outbreaksWithStatus(SyncOutbreakAccessStatus.PENDING).length, 0)
+              );
+            }
+          })
+      );
+    } else {
+      this.emit(this._sendCount$, 0);
+    }
+  }
+
+  /**
+   * Emit only when the number changes
+   */
+  private emit(
+    subject: BehaviorSubject<number>,
+    value: number
+  ): void {
+    if (subject.value !== value) {
+      subject.next(value);
+    }
   }
 
   /**
    * Stop asking the api
    */
-  private stopRequest(): void {
-    if (this._request) {
-      this._request.unsubscribe();
-      this._request = undefined;
-    }
+  private stopRequests(): void {
+    this._requests.forEach((request) => request.unsubscribe());
+    this._requests = [];
   }
 }

@@ -10,7 +10,8 @@
     <span
       *ngIf="tab.count"
       class="gd-sync-area-tab-count"
-      [matTooltip]="'LNG_SYNC_AREA_TAB_REVIEW_COUNT' | translate: {count: tab.count}">
+      [class.gd-sync-area-tab-count-info]="tab.countType === 'info'"
+      [matTooltip]="tab.countTooltip | translate: {count: tab.count}">
       {{tab.count}}
     </span>
   </a>

@@ -158,6 +158,14 @@
     }
   }
 
+  &.gd-sync-activity-item-waiting {
+    border-left-color: var(--gd-primary);
+
+    .gd-sync-activity-icon {
+      color: var(--gd-primary-alt);
+    }
+  }
+
   &.gd-sync-activity-item-progress {
     border-left-color: var(--gd-primary);
 

@@ -53,7 +53,7 @@ interface ISyncActivityItem {
   day: string;
   time: string;
 
-  status: 'success' | 'warning' | 'failed' | 'progress';
+  status: 'success' | 'warning' | 'failed' | 'progress' | 'waiting';
 
   // what happened, in plain words
   result: string;
@@ -428,6 +428,12 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
         if (this.systemSyncLogHelperService.isNoDataToSync(log)) {
           status = 'success';
           result = 'LNG_SYNC_ACTIVITY_RESULT_NOTHING_TO_SEND';
+        } else if (this.systemSyncLogHelperService.isWaitingForAccess(log)) {
+          // nothing could be sent: the upstream server didn't accept any outbreak yet
+          status = 'waiting';
+          result = log.syncStepErrorCode === 'ACCESS_REFUSED' ?
+            'LNG_SYNC_ACTIVITY_RESULT_NOTHING_ACCEPTED' :
+            'LNG_SYNC_ACTIVITY_RESULT_WAITING_ACCESS';
         } else {
           status = 'failed';
           result = 'LNG_SYNC_ACTIVITY_RESULT_FAILED';

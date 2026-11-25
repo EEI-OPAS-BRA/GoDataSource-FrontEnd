@@ -40,7 +40,7 @@ enum SyncPhase {
  */
 type SyncStepKey = 'connect' | 'credentials' | 'sync' | 'final';
 type SyncStepStatus = 'pending' | 'running' | 'success' | 'error';
-type SyncResult = 'success' | 'warning' | 'upToDate' | 'error';
+type SyncResult = 'success' | 'warning' | 'upToDate' | 'waiting' | 'error';
 
 interface ISyncStep {
   key: SyncStepKey;
@@ -83,6 +83,8 @@ export class SyncProgressDialogComponent implements OnInit, OnDestroy {
   } = {
       CONNECT: SyncPhase.CONNECT,
       CREDENTIALS: SyncPhase.CREDENTIALS,
+      // the upstream server says which outbreaks it accepts
+      ACCESS: SyncPhase.CREDENTIALS,
       EXPORT: SyncPhase.EXPORT,
       NO_DATA: SyncPhase.EXPORT,
       SEND: SyncPhase.SEND,
@@ -257,6 +259,9 @@ export class SyncProgressDialogComponent implements OnInit, OnDestroy {
                   // older api versions saved this case as a failure
                   if (this.systemSyncLogHelperService.isNoDataToSync(syncLog)) {
                     this.succeed('upToDate');
+                  } else if (this.systemSyncLogHelperService.isWaitingForAccess(syncLog)) {
+                    // nothing could be sent yet: the upstream server didn't accept any outbreak
+                    this.succeed('waiting');
                   } else {
                     this.failFromLog(syncLog, apiPhase);
                   }
