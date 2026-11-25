@@ -667,8 +667,12 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         'refused',
         'LNG_SYNC_UPSTREAM_SERVER_APPROVAL_REFUSED'
       );
-    return html ?
-      `<span class="gd-list-table-sync-approval">${html}</span>` :
+    // the last check failed: the numbers are the last known ones
+    const unreachable: string = access.errorCode ?
+      `<span class="gd-list-table-sync-approval-refused" title="${_.escape(access.error || '')}">${_.escape(this.i18nService.instant('LNG_SYNC_UPSTREAM_SERVER_APPROVAL_UNREACHABLE'))}</span>` :
+      '';
+    return html || unreachable ?
+      `<span class="gd-list-table-sync-approval">${unreachable}${html}</span>` :
       '<span class="gd-list-table-sync-none">-</span>';
   }
 

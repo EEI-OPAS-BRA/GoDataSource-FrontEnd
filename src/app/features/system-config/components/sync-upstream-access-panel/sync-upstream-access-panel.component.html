@@ -42,7 +42,10 @@
         *ngIf="item.state?.error"
         class="gd-upstream-access-error">
         <span class="material-icons">cloud_off</span>
-        {{'LNG_SYNC_UPSTREAM_ACCESS_ERROR' | translate}}
+        <span>
+          {{'LNG_SYNC_UPSTREAM_ACCESS_ERROR' | translate}}
+          <strong *ngIf="item.errorReason">{{item.errorReason}}</strong>
+        </span>
       </p>
 
       <!-- The server receives everything without approval -->

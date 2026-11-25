@@ -15,6 +15,7 @@ import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sy
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SyncReviewCountService } from '../../../../core/services/helper/sync-review-count.service';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
+import { UpstreamServerCheckHelperService } from '../../../../core/services/helper/upstream-server-check-helper.service';
 
 /**
  * Upstream server as displayed
@@ -31,6 +32,9 @@ interface IUpstreamAccessItem {
 
   checkedAt: string;
   requestedAt: string;
+
+  // why the last decisions couldn't be retrieved
+  errorReason: string;
 
   // asking the upstream server
   checking: boolean;
@@ -74,7 +78,8 @@ export class SyncUpstreamAccessPanelComponent implements OnInit, AfterViewInit, 
     private systemSettingsDataService: SystemSettingsDataService,
     private syncOutbreakAccessDataService: SyncOutbreakAccessDataService,
     private syncReviewCountService: SyncReviewCountService,
-    private toastV2Service: ToastV2Service
+    private toastV2Service: ToastV2Service,
+    private upstreamServerCheckHelperService: UpstreamServerCheckHelperService
   ) {}
 
   /**
@@ -216,6 +221,7 @@ export class SyncUpstreamAccessPanelComponent implements OnInit, AfterViewInit, 
       paused: state ? state.outbreaksWithStatus(SyncOutbreakAccessStatus.PAUSED) : [],
       checkedAt: state?.checkedAt ? LocalizationHelper.displayDateTime(state.checkedAt) : undefined,
       requestedAt: state?.requestedAt ? LocalizationHelper.displayDateTime(state.requestedAt) : undefined,
+      errorReason: state?.errorCode ? this.upstreamServerCheckHelperService.getErrorMessage(state.errorCode) : undefined,
       checking: false
     };
   }

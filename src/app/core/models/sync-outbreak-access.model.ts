@@ -88,6 +88,9 @@ export class UpstreamOutbreakAccessModel {
   requestedAt: string;
   error: string;
 
+  // why the upstream server couldn't be reached / didn't accept the credentials (e.g. INVALID_CREDENTIALS)
+  errorCode: string;
+
   /**
    * Constructor
    */
@@ -99,6 +102,7 @@ export class UpstreamOutbreakAccessModel {
     this.checkedAt = _.get(data, 'checkedAt');
     this.requestedAt = _.get(data, 'requestedAt');
     this.error = _.get(data, 'error');
+    this.errorCode = _.get(data, 'errorCode');
   }
 
   /**

@@ -10,6 +10,14 @@
       </ng-container>
     </span>
 
+    <!-- Syncs without new data -->
+    <mat-slide-toggle
+      class="gd-sync-activity-toggle-empty"
+      [checked]="showEmpty"
+      (change)="toggleEmpty()">
+      {{(direction === 'sent' ? 'LNG_SYNC_ACTIVITY_PANEL_SHOW_EMPTY_SENT' : 'LNG_SYNC_ACTIVITY_PANEL_SHOW_EMPTY_RECEIVED') | translate}}
+    </mat-slide-toggle>
+
     <!-- Only one server / client -->
     <span
       *ngIf="focusKey && !focusLocked"

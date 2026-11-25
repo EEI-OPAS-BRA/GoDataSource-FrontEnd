@@ -131,6 +131,9 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
   loading: boolean = true;
   items: ISyncActivityItem[] = [];
 
+  // syncs that didn't bring / send anything are hidden, so the history shows what matters
+  showEmpty: boolean = false;
+
   // pages
   pageIndex: number = 0;
   total: number;
@@ -220,6 +223,15 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Show / hide the syncs without new data
+   */
+  toggleEmpty(): void {
+    this.showEmpty = !this.showEmpty;
+    this.pageIndex = 0;
+    this.refresh();
+  }
+
+  /**
    * Change page
    */
   changePage(pageIndex: number): void {
@@ -276,6 +288,42 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
         this.focusKey :
         { neq: null }
     });
+
+    // syncs without new data
+    if (!this.showEmpty) {
+      qb.filter.where(this.direction === 'sent' ?
+        {
+          // nothing changed since the last sync
+          syncStep: {
+            neq: 'NO_DATA'
+          }
+        } : {
+          or: [
+            // failed / with warnings
+            {
+              status: {
+                neq: Constants.SYSTEM_SYNC_LOG_STATUS.SUCCESS.value
+              }
+            },
+            // older syncs (no details)
+            {
+              receivedSummary: null
+            },
+            // records of an outbreak (an empty list must not match) / other records
+            {
+              'receivedSummary.outbreaks.sourceOutbreakId': {
+                gt: ''
+              }
+            },
+            {
+              'receivedSummary.otherImported': {
+                gt: 0
+              }
+            }
+          ]
+        }
+      );
+    }
 
     // number of syncs
     const countQb: RequestQueryBuilder = _.cloneDeep(qb);

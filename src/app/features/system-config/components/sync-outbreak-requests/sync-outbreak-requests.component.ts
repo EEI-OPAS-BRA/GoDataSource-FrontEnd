@@ -226,7 +226,8 @@ export class SyncOutbreakRequestsComponent implements OnChanges, OnDestroy {
    * Number of cases / contacts as text
    */
   hasCounts(item: IRequestItem): boolean {
-    return !!item.access && (
+    return !!item.access &&
+      item.access.status === SyncOutbreakAccessStatus.PENDING && (
       _.isNumber(item.access.sourceCasesCount) ||
       _.isNumber(item.access.sourceContactsCount)
     );
