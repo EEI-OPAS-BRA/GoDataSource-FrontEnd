@@ -87,6 +87,17 @@ const routes: Routes = [
     path: 'upstream-servers',
     children: [
       {
+        // older pages (history & how it works are on the page of each destination now)
+        path: 'history',
+        pathMatch: 'full',
+        redirectTo: '/system-config/upstream-servers'
+      },
+      {
+        path: 'how-it-works',
+        pathMatch: 'full',
+        redirectTo: '/system-config/upstream-servers'
+      },
+      {
         // page of a destination server: which outbreaks it accepts & what was sent to it
         path: 'server/:serverUrl',
         component: fromPages.SyncUpstreamServerComponent,
@@ -152,6 +163,17 @@ const routes: Routes = [
   {
     path: 'client-applications',
     children: [
+      {
+        // older pages (history & how it works are on the page of each origin now)
+        path: 'history',
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
+      },
+      {
+        path: 'how-it-works',
+        pathMatch: 'full',
+        redirectTo: '/system-config/client-applications'
+      },
       {
         path: '',
         component: fromPages.ClientApplicationsListComponent,
