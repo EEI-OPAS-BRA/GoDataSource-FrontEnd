@@ -10,6 +10,7 @@ import {
   IV2SideDialogConfigInputDate,
   IV2SideDialogConfigInputMultiDropdown,
   IV2SideDialogConfigInputSingleDropdown,
+  IV2SideDialogConfigInputToggleCheckbox,
   IV2SideDialogData,
   V2SideDialogConfigInput,
   V2SideDialogConfigInputType
@@ -40,6 +41,7 @@ export class SyncActionsService {
   private static readonly SYNC_DIALOG_MODE_INPUT: string = 'sendMode';
   private static readonly SYNC_DIALOG_FROM_DATE_INPUT: string = 'fromDate';
   private static readonly SYNC_DIALOG_OUTBREAKS_INPUT: string = 'outbreakIDs';
+  private static readonly SYNC_DIALOG_ADVANCED_INPUT: string = 'advanced';
   private static readonly SYNC_MODE_SINCE_LAST: string = 'sinceLast';
   private static readonly SYNC_MODE_FROM_DATE: string = 'fromDate';
   private static readonly SYNC_MODE_ALL: string = 'all';
@@ -121,7 +123,10 @@ export class SyncActionsService {
       return servers;
     }).pipe(
       map(() => {
-        this.toastV2Service.success('LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_ACTION_TOGGLE_SYNC_ENABLED_SUCCESS_MESSAGE');
+        this.toastV2Service.success(syncEnabled ?
+          'LNG_SYNC_UPSTREAM_SERVER_RESUMED_MESSAGE' :
+          'LNG_SYNC_UPSTREAM_SERVER_PAUSED_MESSAGE'
+        );
         return syncEnabled;
       })
     );
@@ -180,8 +185,16 @@ export class SyncActionsService {
           name: 'server',
           placeholder: this.getSyncDialogServerHtml(server)
         }, {
+          // what changed since the last sync is sent; the other options are for recovering data, so they are hidden by default
+          type: V2SideDialogConfigInputType.TOGGLE_CHECKBOX,
+          name: SyncActionsService.SYNC_DIALOG_ADVANCED_INPUT,
+          placeholder: 'LNG_SYNC_DIALOG_ADVANCED',
+          tooltip: 'LNG_SYNC_DIALOG_ADVANCED_TOOLTIP',
+          value: false
+        }, {
           type: V2SideDialogConfigInputType.DROPDOWN_SINGLE,
           name: SyncActionsService.SYNC_DIALOG_MODE_INPUT,
+          visible: (data) => this.isAdvanced(data),
           placeholder: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE',
           tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_MODE_TOOLTIP',
           options: [
@@ -213,14 +226,15 @@ export class SyncActionsService {
         }, {
           type: V2SideDialogConfigInputType.DROPDOWN_MULTI,
           name: SyncActionsService.SYNC_DIALOG_OUTBREAKS_INPUT,
-          // nothing chosen means all the outbreaks
-          placeholder: this.getSyncOutbreaksPlaceholder(server.outbreakIDs),
+          visible: (data) => this.isAdvanced(data),
+          // the outbreaks must be chosen (none doesn't mean all of them)
+          placeholder: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS',
           tooltip: 'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_TOOLTIP',
           options: outbreakOptions,
           // outbreaks configured for the server
           values: [...(server.outbreakIDs || [])],
-          change: (_data, _handler, item) => {
-            item.placeholder = this.getSyncOutbreaksPlaceholder((item as IV2SideDialogConfigInputMultiDropdown).values);
+          validators: {
+            required: (data) => this.isAdvanced(data)
           }
         },
 
@@ -253,10 +267,11 @@ export class SyncActionsService {
             'filter_alt',
             'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_HINT_PARTIAL'
           ),
-          visible: (data) => this.isPartialSync(
-            server,
-            this.getSyncOutbreakIDs(data)
-          )
+          visible: (data) => this.isAdvanced(data) &&
+            this.isPartialSync(
+              server,
+              this.getSyncOutbreakIDs(data)
+            )
         },
 
         // without a successful sync everything is sent, whatever the option
@@ -317,7 +332,9 @@ export class SyncActionsService {
       // outbreaks to send; always sent, since nothing chosen means all of them and not the ones configured for the server
       syncOptions = {
         ...syncOptions,
-        outbreakIDs: this.getSyncOutbreakIDs(response.data)
+        outbreakIDs: this.isAdvanced(response.data) ?
+          this.getSyncOutbreakIDs(response.data) :
+          [...(server.outbreakIDs || [])]
       };
 
       // close dialog
@@ -393,26 +410,26 @@ export class SyncActionsService {
   }
 
   /**
-   * Which data was chosen in the sync dialog
+   * The advanced options of the sync dialog are displayed
    */
-  private getSyncMode(data: IV2SideDialogData): string {
-    return (data.map[SyncActionsService.SYNC_DIALOG_MODE_INPUT] as IV2SideDialogConfigInputSingleDropdown)?.value;
+  private isAdvanced(data: IV2SideDialogData): boolean {
+    return !!(data.map[SyncActionsService.SYNC_DIALOG_ADVANCED_INPUT] as IV2SideDialogConfigInputToggleCheckbox)?.value;
   }
 
   /**
-   * Outbreaks chosen in the sync dialog; nothing means all of them
+   * Which data was chosen in the sync dialog (without the advanced options, what changed since the last sync)
+   */
+  private getSyncMode(data: IV2SideDialogData): string {
+    return this.isAdvanced(data) ?
+      (data.map[SyncActionsService.SYNC_DIALOG_MODE_INPUT] as IV2SideDialogConfigInputSingleDropdown)?.value :
+      SyncActionsService.SYNC_MODE_SINCE_LAST;
+  }
+
+  /**
+   * Outbreaks chosen in the sync dialog (without the advanced options, the ones configured for the server)
    */
   private getSyncOutbreakIDs(data: IV2SideDialogData): string[] {
     return (data.map[SyncActionsService.SYNC_DIALOG_OUTBREAKS_INPUT] as IV2SideDialogConfigInputMultiDropdown)?.values || [];
-  }
-
-  /**
-   * Sync dialog - label of the outbreaks field; nothing chosen means all the outbreaks
-   */
-  private getSyncOutbreaksPlaceholder(outbreakIDs: string[]): string {
-    return outbreakIDs?.length > 0 ?
-      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS' :
-      'LNG_PAGE_LIST_SYSTEM_UPSTREAM_SERVERS_SYNC_DIALOG_OUTBREAKS_ALL';
   }
 
   /**
@@ -422,18 +439,7 @@ export class SyncActionsService {
     server: SystemUpstreamServerModel,
     outbreakIDs: string[]
   ): boolean {
-    // all outbreaks
-    if (!outbreakIDs.length) {
-      return false;
-    }
-
-    // configured to sync all outbreaks
-    const configuredOutbreakIDs: string[] = server.outbreakIDs || [];
-    if (!configuredOutbreakIDs.length) {
-      return true;
-    }
-
-    return configuredOutbreakIDs.some((outbreakId) => !outbreakIDs.includes(outbreakId));
+    return (server.outbreakIDs || []).some((outbreakId) => !outbreakIDs.includes(outbreakId));
   }
 
   /**

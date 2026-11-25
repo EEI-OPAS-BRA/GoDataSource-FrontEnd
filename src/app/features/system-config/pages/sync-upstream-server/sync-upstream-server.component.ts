@@ -163,17 +163,7 @@ export class SyncUpstreamServerComponent implements OnInit, OnDestroy {
     this.setTabs();
 
     // send now
-    if (this.canSync) {
-      this.actionButton = {
-        type: V2ActionType.ICON_LABEL,
-        icon: 'sync',
-        label: 'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_TITLE',
-        action: {
-          click: () => this.startSync()
-        },
-        disable: () => !this.server
-      };
-    }
+    this.setActionButton();
 
     // breadcrumbs (the name is added when the server is retrieved)
     this.setBreadcrumbs();
@@ -204,6 +194,7 @@ export class SyncUpstreamServerComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.setBreadcrumbs();
         this.setToggleRight();
+        this.setActionButton();
 
         if (this.server) {
           this.loadLastSync();
@@ -240,7 +231,11 @@ export class SyncUpstreamServerComponent implements OnInit, OnDestroy {
    * Choose what is sent & send it
    */
   startSync(): void {
-    if (!this.server) {
+    // paused / no outbreak chosen: nothing can be sent to it
+    if (
+      !this.server?.syncEnabled ||
+      !this.server?.outbreakIDs?.length
+    ) {
       return;
     }
 
@@ -271,6 +266,7 @@ export class SyncUpstreamServerComponent implements OnInit, OnDestroy {
         this.server.syncEnabled = syncEnabled;
         this.saving = false;
         this.setToggleRight();
+        this.setActionButton();
       });
   }
 
@@ -385,6 +381,29 @@ export class SyncUpstreamServerComponent implements OnInit, OnDestroy {
     this.connection = {
       ...SyncUpstreamServerComponent.CONNECTION_STATUS[status],
       message
+    };
+  }
+
+  /**
+   * Send now
+   * Note: a new object, so the page redraws the button when the server is paused / resumed
+   */
+  private setActionButton(): void {
+    if (!this.canSync) {
+      return;
+    }
+
+    // paused / no outbreak chosen: nothing can be sent to it
+    const paused: boolean = !this.server?.syncEnabled || !this.server?.outbreakIDs?.length;
+    this.actionButton = {
+      type: V2ActionType.ICON_LABEL,
+      icon: 'sync',
+      label: 'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_TITLE',
+      action: {
+        click: () => this.startSync()
+      },
+      // paused: nothing can be sent to it
+      disable: () => paused
     };
   }
 

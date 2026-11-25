@@ -687,6 +687,7 @@
                     [tooltip]="input.description ? input.description() : undefined"
                     [noValueLabel]="input.noValueLabel ? input.noValueLabel(): '—'"
                     [viewOnly]="isView || !input.value.set"
+                    [sortDisabled]="input.sortDisabled"
                     [options]="input.options"
                     [clearable]="input.clearable === undefined || input.clearable"
                     [disabled]="!isView && input.disabled ? input.disabled(input) : undefined"

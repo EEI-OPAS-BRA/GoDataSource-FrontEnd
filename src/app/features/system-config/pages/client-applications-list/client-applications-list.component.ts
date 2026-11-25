@@ -184,7 +184,8 @@ export class ClientApplicationsListComponent
               }) :
             [
               {
-                label: this.i18nService.instant('LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_LABEL_ALL_OUTBREAKS'),
+                // the outbreaks must be chosen (none doesn't mean all of them)
+                label: this.i18nService.instant('LNG_SYNC_NO_OUTBREAKS_CHOSEN'),
                 href: null
               }
             ],

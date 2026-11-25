@@ -173,7 +173,8 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         format: {
           type: (item: SystemUpstreamServerModel) => {
             if (!item.outbreakIDs?.length) {
-              return this.i18nService.instant('LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC_ALL');
+              // the outbreaks must be chosen (none doesn't mean all of them)
+              return this.i18nService.instant('LNG_SYNC_NO_OUTBREAKS_CHOSEN');
             }
 
             // outbreaks that can't be displayed are shown by id
@@ -191,29 +192,20 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         notVisible: true
       },
       {
-        field: 'timeout',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT',
-        // on the page of the server (settings)
-        notVisible: true
-      },
-      {
         field: 'syncInterval',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL',
+        label: 'LNG_SYNC_UPSTREAM_SERVER_FIELD_SCHEDULE',
         // on the page of the server (settings)
-        notVisible: true
-      },
-      {
-        field: 'syncOnEveryChange',
         notVisible: true,
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE',
         format: {
-          type: V2ColumnFormat.BOOLEAN
+          type: (item: SystemUpstreamServerModel) => item.syncInterval > 0 ?
+            this.i18nService.instant('LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS', { hours: item.syncInterval }) :
+            this.i18nService.instant('LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL')
         }
       },
       {
         field: 'syncEnabled',
         notVisible: true,
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ENABLED',
+        label: 'LNG_SYNC_UPSTREAM_SERVER_FIELD_ACTIVE',
         format: {
           type: V2ColumnFormat.BOOLEAN
         }

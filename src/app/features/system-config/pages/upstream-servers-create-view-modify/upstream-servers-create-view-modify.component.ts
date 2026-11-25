@@ -25,6 +25,7 @@ import { ToastV2Service } from '../../../../core/services/helper/toast-v2.servic
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
+import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-value-pair.model';
 
 /**
  * Result displayed next to a check button
@@ -43,6 +44,9 @@ interface ICheckResult {
   templateUrl: './upstream-servers-create-view-modify.component.html'
 })
 export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyComponent<SystemUpstreamServerModel> implements OnDestroy {
+  // hours between the automatic syncs that can be chosen
+  private static readonly SYNC_INTERVALS: number[] = [1, 6, 12, 24];
+
   // upstream servers map
   private _upstreamServersMap: {
     [url: string]: true
@@ -120,7 +124,35 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
    * Create new item model if needed
    */
   protected createNewItem(): SystemUpstreamServerModel {
-    return new SystemUpstreamServerModel();
+    // the data is sent every hour by default
+    const upstreamServer: SystemUpstreamServerModel = new SystemUpstreamServerModel();
+    upstreamServer.syncInterval = 1;
+    return upstreamServer;
+  }
+
+  /**
+   * When the data is sent: only manually or every few hours (an interval saved before, that isn't one of these, is kept)
+   */
+  private getScheduleOptions(): ILabelValuePairModel[] {
+    const hours: number[] = [...UpstreamServersCreateViewModifyComponent.SYNC_INTERVALS];
+    if (
+      this.itemData?.syncInterval > 0 &&
+      !hours.includes(this.itemData.syncInterval)
+    ) {
+      hours.push(this.itemData.syncInterval);
+      hours.sort((a, b) => a - b);
+    }
+
+    return [
+      ...hours.map((hour) => ({
+        label: this.i18nService.instant('LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS', { hours: hour }),
+        value: String(hour)
+      })),
+      {
+        label: 'LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL',
+        value: '0'
+      }
+    ];
   }
 
   /**
@@ -402,10 +434,11 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
           label: 'LNG_PAGE_CREATE_SYSTEM_UPSTREAM_SERVER_SECTION_SYNCHRONIZATION',
           inputs: [
             {
+              // paused: nothing is sent to it, neither automatically nor manually
               type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
               name: 'syncEnabled',
-              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ENABLED',
-              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ENABLED_DESCRIPTION',
+              placeholder: () => 'LNG_SYNC_UPSTREAM_SERVER_FIELD_ACTIVE',
+              description: () => 'LNG_SYNC_UPSTREAM_SERVER_FIELD_ACTIVE_DESCRIPTION',
               value: {
                 get: () => this.itemData.syncEnabled,
                 set: (value) => {
@@ -414,23 +447,30 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
                 }
               }
             }, {
-              type: CreateViewModifyV2TabInputType.TOGGLE_CHECKBOX,
-              name: 'syncOnEveryChange',
-              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE',
-              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE_DESCRIPTION',
+              // when the data is sent (sync on every change isn't used, it overloads the instance that receives the data)
+              type: CreateViewModifyV2TabInputType.SELECT_SINGLE,
+              name: 'syncInterval',
+              placeholder: () => 'LNG_SYNC_UPSTREAM_SERVER_FIELD_SCHEDULE',
+              description: () => 'LNG_SYNC_UPSTREAM_SERVER_FIELD_SCHEDULE_DESCRIPTION',
+              options: this.getScheduleOptions(),
+              // from the most to the least frequent, never empty
+              sortDisabled: true,
+              clearable: false,
               value: {
-                get: () => this.itemData.syncOnEveryChange,
+                get: () => String(this.itemData.syncInterval > 0 ? this.itemData.syncInterval : 0),
                 set: (value) => {
                   // set data
-                  this.itemData.syncOnEveryChange = value;
+                  this.itemData.syncInterval = Number(value) || 0;
                 }
+              },
+              validators: {
+                required: () => true
               }
             }, {
               type: CreateViewModifyV2TabInputType.SELECT_MULTIPLE,
               name: 'outbreakIDs',
-              placeholder: () => this.itemData.outbreakIDs?.length > 0 ?
-                'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC' :
-                'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC_ALL',
+              // the outbreaks must be chosen (none doesn't mean all of them)
+              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC',
               description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC_DESCRIPTION',
               value: {
                 get: () => this.itemData.outbreakIDs,
@@ -439,34 +479,7 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
                   this.itemData.outbreakIDs = value || [];
                 }
               },
-              options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options
-            }, {
-              type: CreateViewModifyV2TabInputType.NUMBER,
-              name: 'syncInterval',
-              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL',
-              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL_DESCRIPTION',
-              value: {
-                get: () => this.itemData.syncInterval,
-                set: (value) => {
-                  // set data
-                  this.itemData.syncInterval = value;
-                }
-              },
-              validators: {
-                required: () => true
-              }
-            }, {
-              type: CreateViewModifyV2TabInputType.NUMBER,
-              name: 'timeout',
-              placeholder: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT',
-              description: () => 'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT_DESCRIPTION',
-              value: {
-                get: () => this.itemData.timeout,
-                set: (value) => {
-                  // set data
-                  this.itemData.timeout = value;
-                }
-              },
+              options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options,
               validators: {
                 required: () => true
               }
@@ -720,6 +733,12 @@ export class UpstreamServersCreateViewModifyComponent extends CreateViewModifyCo
       if (_.isString(data.url)) {
         data.url = data.url.trim();
       }
+
+      // the interval is chosen from a list (text); sync on every change isn't used anymore
+      if (data.syncInterval !== undefined) {
+        data.syncInterval = Number(data.syncInterval) || 0;
+      }
+      data.syncOnEveryChange = false;
 
       // servers are saved as part of the system settings
       this.systemSettingsDataService

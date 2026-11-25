@@ -318,7 +318,8 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
               type: CreateViewModifyV2TabInputType.SELECT_MULTIPLE,
               name: 'outbreakIDs',
               visible: () => !this.itemData.usesRequests,
-              placeholder: () => this.itemData.outbreakIDs?.length > 0 ? 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' : 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS',
+              // the outbreaks must be chosen (none doesn't mean all of them)
+              placeholder: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS',
               description: () => 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS_DESCRIPTION',
               value: {
                 get: () => this.itemData.outbreakIDs,
@@ -327,7 +328,10 @@ export class ClientApplicationsCreateViewModifyComponent extends CreateViewModif
                   this.itemData.outbreakIDs = value;
                 }
               },
-              options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<ReferenceDataEntryModel>).options
+              options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<ReferenceDataEntryModel>).options,
+              validators: {
+                required: () => !this.itemData.usesRequests
+              }
             }
           ]
         },

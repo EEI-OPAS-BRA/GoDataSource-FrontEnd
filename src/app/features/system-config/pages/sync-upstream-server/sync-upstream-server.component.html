@@ -24,9 +24,23 @@
         </span>
         <span
           class="gd-sync-entity-pill"
-          [class.gd-sync-entity-pill-success]="server.syncEnabled">
-          <span class="material-icons" aria-hidden="true">{{server.syncEnabled ? 'update' : 'update_disabled'}}</span>
-          {{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_AUTO_ON' : 'LNG_SYNC_UPSTREAM_SERVER_AUTO_OFF') | translate}}
+          [class.gd-sync-entity-pill-success]="server.syncEnabled"
+          [class.gd-sync-entity-pill-warning]="!server.syncEnabled">
+          <span class="material-icons" aria-hidden="true">{{server.syncEnabled ? 'play_circle' : 'pause_circle'}}</span>
+          {{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTIVE' : 'LNG_SYNC_UPSTREAM_SERVER_PAUSED') | translate}}
+        </span>
+        <span
+          *ngIf="!server.outbreakIDs?.length"
+          class="gd-sync-entity-pill gd-sync-entity-pill-danger">
+          <span class="material-icons" aria-hidden="true">report_problem</span>
+          {{'LNG_SYNC_NO_OUTBREAKS_CHOSEN' | translate}}
+        </span>
+        <span
+          *ngIf="server.syncEnabled"
+          class="gd-sync-entity-pill">
+          <span class="material-icons" aria-hidden="true">schedule</span>
+          <ng-container *ngIf="server.syncInterval > 0; else manualOnly">{{'LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS' | translate: {hours: server.syncInterval} }}</ng-container>
+          <ng-template #manualOnly>{{'LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL' | translate}}</ng-template>
         </span>
         <span
           *ngIf="canListSyncs"
@@ -83,20 +97,15 @@
             <strong class="gd-sync-client-mono">{{server.url}}</strong>
           </div>
           <div class="gd-sync-client-fact">
-            <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL' | translate}}</small>
+            <small>{{'LNG_SYNC_UPSTREAM_SERVER_FIELD_SCHEDULE' | translate}}</small>
             <strong>
               <ng-container *ngIf="server.syncInterval > 0; else manual">{{'LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS' | translate: {hours: server.syncInterval} }}</ng-container>
               <ng-template #manual>{{'LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL' | translate}}</ng-template>
-              <ng-container *ngIf="server.syncOnEveryChange"> · {{'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE' | translate}}</ng-container>
             </strong>
           </div>
           <div class="gd-sync-client-fact">
             <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC' | translate}}</small>
-            <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYNC_ACTIVITY_PANEL_ALL_OUTBREAKS' | translate)}}</strong>
-          </div>
-          <div class="gd-sync-client-fact">
-            <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_TIMEOUT' | translate}}</small>
-            <strong>{{server.timeout ?? '-'}}</strong>
+            <strong [class.gd-sync-client-status-off]="!server.outbreakIDs?.length">{{server.outbreakIDs?.length ? outbreakNames.join(', ') : ('LNG_SYNC_NO_OUTBREAKS_CHOSEN' | translate)}}</strong>
           </div>
           <div
             *ngIf="server.description"
@@ -145,12 +154,13 @@
             <span class="material-icons gd-sync-action-icon">sync</span>
             <div class="gd-sync-action-text">
               <strong>{{'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_TITLE' | translate}}</strong>
-              <span>{{'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_DESCRIPTION' | translate}}</span>
+              <span>{{(!server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_PAUSED' : (!server.outbreakIDs?.length ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_NO_OUTBREAKS' : 'LNG_SYNC_UPSTREAM_SERVER_ACTION_SYNC_DESCRIPTION')) | translate}}</span>
             </div>
             <button
               type="button"
               mat-flat-button
               color="primary"
+              [disabled]="!server.syncEnabled || !server.outbreakIDs?.length"
               (click)="startSync()">
               {{'LNG_SYNC_ACTION_BUTTON_SYNC' | translate}}
             </button>
@@ -158,10 +168,10 @@
           <div
             *ngIf="canToggle"
             class="gd-sync-action">
-            <span class="material-icons gd-sync-action-icon">{{server.syncEnabled ? 'update_disabled' : 'update'}}</span>
+            <span class="material-icons gd-sync-action-icon">{{server.syncEnabled ? 'pause_circle' : 'play_circle'}}</span>
             <div class="gd-sync-action-text">
-              <strong>{{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_DISABLE_TITLE' : 'LNG_SYNC_UPSTREAM_SERVER_ACTION_ENABLE_TITLE') | translate}}</strong>
-              <span>{{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_DISABLE_DESCRIPTION' : 'LNG_SYNC_UPSTREAM_SERVER_ACTION_ENABLE_DESCRIPTION') | translate}}</span>
+              <strong>{{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_PAUSE_TITLE' : 'LNG_SYNC_UPSTREAM_SERVER_ACTION_RESUME_TITLE') | translate}}</strong>
+              <span>{{(server.syncEnabled ? 'LNG_SYNC_UPSTREAM_SERVER_ACTION_PAUSE_DESCRIPTION' : 'LNG_SYNC_UPSTREAM_SERVER_ACTION_RESUME_DESCRIPTION') | translate}}</span>
             </div>
             <button
               type="button"
@@ -169,7 +179,7 @@
               [color]="server.syncEnabled ? 'secondary' : 'primary'"
               [disabled]="saving"
               (click)="toggleSync()">
-              {{(server.syncEnabled ? 'LNG_SYNC_ACTION_BUTTON_DISABLE' : 'LNG_SYNC_ACTION_BUTTON_ENABLE') | translate}}
+              {{(server.syncEnabled ? 'LNG_SYNC_ACTION_BUTTON_PAUSE' : 'LNG_SYNC_ACTION_BUTTON_RESUME') | translate}}
             </button>
           </div>
           <div

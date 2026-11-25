@@ -94,7 +94,7 @@
             *ngIf="!client.usesRequests"
             class="gd-sync-client-fact">
             <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' | translate}}</small>
-            <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS' | translate)}}</strong>
+            <strong [class.gd-sync-client-status-off]="!client.outbreakIDs?.length">{{client.outbreakIDs?.length ? outbreakNames.join(', ') : ('LNG_SYNC_NO_OUTBREAKS_CHOSEN' | translate)}}</strong>
           </div>
           <div class="gd-sync-client-fact">
             <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CLIENT_ID' | translate}}</small>
