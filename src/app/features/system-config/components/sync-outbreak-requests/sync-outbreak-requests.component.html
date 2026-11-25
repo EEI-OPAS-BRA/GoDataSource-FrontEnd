@@ -1,0 +1,280 @@
+<div class="gd-mappings">
+
+  <div *ngIf="loading" class="gd-mappings-loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Waiting for a decision -->
+    <app-sync-section-title
+      icon="mark_email_unread"
+      heading="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_WAITING_TITLE"
+      description="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_WAITING_DESCRIPTION">
+      <span
+        *ngIf="waitingItems.length"
+        class="gd-mappings-count gd-mappings-count-warning">{{waitingItems.length}}</span>
+    </app-sync-section-title>
+    <div
+      *ngIf="waitingItems.length; else nothingWaiting"
+      class="gd-mappings-grid">
+      <ng-container *ngTemplateOutlet="requestTemplate; context: {items: waitingItems}"></ng-container>
+    </div>
+    <ng-template #nothingWaiting>
+      <div class="gd-mappings-empty">
+        <span class="material-icons">task_alt</span>
+        <p>{{(inbox ? 'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_INBOX_EMPTY' : 'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_WAITING_EMPTY') | translate}}</p>
+      </div>
+    </ng-template>
+
+    <!-- Questions to review -->
+    <ng-container *ngIf="reviewItems.length">
+      <app-sync-section-title
+        icon="fact_check"
+        heading="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_DESCRIPTION">
+        <span class="gd-mappings-count gd-mappings-count-warning">{{reviewItems.length}}</span>
+      </app-sync-section-title>
+      <div class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="mappingTemplate; context: {items: reviewItems}"></ng-container>
+      </div>
+    </ng-container>
+
+    <!-- Accepted -->
+    <ng-container *ngIf="!inbox">
+      <app-sync-section-title
+        icon="task_alt"
+        heading="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_ACCEPTED_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_ACCEPTED_DESCRIPTION">
+        <span
+          *ngIf="acceptedItems.length"
+          class="gd-mappings-count">{{acceptedItems.length}}</span>
+      </app-sync-section-title>
+      <div
+        *ngIf="acceptedItems.length; else nothingAccepted"
+        class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="requestTemplate; context: {items: acceptedItems}"></ng-container>
+      </div>
+      <ng-template #nothingAccepted>
+        <div class="gd-mappings-empty">
+          <span class="material-icons">inbox</span>
+          <p>{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_ACCEPTED_EMPTY' | translate}}</p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- Paused -->
+    <ng-container *ngIf="!inbox && pausedItems.length">
+      <app-sync-section-title
+        icon="pause_circle"
+        heading="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_PAUSED_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_PAUSED_DESCRIPTION">
+        <span class="gd-mappings-count">{{pausedItems.length}}</span>
+      </app-sync-section-title>
+      <div class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="requestTemplate; context: {items: pausedItems}"></ng-container>
+      </div>
+    </ng-container>
+
+    <!-- Refused -->
+    <ng-container *ngIf="!inbox && refusedItems.length">
+      <app-sync-section-title
+        icon="block"
+        heading="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REFUSED_TITLE"
+        description="LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REFUSED_DESCRIPTION">
+        <span class="gd-mappings-count">{{refusedItems.length}}</span>
+      </app-sync-section-title>
+      <div class="gd-mappings-grid">
+        <ng-container *ngTemplateOutlet="requestTemplate; context: {items: refusedItems}"></ng-container>
+      </div>
+    </ng-container>
+
+  </ng-container>
+</div>
+
+<!-- Outbreak another instance asked to send (without a request: its review) -->
+<ng-template #requestTemplate let-items="items">
+  <ng-container *ngFor="let item of items; trackBy: trackByItem">
+
+    <!-- Received without a request -->
+    <ng-container
+      *ngIf="!item.access; else requestCard">
+      <ng-container *ngTemplateOutlet="mappingTemplate; context: {items: [item]}"></ng-container>
+    </ng-container>
+
+    <!-- Request -->
+    <ng-template #requestCard>
+      <div class="gd-mappings-card gd-mappings-card-{{item.access.status | lowercase}}">
+        <div class="gd-mappings-card-header">
+          <span class="gd-mappings-status gd-mappings-status-{{item.access.status | lowercase}}">
+            {{('LNG_SYNC_OUTBREAK_ACCESS_STATUS_' + item.access.status) | translate}}
+          </span>
+          <small *ngIf="item.access.status === Status.PENDING && item.requestedAt">{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REQUESTED_AT' | translate: {date: item.requestedAt} }}</small>
+          <small *ngIf="item.access.status !== Status.PENDING && item.decidedAt">
+            {{(item.access.autoAccepted ? 'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_AUTO_ACCEPTED_AT' : 'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_DECIDED_AT') | translate: {date: item.decidedAt} }}
+          </small>
+        </div>
+
+        <!-- Outbreak -->
+        <div class="gd-requests-outbreak">
+          <small *ngIf="inbox">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_RECEIVED_FROM' | translate}} {{item.clientName}}</small>
+          <strong>{{item.name || ('LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UNKNOWN_OUTBREAK' | translate)}}</strong>
+          <span class="gd-requests-facts">
+            <span *ngIf="item.access.sourceDisease">
+              <span class="material-icons">coronavirus</span>
+              {{item.access.sourceDisease | translate}}
+            </span>
+            <span *ngIf="hasCounts(item)">
+              <span class="material-icons">groups</span>
+              {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_COUNTS' | translate: {cases: item.access.sourceCasesCount || 0, contacts: item.access.sourceContactsCount || 0} }}
+            </span>
+          </span>
+        </div>
+
+        <!-- Where the data goes -->
+        <p class="gd-requests-destination gd-requests-destination-{{item.destination}}">
+          <span class="material-icons">{{item.destination === 'undefined' ? 'help_outline' : 'subdirectory_arrow_right'}}</span>
+          <span [ngSwitch]="item.destination">
+            <ng-container *ngSwitchCase="'same'">{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_DESTINATION_SAME' | translate: {name: item.targetOutbreakName} }}</ng-container>
+            <ng-container *ngSwitchCase="'map'">{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_DESTINATION_MAP' | translate: {name: item.targetOutbreakName} }}</ng-container>
+            <ng-container *ngSwitchCase="'new'">{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_DESTINATION_NEW' | translate}}</ng-container>
+            <ng-container *ngSwitchDefault>{{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_DESTINATION_UNDEFINED' | translate}}</ng-container>
+          </span>
+        </p>
+
+        <!-- Actions -->
+        <div
+          *ngIf="canModify"
+          class="gd-requests-actions">
+
+          <!-- Resume -->
+          <button
+            *ngIf="item.access.status === Status.PAUSED"
+            type="button"
+            mat-flat-button
+            color="primary"
+            [disabled]="item.busy"
+            [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_RESUME_TOOLTIP' | translate"
+            (click)="decide(item, 'resume')">
+            <mat-icon>play_arrow</mat-icon>
+            {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_RESUME_BUTTON' | translate}}
+          </button>
+
+          <!-- Accept -->
+          <ng-container *ngIf="item.access.status === Status.PENDING || item.access.status === Status.REFUSED">
+            <button
+              *ngIf="canAcceptDirectly(item); else reviewAndAccept"
+              type="button"
+              mat-flat-button
+              color="primary"
+              [disabled]="item.busy"
+              (click)="accept(item)">
+              <mat-icon>check</mat-icon>
+              {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_ACCEPT_BUTTON' | translate}}
+            </button>
+            <ng-template #reviewAndAccept>
+              <a
+                mat-flat-button
+                color="primary"
+                [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REVIEW_AND_ACCEPT_TOOLTIP' | translate"
+                [routerLink]="['/system-config/sync-outbreak-mappings', item.access.mappingId]">
+                <mat-icon>fact_check</mat-icon>
+                {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REVIEW_AND_ACCEPT_BUTTON' | translate}}
+              </a>
+            </ng-template>
+          </ng-container>
+
+          <!-- Review -->
+          <a
+            *ngIf="item.mapping && item.destination !== 'undefined'"
+            mat-stroked-button
+            [routerLink]="['/system-config/sync-outbreak-mappings', item.mapping.id]">
+            {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_VIEW_BUTTON' | translate}}
+          </a>
+
+          <!-- Pause -->
+          <button
+            *ngIf="item.access.status === Status.ACCEPTED"
+            type="button"
+            mat-stroked-button
+            [disabled]="item.busy"
+            [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_PAUSE_TOOLTIP' | translate"
+            (click)="decide(item, 'pause')">
+            <mat-icon>pause</mat-icon>
+            {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_PAUSE_BUTTON' | translate}}
+          </button>
+
+          <span class="gd-requests-actions-spacer"></span>
+
+          <!-- Refuse -->
+          <button
+            *ngIf="item.access.status !== Status.REFUSED"
+            type="button"
+            mat-button
+            class="gd-requests-refuse"
+            [disabled]="item.busy"
+            (click)="decide(item, 'refuse')">
+            {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REFUSE_BUTTON' | translate}}
+          </button>
+
+          <!-- Remove the decision -->
+          <button
+            *ngIf="item.access.status !== Status.PENDING"
+            type="button"
+            mat-icon-button
+            class="gd-requests-refuse"
+            [disabled]="item.busy"
+            [matTooltip]="'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_REMOVE_TOOLTIP' | translate"
+            (click)="decide(item, 'remove')">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </ng-container>
+</ng-template>
+
+<!-- Review of where the data of a received outbreak goes -->
+<ng-template #mappingTemplate let-items="items">
+  <div
+    *ngFor="let item of items; trackBy: trackByItem"
+    class="gd-mappings-card gd-mappings-card-{{item.mapping.status | lowercase}}">
+    <div class="gd-mappings-card-header">
+      <span class="gd-mappings-status gd-mappings-status-{{item.mapping.status | lowercase}}">
+        {{('LNG_SYNC_OUTBREAK_MAPPING_STATUS_' + item.mapping.status) | translate}}
+      </span>
+      <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UPDATED_AT' | translate: {date: item.updatedAt} }}</small>
+    </div>
+
+    <div class="gd-mappings-card-flow">
+      <div>
+        <small *ngIf="inbox">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_RECEIVED_FROM' | translate}} {{item.clientName}}</small>
+        <strong>{{item.name || ('LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_UNKNOWN_OUTBREAK' | translate)}}</strong>
+      </div>
+      <span class="material-icons">arrow_forward</span>
+      <div>
+        <small>{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_HERE' | translate}}</small>
+        <strong *ngIf="item.mapping.mode === 'map'">{{item.targetOutbreakName}}</strong>
+        <strong *ngIf="item.mapping.mode === 'new'">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_IMPORTED_AS_NEW' | translate}}</strong>
+        <em *ngIf="!item.mapping.mode">{{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_NOT_DEFINED' | translate}}</em>
+      </div>
+    </div>
+
+    <p *ngIf="item.mapping.status === 'REVIEW'" class="gd-mappings-card-note">
+      <span class="material-icons">new_releases</span>
+      {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_NEW_QUESTIONS' | translate: {count: item.pendingCount} }}
+    </p>
+    <p *ngIf="item.mapping.status === 'PENDING'" class="gd-mappings-card-note">
+      <span class="material-icons">hourglass_empty</span>
+      {{'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_WAITING_NOTE' | translate}}
+    </p>
+
+    <a
+      mat-flat-button
+      [color]="item.mapping.status === 'APPROVED' ? 'secondary' : 'primary'"
+      [routerLink]="['/system-config/sync-outbreak-mappings', item.mapping.id]">
+      {{(item.mapping.status === 'APPROVED' ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_VIEW_BUTTON' : (canModify ? 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_MAP_BUTTON' : 'LNG_PAGE_SYNC_OUTBREAK_MAPPINGS_VIEW_BUTTON')) | translate}}
+    </a>
+  </div>
+</ng-template>
+

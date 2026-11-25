@@ -73,7 +73,9 @@ app-basic-page-v2 {
     // sync areas: the tabs & sections are placed directly on the page, like on the list pages of the same area
     app-sync-area-history &,
     app-sync-area-how-it-works &,
-    app-sync-outbreak-mappings-list & {
+    app-sync-outbreak-mappings-list &,
+    app-sync-client &,
+    app-sync-upstream-server & {
       background: transparent;
       box-shadow: none;
       overflow: visible;

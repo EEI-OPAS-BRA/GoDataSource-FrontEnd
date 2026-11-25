@@ -29,6 +29,10 @@ export class SystemClientApplicationModel
   // used by ui
   loading: boolean;
 
+  // outbreaks of the client waiting for a decision / accepted (clients tab)
+  pendingCount: number;
+  acceptedCount: number;
+
   /**
    * Static Permissions - IPermissionBasic
    */

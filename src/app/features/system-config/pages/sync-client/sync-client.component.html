@@ -1,0 +1,87 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  [pageTitle]="client?.name || 'LNG_SYNC_AREA_TAB_KEYS'"
+  [actionButton]="actionButton">
+
+  <div class="gd-sync-area-page">
+
+    <div *ngIf="loading" class="gd-sync-client-loading">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading && client">
+
+      <!-- The key -->
+      <app-sync-section-title
+        icon="vpn_key"
+        heading="LNG_SYNC_CLIENT_KEY_TITLE"
+        description="LNG_SYNC_CLIENT_KEY_DESCRIPTION">
+      </app-sync-section-title>
+      <div class="gd-sync-client-card">
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE' | translate}}</small>
+          <strong>{{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}</strong>
+        </div>
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ACTIVE' | translate}}</small>
+          <strong
+            class="gd-sync-client-status"
+            [class.gd-sync-client-status-off]="!client.active">
+            <span class="material-icons" aria-hidden="true">{{client.active ? 'check_circle' : 'block'}}</span>
+            {{(client.active ? 'LNG_SYNC_CLIENT_ACTIVE' : 'LNG_SYNC_CLIENT_INACTIVE') | translate}}
+          </strong>
+        </div>
+        <div
+          *ngIf="client.usesRequests"
+          class="gd-sync-client-fact">
+          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_AUTO_ACCEPT' | translate}}</small>
+          <strong>{{(client.autoAcceptSameIdOutbreaks ? 'LNG_COMMON_LABEL_YES' : 'LNG_COMMON_LABEL_NO') | translate}}</strong>
+        </div>
+        <div
+          *ngIf="!client.usesRequests"
+          class="gd-sync-client-fact">
+          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_OUTBREAKS' | translate}}</small>
+          <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_ALL_OUTBREAKS' | translate)}}</strong>
+        </div>
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_CLIENT_ID' | translate}}</small>
+          <strong class="gd-sync-client-mono">{{client.credentials?.clientId}}</strong>
+        </div>
+      </div>
+
+      <!-- Outbreaks of the client -->
+      <ng-container *ngIf="client.usesRequests; else noRequests">
+        <app-sync-outbreak-requests
+          [clientId]="client.credentials?.clientId">
+        </app-sync-outbreak-requests>
+      </ng-container>
+      <ng-template #noRequests>
+        <app-sync-section-title
+          icon="folder_open"
+          heading="LNG_SYNC_CLIENT_OUTBREAKS_TITLE"
+          description="LNG_SYNC_CLIENT_NO_REQUESTS">
+        </app-sync-section-title>
+        <app-sync-outbreak-requests
+          [clientId]="client.credentials?.clientId">
+        </app-sync-outbreak-requests>
+      </ng-template>
+
+      <!-- What it sent -->
+      <ng-container *ngIf="canListSyncs">
+        <app-sync-section-title
+          icon="history"
+          heading="LNG_SYNC_CLIENT_HISTORY_TITLE"
+          description="LNG_SYNC_CLIENT_HISTORY_DESCRIPTION">
+        </app-sync-section-title>
+        <app-sync-activity-panel
+          direction="received"
+          [pageSize]="pageSize"
+          [focusKey]="client.credentials?.clientId"
+          [focusLabel]="client.name"
+          [focusLocked]="true">
+        </app-sync-activity-panel>
+      </ng-container>
+
+    </ng-container>
+  </div>
+</app-basic-page-v2>

@@ -1,100 +1,27 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import * as _ from 'lodash';
-import { forkJoin, Observable, of, Subject } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
-import { OutbreakModel } from '../../../../core/models/outbreak.model';
-import { SyncOutbreakAccessModel, SyncOutbreakAccessStatus } from '../../../../core/models/sync-outbreak-access.model';
-import { SyncOutbreakMappingModel } from '../../../../core/models/sync-outbreak-mapping.model';
-import { SystemClientApplicationModel } from '../../../../core/models/system-client-application.model';
 import { UserModel } from '../../../../core/models/user.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
-import { ClientApplicationDataService } from '../../../../core/services/data/client-application.data.service';
-import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sync-outbreak-access.data.service';
-import { SyncOutbreakMappingDataService } from '../../../../core/services/data/sync-outbreak-mapping.data.service';
-import { DialogV2Service } from '../../../../core/services/helper/dialog-v2.service';
-import { SyncReviewCountService } from '../../../../core/services/helper/sync-review-count.service';
-import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
-import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
-import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
 import { IV2Breadcrumb } from '../../../../shared/components-v2/app-breadcrumb-v2/models/breadcrumb.model';
-import { IV2BottomDialogConfigButtonType } from '../../../../shared/components-v2/app-bottom-dialog-v2/models/bottom-dialog-config.model';
 
 /**
- * Where the data of a received outbreak goes
- * - same: into the outbreak of this instance with the same id
- * - map: into another outbreak of this instance (approved review)
- * - new: imported as a new outbreak (approved review)
- * - undefined: the review wasn't approved yet
- */
-type RequestDestination = 'same' | 'map' | 'new' | 'undefined';
-
-/**
- * Decisions about an outbreak, besides accepting it
- */
-type RequestAction = 'refuse' | 'pause' | 'resume' | 'remove';
-
-/**
- * Received outbreak as displayed: asked by another instance (access) and / or with a review of where its data goes (mapping)
- */
-interface IRequestItem {
-  access?: SyncOutbreakAccessModel;
-  mapping?: SyncOutbreakMappingModel;
-  name: string;
-  clientName: string;
-  destination: RequestDestination;
-  targetOutbreakName?: string;
-  requestedAt?: string;
-  decidedAt?: string;
-  updatedAt?: string;
-  pendingCount: number;
-
-  // an action is in progress
-  busy?: boolean;
-}
-
-/**
- * Received outbreaks: requests of other instances & reviews of where the received data goes
+ * Pending tab of the receive area: what waits for a decision, of all the clients
+ * (the page of each client displays all its outbreaks)
  */
 @Component({
   selector: 'app-sync-outbreak-mappings-list',
   templateUrl: './sync-outbreak-mappings-list.component.html',
-  styleUrls: ['./sync-outbreak-mappings-list.component.scss']
+  styleUrls: ['../sync-area-page.scss']
 })
-export class SyncOutbreakMappingsListComponent implements OnInit, OnDestroy {
+export class SyncOutbreakMappingsListComponent implements OnInit {
   // breadcrumbs
   breadcrumbs: IV2Breadcrumb[] = [];
-
-  // data
-  loading: boolean = true;
-  waitingItems: IRequestItem[] = [];
-  reviewItems: IRequestItem[] = [];
-  acceptedItems: IRequestItem[] = [];
-  pausedItems: IRequestItem[] = [];
-  refusedItems: IRequestItem[] = [];
-
-  // user
-  canModify: boolean = false;
-
-  // statuses
-  readonly Status = SyncOutbreakAccessStatus;
-
-  // release subscriptions
-  private _destroyed$: Subject<void> = new Subject<void>();
 
   /**
    * Constructor
    */
   constructor(
-    private authDataService: AuthDataService,
-    private activatedRoute: ActivatedRoute,
-    private syncOutbreakMappingDataService: SyncOutbreakMappingDataService,
-    private syncOutbreakAccessDataService: SyncOutbreakAccessDataService,
-    private clientApplicationDataService: ClientApplicationDataService,
-    private dialogV2Service: DialogV2Service,
-    private syncReviewCountService: SyncReviewCountService,
-    private toastV2Service: ToastV2Service
+    private authDataService: AuthDataService
   ) {}
 
   /**
@@ -102,9 +29,6 @@ export class SyncOutbreakMappingsListComponent implements OnInit, OnDestroy {
    */
   ngOnInit(): void {
     const authUser: UserModel = this.authDataService.getAuthenticatedUser();
-    this.canModify = SystemClientApplicationModel.canModify(authUser);
-
-    // breadcrumbs
     this.breadcrumbs = [
       {
         label: 'LNG_COMMON_LABEL_HOME',
@@ -123,254 +47,5 @@ export class SyncOutbreakMappingsListComponent implements OnInit, OnDestroy {
         action: null
       }
     ];
-
-    // retrieve data
-    this.load();
-  }
-
-  /**
-   * Release resources
-   */
-  ngOnDestroy(): void {
-    this._destroyed$.next();
-    this._destroyed$.complete();
-  }
-
-  /**
-   * Accept an outbreak that exists here with the same id, or whose review was already approved
-   */
-  accept(item: IRequestItem): void {
-    item.busy = true;
-    this.syncOutbreakAccessDataService
-      .accept(item.access.id)
-      .pipe(
-        catchError((err) => {
-          item.busy = false;
-          this.toastV2Service.error(err);
-          return of(undefined);
-        }),
-        takeUntil(this._destroyed$)
-      )
-      .subscribe((access) => {
-        if (!access) {
-          return;
-        }
-        this.toastV2Service.success(
-          'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_ACCEPT_SUCCESS', {
-            name: item.name
-          }
-        );
-        this.reload();
-      });
-  }
-
-  /**
-   * Refuse / pause / resume / remove the decision about an outbreak
-   * The actions that stop receiving data are confirmed first
-   */
-  decide(
-    item: IRequestItem,
-    action: RequestAction
-  ): void {
-    const texts: string = action.toUpperCase();
-    const run = () => {
-      item.busy = true;
-      this.syncOutbreakAccessDataService[action](item.access.id)
-        .pipe(
-          catchError((err) => {
-            item.busy = false;
-            this.toastV2Service.error(err);
-            return of(undefined);
-          }),
-          takeUntil(this._destroyed$)
-        )
-        .subscribe((access) => {
-          if (!access) {
-            return;
-          }
-          this.toastV2Service.success(
-            `LNG_PAGE_SYNC_OUTBREAK_REQUESTS_${texts}_SUCCESS`, {
-              name: item.name
-            }
-          );
-          this.reload();
-        });
-    };
-
-    // receives the data again: nothing to confirm
-    if (action === 'resume') {
-      run();
-      return;
-    }
-
-    this.dialogV2Service
-      .showConfirmDialog({
-        config: {
-          title: {
-            get: () => `LNG_PAGE_SYNC_OUTBREAK_REQUESTS_${texts}_TITLE`,
-            data: () => ({
-              name: item.name
-            })
-          },
-          message: {
-            get: () => `LNG_PAGE_SYNC_OUTBREAK_REQUESTS_${texts}_MESSAGE`,
-            data: () => ({
-              name: item.name,
-              client: item.clientName
-            })
-          }
-        }
-      })
-      .subscribe((response) => {
-        // canceled ?
-        if (response.button.type === IV2BottomDialogConfigButtonType.CANCEL) {
-          return;
-        }
-        run();
-      });
-  }
-
-  /**
-   * Can the outbreak be accepted without a review ?
-   */
-  canAcceptDirectly(item: IRequestItem): boolean {
-    return item.destination !== 'undefined';
-  }
-
-  /**
-   * Item tracking
-   */
-  trackByItem(_index: number, item: IRequestItem): string {
-    return item.access ? item.access.id : item.mapping.id;
-  }
-
-  /**
-   * Reload the data & the numbers of the menu
-   */
-  private reload(): void {
-    this.syncReviewCountService.refresh(true);
-    this.load();
-  }
-
-  /**
-   * Retrieve the data
-   */
-  private load(): void {
-    const outbreaksMap = (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map;
-    forkJoin([
-      this.syncOutbreakMappingDataService.getMappingsList(),
-      this.syncOutbreakAccessDataService
-        .getAccessList()
-        .pipe(
-          // older api: only the reviews
-          catchError(() => of([]))
-        ),
-      this.clientApplicationDataService
-        .getClientApplicationsList()
-        .pipe(
-          // the names are only a convenience
-          catchError(() => of([]))
-        )
-    ] as Observable<any>[])
-      .pipe(
-        catchError((err) => {
-          this.toastV2Service.error(err);
-          return of([[], [], []]);
-        }),
-        takeUntil(this._destroyed$)
-      )
-      .subscribe(([mappings, accesses, clientApplications]: [SyncOutbreakMappingModel[], SyncOutbreakAccessModel[], SystemClientApplicationModel[]]) => {
-        // client names
-        const clientNames: {
-          [clientId: string]: string
-        } = {};
-        clientApplications.forEach((clientApplication) => {
-          clientNames[clientApplication.credentials?.clientId] = clientApplication.name;
-        });
-
-        // reviews of each received outbreak
-        const mappingsByOutbreak: {
-          [key: string]: SyncOutbreakMappingModel
-        } = {};
-        mappings.forEach((mapping) => {
-          mappingsByOutbreak[`${mapping.clientId}|${mapping.sourceOutbreakId}`] = mapping;
-        });
-
-        // item
-        const toItem = (
-          access: SyncOutbreakAccessModel,
-          mapping: SyncOutbreakMappingModel
-        ): IRequestItem => {
-          // where the data goes
-          let destination: RequestDestination = 'undefined';
-          if (mapping && mapping.status !== 'PENDING' && mapping.mode) {
-            destination = mapping.mode === 'new' ? 'new' : 'map';
-          } else if (!mapping && access?.sameIdOutbreak) {
-            destination = 'same';
-          }
-
-          const clientId: string = access ? access.clientId : mapping.clientId;
-          return {
-            access,
-            mapping,
-            name: (access && access.sourceOutbreakName) || (mapping && mapping.sourceOutbreakName),
-            clientName: clientNames[clientId] || clientId,
-            destination,
-            targetOutbreakName: destination === 'map' ?
-              (outbreaksMap[mapping.targetOutbreakId]?.name || mapping.targetOutbreakId) :
-              (destination === 'same' ? (outbreaksMap[access.sourceOutbreakId]?.name || access.sourceOutbreakName) : undefined),
-            requestedAt: access?.requestedAt ? LocalizationHelper.displayDateTime(access.requestedAt) : undefined,
-            decidedAt: access?.decidedAt ? LocalizationHelper.displayDateTime(access.decidedAt) : undefined,
-            updatedAt: mapping?.updatedAt ? LocalizationHelper.displayDateTime(mapping.updatedAt) : undefined,
-            pendingCount: mapping ? mapping.pendingQuestions.length : 0
-          };
-        };
-
-        // outbreaks asked by other instances
-        const requested: {
-          [key: string]: boolean
-        } = {};
-        const accessItems: IRequestItem[] = accesses.map((access) => {
-          const key: string = `${access.clientId}|${access.sourceOutbreakId}`;
-          requested[key] = true;
-          return toItem(access, mappingsByOutbreak[key]);
-        });
-
-        // outbreaks received without a request (older instances / keys)
-        const legacyItems: IRequestItem[] = mappings
-          .filter((mapping) => !requested[`${mapping.clientId}|${mapping.sourceOutbreakId}`])
-          .map((mapping) => toItem(undefined, mapping));
-
-        // sections
-        const byName = (a: IRequestItem, b: IRequestItem) => (a.name || '').localeCompare(b.name || '');
-        this.waitingItems = accessItems
-          .filter((item) => item.access.status === SyncOutbreakAccessStatus.PENDING)
-          .sort(byName);
-        this.reviewItems = accessItems
-          .filter((item) => item.access.status === SyncOutbreakAccessStatus.ACCEPTED && item.mapping?.status === 'REVIEW')
-          .concat(legacyItems.filter((item) => item.mapping.status !== 'APPROVED'))
-          .sort(byName);
-        this.acceptedItems = accessItems
-          .filter((item) => item.access.status === SyncOutbreakAccessStatus.ACCEPTED && item.mapping?.status !== 'REVIEW')
-          .concat(legacyItems.filter((item) => item.mapping.status === 'APPROVED'))
-          .sort(byName);
-        this.pausedItems = accessItems
-          .filter((item) => item.access.status === SyncOutbreakAccessStatus.PAUSED)
-          .sort(byName);
-        this.refusedItems = accessItems
-          .filter((item) => item.access.status === SyncOutbreakAccessStatus.REFUSED)
-          .sort(byName);
-        this.loading = false;
-      });
-  }
-
-  /**
-   * Number of cases / contacts as text
-   */
-  hasCounts(item: IRequestItem): boolean {
-    return !!item.access && (
-      _.isNumber(item.access.sourceCasesCount) ||
-      _.isNumber(item.access.sourceContactsCount)
-    );
   }
 }

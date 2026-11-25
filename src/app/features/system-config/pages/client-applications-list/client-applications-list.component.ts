@@ -1,8 +1,8 @@
 import { Component, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import * as _ from 'lodash';
-import { throwError } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { ListComponent } from '../../../../core/helperClasses/list-component';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
@@ -21,6 +21,10 @@ import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-val
 import { UserModel } from '../../../../core/models/user.model';
 import { ClientApplicationHelperService } from '../../../../core/services/helper/client-application-helper.service';
 import { SystemSyncLogModel } from '../../../../core/models/system-sync-log.model';
+import { SyncOutbreakAccessModel, SyncOutbreakAccessStatus } from '../../../../core/models/sync-outbreak-access.model';
+import { SyncOutbreakMappingModel } from '../../../../core/models/sync-outbreak-mapping.model';
+import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sync-outbreak-access.data.service';
+import { SyncOutbreakMappingDataService } from '../../../../core/services/data/sync-outbreak-mapping.data.service';
 
 @Component({
   selector: 'app-client-applications-list',
@@ -39,7 +43,9 @@ export class ClientApplicationsListComponent
     private i18nService: I18nService,
     private activatedRoute: ActivatedRoute,
     private dialogV2Service: DialogV2Service,
-    private clientApplicationHelperService: ClientApplicationHelperService
+    private clientApplicationHelperService: ClientApplicationHelperService,
+    private syncOutbreakAccessDataService: SyncOutbreakAccessDataService,
+    private syncOutbreakMappingDataService: SyncOutbreakMappingDataService
   ) {
     super(
       listHelperService, {
@@ -80,10 +86,10 @@ export class ClientApplicationsListComponent
         {
           type: V2ActionType.ICON,
           icon: 'visibility',
-          iconTooltip: 'LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_ACTION_VIEW',
+          iconTooltip: 'LNG_SYNC_CLIENT_OPEN',
           action: {
             link: (data: SystemClientApplicationModel): string[] => {
-              return ['/system-config/client-applications', data.id, 'view'];
+              return ['/system-config/client-applications', data.id];
             }
           },
           visible: (item: SystemClientApplicationModel): boolean => {
@@ -263,6 +269,40 @@ export class ClientApplicationsListComponent
         filter: {
           type: V2FilterType.TEXT,
           textType: V2FilterTextType.STARTS_WITH
+        },
+        link: (item: SystemClientApplicationModel) => SystemClientApplicationModel.canView(this.authUser) ?
+          `/system-config/client-applications/${item.id}` :
+          undefined
+      },
+      {
+        field: 'type',
+        label: 'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE',
+        sortable: true,
+        format: {
+          type: (item: SystemClientApplicationModel) => this.i18nService.instant(
+            item.usesRequests ?
+              'LNG_SYNC_CLIENT_TYPE_SHORT_INSTANCE' :
+              (item.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')
+          )
+        }
+      },
+      {
+        field: 'pendingCount',
+        label: 'LNG_SYNC_CLIENT_COLUMN_PENDING',
+        format: {
+          type: V2ColumnFormat.HTML
+        },
+        html: (item: SystemClientApplicationModel) => item.pendingCount ?
+          `<span class="gd-list-table-sync-pending">${item.pendingCount}</span>` :
+          '<span class="gd-list-table-sync-none">0</span>'
+      },
+      {
+        field: 'acceptedCount',
+        label: 'LNG_SYNC_CLIENT_COLUMN_ACCEPTED',
+        format: {
+          type: (item: SystemClientApplicationModel) => item.usesRequests ?
+            String(item.acceptedCount || 0) :
+            '-'
         }
       },
       {
@@ -300,23 +340,30 @@ export class ClientApplicationsListComponent
         format: {
           type: V2ColumnFormat.LINK_LIST
         },
-        links: (item: SystemClientApplicationModel) => item.outbreakIDs?.length > 0 ?
-          item.outbreakIDs
-            .filter((outbreakId) => !!(this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map[outbreakId])
-            .map((outbreakId) => {
-              return {
-                label: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map[outbreakId].name,
-                href: OutbreakModel.canView(this.authUser) ?
-                  `/outbreaks/${ outbreakId }/view` :
-                  null
-              };
-            }) :
+        links: (item: SystemClientApplicationModel) => item.usesRequests ?
           [
             {
-              label: this.i18nService.instant('LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_LABEL_ALL_OUTBREAKS'),
+              label: this.i18nService.instant('LNG_SYNC_CLIENT_OUTBREAKS_BY_REQUEST'),
               href: null
             }
-          ],
+          ] :
+          item.outbreakIDs?.length > 0 ?
+            item.outbreakIDs
+              .filter((outbreakId) => !!(this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map[outbreakId])
+              .map((outbreakId) => {
+                return {
+                  label: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).map[outbreakId].name,
+                  href: OutbreakModel.canView(this.authUser) ?
+                    `/outbreaks/${ outbreakId }/view` :
+                    null
+                };
+              }) :
+            [
+              {
+                label: this.i18nService.instant('LNG_PAGE_LIST_SYSTEM_CLIENT_APPLICATIONS_LABEL_ALL_OUTBREAKS'),
+                href: null
+              }
+            ],
         filter: {
           type: V2FilterType.MULTIPLE_SELECT,
           options: (this.activatedRoute.snapshot.data.outbreak as IResolverV2ResponseModel<OutbreakModel>).options
@@ -485,6 +532,8 @@ export class ClientApplicationsListComponent
       'credentials',
       'active',
       'outbreakIDs',
+      'type',
+      'autoAcceptSameIdOutbreaks',
       'createdOn',
       'createdBy',
       'createdAt',
@@ -505,6 +554,55 @@ export class ClientApplicationsListComponent
     this.records$ = this.clientApplicationDataService
       .getClientApplicationsList(this.queryBuilder)
       .pipe(
+        // what waits for a decision / was accepted for each client
+        switchMap((clientApplications: SystemClientApplicationModel[]) => forkJoin([
+          this.syncOutbreakAccessDataService
+            .getAccessList()
+            .pipe(catchError(() => of([]))),
+          this.syncOutbreakMappingDataService
+            .getMappingsList()
+            .pipe(catchError(() => of([])))
+        ] as Observable<any>[])
+          .pipe(
+            map(([accesses, mappings]: [SyncOutbreakAccessModel[], SyncOutbreakMappingModel[]]) => {
+              const requested: {
+                [key: string]: boolean
+              } = {};
+              const pending: {
+                [clientId: string]: number
+              } = {};
+              const accepted: {
+                [clientId: string]: number
+              } = {};
+              accesses.forEach((access) => {
+                requested[`${access.clientId}|${access.sourceOutbreakId}`] = true;
+                if (access.status === SyncOutbreakAccessStatus.PENDING) {
+                  pending[access.clientId] = (pending[access.clientId] || 0) + 1;
+                } else if (access.status === SyncOutbreakAccessStatus.ACCEPTED) {
+                  accepted[access.clientId] = (accepted[access.clientId] || 0) + 1;
+                }
+              });
+
+              // questions to review & outbreaks received without a request
+              mappings
+                .filter((mapping) => mapping.status === 'REVIEW' || (
+                  mapping.status !== 'APPROVED' &&
+                  !requested[`${mapping.clientId}|${mapping.sourceOutbreakId}`]
+                ))
+                .forEach((mapping) => {
+                  pending[mapping.clientId] = (pending[mapping.clientId] || 0) + 1;
+                });
+
+              clientApplications.forEach((clientApplication) => {
+                const clientId: string = clientApplication.credentials?.clientId;
+                clientApplication.pendingCount = pending[clientId] || 0;
+                clientApplication.acceptedCount = accepted[clientId] || 0;
+              });
+              return clientApplications;
+            })
+          )
+        ),
+
         // should be the last pipe
         takeUntil(this.destroyed$)
       );

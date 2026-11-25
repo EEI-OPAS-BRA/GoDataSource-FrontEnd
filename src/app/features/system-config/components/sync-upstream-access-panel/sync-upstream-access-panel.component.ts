@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
 import { forkJoin, of, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
@@ -45,6 +45,9 @@ interface IUpstreamAccessItem {
   styleUrls: ['./sync-upstream-access-panel.component.scss']
 })
 export class SyncUpstreamAccessPanelComponent implements OnInit, AfterViewInit, OnDestroy {
+  // only one upstream server (its page)
+  @Input() serverUrl: string;
+
   // height changed
   @Output() resized = new EventEmitter<void>();
 
@@ -103,7 +106,9 @@ export class SyncUpstreamAccessPanelComponent implements OnInit, AfterViewInit, 
         states.forEach((state) => {
           statesMap[state.upstreamServerUrl] = state;
         });
-        this.items = (settings?.upstreamServers || []).map((server) => this.toItem(server, statesMap[server.url]));
+        this.items = (settings?.upstreamServers || [])
+          .filter((server) => !this.serverUrl || server.url === this.serverUrl)
+          .map((server) => this.toItem(server, statesMap[server.url]));
         this.loading = false;
 
         // ask the servers for their current decisions (the new outbreaks are requested)

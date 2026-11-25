@@ -12,7 +12,7 @@
 
     <!-- Only one server / client -->
     <span
-      *ngIf="focusKey"
+      *ngIf="focusKey && !focusLocked"
       class="gd-sync-activity-focus">
       {{'LNG_SYNC_ACTIVITY_PANEL_ONLY' | translate: {name: focusLabel} }}
       <button

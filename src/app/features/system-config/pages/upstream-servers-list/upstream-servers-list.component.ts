@@ -11,6 +11,8 @@ import { Constants } from '../../../../core/models/constants';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
 import { SystemSettingsModel } from '../../../../core/models/system-settings.model';
 import { SystemSyncLogModel } from '../../../../core/models/system-sync-log.model';
+import { SyncOutbreakAccessStatus, UpstreamOutbreakAccessModel } from '../../../../core/models/sync-outbreak-access.model';
+import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sync-outbreak-access.data.service';
 import { SystemUpstreamServerModel } from '../../../../core/models/system-upstream-server.model';
 import { SystemSettingsDataService } from '../../../../core/services/data/system-settings.data.service';
 import { SystemSyncLogDataService } from '../../../../core/services/data/system-sync-log.data.service';
@@ -87,7 +89,8 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
     private systemSyncLogHelperService: SystemSyncLogHelperService,
     private upstreamServerCheckHelperService: UpstreamServerCheckHelperService,
     private activatedRoute: ActivatedRoute,
-    private matDialog: MatDialog
+    private matDialog: MatDialog,
+    private syncOutbreakAccessDataService: SyncOutbreakAccessDataService
   ) {
     super(
       listHelperService, {
@@ -128,6 +131,19 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
         type: V2ColumnFormat.ACTIONS
       },
       actions: [
+        // Page of the server
+        {
+          type: V2ActionType.ICON,
+          icon: 'visibility',
+          iconTooltip: 'LNG_SYNC_UPSTREAM_SERVER_OPEN',
+          action: {
+            link: (item: SystemUpstreamServerModel): string[] => ['/system-config/upstream-servers/server', item.url]
+          },
+          visible: (): boolean => {
+            return SystemUpstreamServerModel.canList(this.authUser);
+          }
+        },
+
         // Modify
         {
           type: V2ActionType.ICON,
@@ -328,7 +344,17 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
     this.tableColumns = [
       {
         field: 'name',
-        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_NAME'
+        label: 'LNG_UPSTREAM_SERVER_FIELD_LABEL_NAME',
+        link: (item: SystemUpstreamServerModel) => `/system-config/upstream-servers/server/${encodeURIComponent(item.url)}`
+      },
+      {
+        // which outbreaks the server accepts
+        field: 'access',
+        label: 'LNG_SYNC_UPSTREAM_SERVER_COLUMN_APPROVAL',
+        format: {
+          type: V2ColumnFormat.HTML
+        },
+        html: (item: SystemUpstreamServerModel) => this.getApprovalHtml(item.access)
       },
       {
         // the check is made by the api, and it needs the same permission used to save the servers
@@ -572,6 +598,37 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
           );
         }),
 
+        // which outbreaks each server accepts (the new outbreaks are requested); the last known decisions when it can't be asked
+        switchMap((upstreamServers: SystemUpstreamServerModel[]): Observable<SystemUpstreamServerModel[]> => {
+          if (!upstreamServers.length) {
+            return of(upstreamServers);
+          }
+
+          return this.syncOutbreakAccessDataService
+            .getUpstreamAccessList()
+            .pipe(
+              catchError(() => of([])),
+              switchMap((states: UpstreamOutbreakAccessModel[]) => forkJoin(
+                upstreamServers.map((upstreamServer) => {
+                  upstreamServer.access = states.find((state) => state.upstreamServerUrl === upstreamServer.url);
+                  if (!upstreamServer.syncEnabled) {
+                    return of(upstreamServer);
+                  }
+
+                  return this.syncOutbreakAccessDataService
+                    .checkUpstreamAccess(upstreamServer.url)
+                    .pipe(
+                      map((state) => {
+                        upstreamServer.access = state;
+                        return upstreamServer;
+                      }),
+                      catchError(() => of(upstreamServer))
+                    );
+                })
+              ))
+            );
+        }),
+
         // check if each server is online & accepts its credentials
         tap((upstreamServers: SystemUpstreamServerModel[]) => this.startConnectionChecks(upstreamServers)),
 
@@ -583,6 +640,36 @@ export class UpstreamServersListComponent extends ListComponent<SystemUpstreamSe
           };
         })
       );
+  }
+
+  /**
+   * Summary of the decisions of a server about the outbreaks of this instance
+   */
+  private getApprovalHtml(access: UpstreamOutbreakAccessModel): string {
+    // not asked yet
+    if (!access?.mode) {
+      return '<span class="gd-list-table-sync-none">-</span>';
+    }
+
+    // the server receives the outbreaks without approval
+    if (access.mode !== 'request') {
+      return `<span class="gd-list-table-sync-approval"><span class="gd-list-table-sync-approval-refused">${_.escape(this.i18nService.instant('LNG_SYNC_UPSTREAM_SERVER_APPROVAL_NOT_NEEDED'))}</span></span>`;
+    }
+
+    // numbers
+    const chip = (count: number, cssClass: string, token: string) => count ?
+      `<span class="gd-list-table-sync-approval-${cssClass}">${_.escape(this.i18nService.instant(token, { count }))}</span>` :
+      '';
+    const html: string = chip(access.outbreaksWithStatus(SyncOutbreakAccessStatus.PENDING).length, 'pending', 'LNG_SYNC_UPSTREAM_SERVER_APPROVAL_PENDING') +
+      chip(access.outbreaksWithStatus(SyncOutbreakAccessStatus.ACCEPTED).length, 'accepted', 'LNG_SYNC_UPSTREAM_SERVER_APPROVAL_ACCEPTED') +
+      chip(
+        access.outbreaksWithStatus(SyncOutbreakAccessStatus.REFUSED).length + access.outbreaksWithStatus(SyncOutbreakAccessStatus.PAUSED).length,
+        'refused',
+        'LNG_SYNC_UPSTREAM_SERVER_APPROVAL_REFUSED'
+      );
+    return html ?
+      `<span class="gd-list-table-sync-approval">${html}</span>` :
+      '<span class="gd-list-table-sync-none">-</span>';
   }
 
   /**

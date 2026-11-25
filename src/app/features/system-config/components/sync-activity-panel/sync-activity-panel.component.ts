@@ -115,6 +115,13 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
   // number of syncs on each page
   @Input() pageSize: number = 10;
 
+  // only the syncs of a server (sent) / client (received)
+  @Input() focusKey: string;
+  @Input() focusLabel: string;
+
+  // the page is about that server / client, so the user can't display the others
+  @Input() focusLocked: boolean = false;
+
   // permissions
   canList: boolean = false;
   canViewError: boolean = false;
@@ -128,9 +135,6 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
   pageIndex: number = 0;
   total: number;
 
-  // only the syncs of a server / client
-  focusKey: string;
-  focusLabel: string;
 
   // names
   private _names: ISyncActivityNames = {
@@ -458,7 +462,8 @@ export class SyncActivityPanelComponent implements OnInit, OnDestroy {
       status,
       result,
       outbreaks,
-      allOutbreaks: this.direction === 'sent' && !outbreaks.length,
+      // nothing was sent while waiting for the approval of the server
+      allOutbreaks: this.direction === 'sent' && !outbreaks.length && status !== 'waiting',
       otherImported,
       failedRecords,
       showAllOutbreaks: false,

@@ -87,6 +87,17 @@ const routes: Routes = [
     path: 'upstream-servers',
     children: [
       {
+        // page of a destination server: which outbreaks it accepts & what was sent to it
+        path: 'server/:serverUrl',
+        component: fromPages.SyncUpstreamServerComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.UPSTREAM_SERVER_LIST
+          ]
+        }
+      },
+      {
         path: 'history',
         component: fromPages.SyncAreaHistoryComponent,
         canActivate: [AuthGuard],
@@ -233,6 +244,17 @@ const routes: Routes = [
         canDeactivate: [
           PageChangeConfirmationGuard
         ]
+      },
+      {
+        // page of a client: its key, its outbreaks & what it sent
+        path: ':clientApplicationId',
+        component: fromPages.SyncClientComponent,
+        canActivate: [AuthGuard],
+        data: {
+          permissions: [
+            PERMISSION.CLIENT_APPLICATION_VIEW
+          ]
+        }
       }
     ]
   },

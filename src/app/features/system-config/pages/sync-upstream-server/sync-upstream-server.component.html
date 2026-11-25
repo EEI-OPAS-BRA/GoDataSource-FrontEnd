@@ -1,0 +1,78 @@
+<app-basic-page-v2
+  [breadcrumbs]="breadcrumbs"
+  [pageTitle]="server?.name || 'LNG_SYNC_AREA_TAB_SERVERS'"
+  [actionButton]="actionButton">
+
+  <div class="gd-sync-area-page">
+
+    <div *ngIf="loading" class="gd-sync-client-loading">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading && server">
+
+      <!-- The server -->
+      <app-sync-section-title
+        icon="dns"
+        heading="LNG_SYNC_UPSTREAM_SERVER_DATA_TITLE"
+        description="LNG_SYNC_UPSTREAM_SERVER_DATA_DESCRIPTION">
+      </app-sync-section-title>
+      <div class="gd-sync-client-card">
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_URL' | translate}}</small>
+          <strong class="gd-sync-client-mono">{{server.url}}</strong>
+        </div>
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ENABLED' | translate}}</small>
+          <strong
+            class="gd-sync-client-status"
+            [class.gd-sync-client-status-off]="!server.syncEnabled">
+            <span class="material-icons" aria-hidden="true">{{server.syncEnabled ? 'check_circle' : 'block'}}</span>
+            {{(server.syncEnabled ? 'LNG_SYNC_CLIENT_ACTIVE' : 'LNG_SYNC_CLIENT_INACTIVE') | translate}}
+          </strong>
+        </div>
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_INTERVAL' | translate}}</small>
+          <strong>
+            <ng-container *ngIf="server.syncInterval > 0; else manual">{{'LNG_SYNC_UPSTREAM_SERVER_EVERY_HOURS' | translate: {hours: server.syncInterval} }}</ng-container>
+            <ng-template #manual>{{'LNG_SYNC_UPSTREAM_SERVER_NO_INTERVAL' | translate}}</ng-template>
+            <ng-container *ngIf="server.syncOnEveryChange"> · {{'LNG_UPSTREAM_SERVER_FIELD_LABEL_SYNC_ON_EVERY_CHANGE' | translate}}</ng-container>
+          </strong>
+        </div>
+        <div class="gd-sync-client-fact">
+          <small>{{'LNG_UPSTREAM_SERVER_FIELD_LABEL_OUTBREAKS_TO_SYNC' | translate}}</small>
+          <strong>{{outbreakNames.length ? outbreakNames.join(', ') : ('LNG_SYNC_ACTIVITY_PANEL_ALL_OUTBREAKS' | translate)}}</strong>
+        </div>
+      </div>
+
+      <!-- Which outbreaks it accepts -->
+      <app-sync-upstream-access-panel
+        [serverUrl]="server.url">
+      </app-sync-upstream-access-panel>
+
+      <!-- What was sent to it -->
+      <ng-container *ngIf="canListSyncs">
+        <app-sync-section-title
+          icon="history"
+          heading="LNG_SYNC_UPSTREAM_SERVER_HISTORY_TITLE"
+          description="LNG_SYNC_UPSTREAM_SERVER_HISTORY_DESCRIPTION">
+        </app-sync-section-title>
+        <app-sync-activity-panel
+          direction="sent"
+          [pageSize]="pageSize"
+          [focusKey]="server.url"
+          [focusLabel]="server.name"
+          [focusLocked]="true">
+        </app-sync-activity-panel>
+      </ng-container>
+
+    </ng-container>
+
+    <!-- Unknown server -->
+    <div
+      *ngIf="!loading && !server"
+      class="gd-sync-client-card">
+      {{'LNG_SYNC_UPSTREAM_SERVER_NOT_FOUND' | translate}}
+    </div>
+  </div>
+</app-basic-page-v2>
