@@ -128,6 +128,12 @@
               <span class="material-icons">groups</span>
               {{'LNG_PAGE_SYNC_OUTBREAK_REQUESTS_COUNTS' | translate: {cases: item.access.sourceCasesCount || 0, contacts: item.access.sourceContactsCount || 0} }}
             </span>
+            <span *ngIf="item.access.status !== Status.PENDING">
+              <span class="material-icons">history</span>
+              {{item.lastReceivedAt ?
+                ('LNG_PAGE_SYNC_OUTBREAK_REQUESTS_LAST_RECEIVED_AT' | translate: {date: item.lastReceivedAt}) :
+                ('LNG_PAGE_SYNC_OUTBREAK_REQUESTS_NOTHING_RECEIVED' | translate)}}
+            </span>
           </span>
         </div>
 

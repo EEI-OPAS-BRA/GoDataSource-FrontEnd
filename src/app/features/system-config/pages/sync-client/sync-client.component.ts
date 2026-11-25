@@ -17,6 +17,7 @@ import { IV2Breadcrumb } from '../../../../shared/components-v2/app-breadcrumb-v
 import { IV2ActionIconLabel, V2ActionType } from '../../../../shared/components-v2/app-list-table-v2/models/action.model';
 import { ISyncTab } from '../../components/sync-tabs/sync-tabs.component';
 import { SyncActionsService } from '../../services/sync-actions.service';
+import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
 
 /**
  * Tabs of the page
@@ -61,6 +62,9 @@ export class SyncClientComponent implements OnInit, OnDestroy {
   canToggle: boolean = false;
   canDownloadConfFile: boolean = false;
   canDelete: boolean = false;
+
+  // when data was sent with this key the last time
+  lastSyncDate: string;
 
   // release subscriptions
   private _destroyed$: Subject<void> = new Subject<void>();
@@ -129,6 +133,9 @@ export class SyncClientComponent implements OnInit, OnDestroy {
       )
       .subscribe((client: SystemClientApplicationModel) => {
         this.client = client;
+        this.lastSyncDate = client?.lastSyncAt ?
+          LocalizationHelper.displayDateTime(client.lastSyncAt) :
+          undefined;
         this.loading = false;
         this.setBreadcrumbs();
         this.setToggleRight();

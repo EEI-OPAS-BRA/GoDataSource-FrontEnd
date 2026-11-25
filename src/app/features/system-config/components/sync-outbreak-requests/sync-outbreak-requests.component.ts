@@ -45,6 +45,7 @@ interface IRequestItem {
   requestedAt?: string;
   decidedAt?: string;
   updatedAt?: string;
+  lastReceivedAt?: string;
   pendingCount: number;
 
   // an action is in progress
@@ -341,6 +342,7 @@ export class SyncOutbreakRequestsComponent implements OnChanges, OnDestroy {
               (destination === 'same' ? (outbreaksMap[access.sourceOutbreakId]?.name || access.sourceOutbreakName) : undefined),
             requestedAt: access?.requestedAt ? LocalizationHelper.displayDateTime(access.requestedAt) : undefined,
             decidedAt: access?.decidedAt ? LocalizationHelper.displayDateTime(access.decidedAt) : undefined,
+            lastReceivedAt: access?.lastReceivedAt ? LocalizationHelper.displayDateTime(access.lastReceivedAt) : undefined,
             updatedAt: mapping?.updatedAt ? LocalizationHelper.displayDateTime(mapping.updatedAt) : undefined,
             pendingCount: mapping ? mapping.pendingQuestions.length : 0
           };

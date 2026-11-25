@@ -470,6 +470,17 @@
             color: rgba(var(--gd-text-rgb), 0.5);
           }
 
+          /* Sync - last data received is late / failed */
+          .gd-list-table-sync-late {
+            color: var(--gd-warning);
+            font-weight: 600;
+          }
+
+          .gd-list-table-sync-failed {
+            color: var(--gd-danger);
+            font-weight: 600;
+          }
+
           /* Sync - decisions of a destination server */
           .gd-list-table-sync-approval {
             @include flex(inline-flex);

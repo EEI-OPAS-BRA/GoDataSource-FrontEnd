@@ -30,6 +30,9 @@ export class SyncOutbreakAccessModel {
   requestedAt: string;
   decidedAt: string;
 
+  // when data of the outbreak arrived the last time
+  lastReceivedAt: string;
+
   /**
    * Constructor
    */
@@ -48,6 +51,7 @@ export class SyncOutbreakAccessModel {
     this.autoAccepted = _.get(data, 'autoAccepted', false);
     this.requestedAt = _.get(data, 'requestedAt');
     this.decidedAt = _.get(data, 'decidedAt');
+    this.lastReceivedAt = _.get(data, 'lastReceivedAt');
   }
 }
 

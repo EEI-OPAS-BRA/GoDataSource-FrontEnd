@@ -21,6 +21,7 @@ import { SyncOutbreakAccessModel, SyncOutbreakAccessStatus } from '../../../../c
 import { SyncOutbreakMappingModel } from '../../../../core/models/sync-outbreak-mapping.model';
 import { SyncOutbreakAccessDataService } from '../../../../core/services/data/sync-outbreak-access.data.service';
 import { SyncOutbreakMappingDataService } from '../../../../core/services/data/sync-outbreak-mapping.data.service';
+import { LocalizationHelper } from '../../../../core/helperClasses/localization-helper';
 
 @Component({
   selector: 'app-client-applications-list',
@@ -143,6 +144,34 @@ export class ClientApplicationsListComponent
           type: (item: SystemClientApplicationModel) => item.usesRequests ?
             String(item.acceptedCount || 0) :
             '-'
+        }
+      },
+      {
+        field: 'senderSyncInterval',
+        label: 'LNG_SYNC_CLIENT_COLUMN_SCHEDULE',
+        format: {
+          type: (item: SystemClientApplicationModel) => this.i18nService.instant(item.schedule.token, item.schedule.data)
+        }
+      },
+      {
+        field: 'lastSyncAt',
+        label: 'LNG_SYNC_CLIENT_COLUMN_LAST_SYNC',
+        format: {
+          type: V2ColumnFormat.HTML
+        },
+        html: (item: SystemClientApplicationModel) => {
+          if (!item.lastSyncAt) {
+            return `<span class="gd-list-table-sync-none">${this.i18nService.instant('LNG_SYNC_CLIENT_LAST_SYNC_NEVER')}</span>`;
+          }
+
+          // late / failed: the user must look at it
+          const date: string = LocalizationHelper.displayDateTime(item.lastSyncAt);
+          if (item.lastSyncFailed) {
+            return `<span class="gd-list-table-sync-failed">${date} · ${this.i18nService.instant('LNG_SYNC_CLIENT_LAST_SYNC_FAILED')}</span>`;
+          }
+          return item.isLate ?
+            `<span class="gd-list-table-sync-late">${date} · ${this.i18nService.instant('LNG_SYNC_CLIENT_LAST_SYNC_LATE')}</span>` :
+            date;
         }
       },
       {
@@ -359,6 +388,10 @@ export class ClientApplicationsListComponent
       'outbreakIDs',
       'type',
       'autoAcceptSameIdOutbreaks',
+      'senderSyncInterval',
+      'senderSyncEnabled',
+      'lastSyncAt',
+      'lastSyncStatus',
       'createdOn',
       'createdBy',
       'createdAt',

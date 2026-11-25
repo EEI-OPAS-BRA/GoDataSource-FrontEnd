@@ -24,6 +24,22 @@
           <span class="material-icons" aria-hidden="true">{{client.usesRequests ? 'dns' : 'smartphone'}}</span>
           {{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}
         </span>
+        <span class="gd-sync-entity-pill">
+          <span class="material-icons" aria-hidden="true">schedule</span>
+          {{client.schedule.token | translate: client.schedule.data}}
+        </span>
+        <span
+          class="gd-sync-entity-pill"
+          [class.gd-sync-entity-pill-warning]="client.isLate && !client.lastSyncFailed"
+          [class.gd-sync-entity-pill-danger]="client.lastSyncFailed">
+          <span class="material-icons" aria-hidden="true">{{client.lastSyncFailed ? 'error_outline' : (client.isLate ? 'running_with_errors' : 'history')}}</span>
+          <ng-container *ngIf="lastSyncDate; else neverSynced">
+            {{'LNG_SYNC_CLIENT_LAST_SYNC_AT' | translate: {date: lastSyncDate} }}
+            <ng-container *ngIf="client.lastSyncFailed"> · {{'LNG_SYNC_CLIENT_LAST_SYNC_FAILED' | translate}}</ng-container>
+            <ng-container *ngIf="client.isLate && !client.lastSyncFailed"> · {{'LNG_SYNC_CLIENT_LAST_SYNC_LATE' | translate}}</ng-container>
+          </ng-container>
+          <ng-template #neverSynced>{{'LNG_SYNC_CLIENT_LAST_SYNC_NEVER' | translate}}</ng-template>
+        </span>
         <button
           *ngIf="waitingCount && tab !== 'outbreaks'"
           type="button"
@@ -83,6 +99,14 @@
           <div class="gd-sync-client-fact">
             <small>{{'LNG_SYSTEM_CLIENT_APPLICATION_FIELD_LABEL_TYPE' | translate}}</small>
             <strong>{{(client.usesRequests ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_INSTANCE' : (client.type ? 'LNG_SYSTEM_CLIENT_APPLICATION_TYPE_MOBILE' : 'LNG_SYNC_CLIENT_TYPE_LEGACY')) | translate}}</strong>
+          </div>
+          <div class="gd-sync-client-fact">
+            <small>{{'LNG_SYNC_CLIENT_COLUMN_SCHEDULE' | translate}}</small>
+            <strong>{{client.schedule.token | translate: client.schedule.data}}</strong>
+          </div>
+          <div class="gd-sync-client-fact">
+            <small>{{'LNG_SYNC_CLIENT_COLUMN_LAST_SYNC' | translate}}</small>
+            <strong [class.gd-sync-client-status-off]="client.lastSyncFailed">{{lastSyncDate || ('LNG_SYNC_CLIENT_LAST_SYNC_NEVER' | translate)}}<ng-container *ngIf="client.lastSyncFailed"> · {{'LNG_SYNC_CLIENT_LAST_SYNC_FAILED' | translate}}</ng-container></strong>
           </div>
           <div
             *ngIf="client.usesRequests"
