@@ -264,7 +264,7 @@ export class EpiCurveDashletComponent implements OnInit, OnDestroy {
 
       // create an array with data for each classification
       _.each(metric.classification, (data, key) => {
-        if (this.embedded || key !== Constants.CASE_CLASSIFICATION.NOT_A_CASE) {
+        if (key !== Constants.CASE_CLASSIFICATION.NOT_A_CASE) {
           if (this.mapCaseClassifications[key]) {
             const translatedKey = this.mapCaseClassifications[key].valueTranslated;
             if (chartData[translatedKey]) {
@@ -397,14 +397,11 @@ export class EpiCurveDashletComponent implements OnInit, OnDestroy {
       }
 
       // exclude discarded cases
-      // - except inside the "case evolution over time" card, where all classifications are displayed (including discarded)
-      if (!this.embedded) {
-        qb.filter.where({
-          classification: {
-            neq: Constants.CASE_CLASSIFICATION.NOT_A_CASE
-          }
-        });
-      }
+      qb.filter.where({
+        classification: {
+          neq: Constants.CASE_CLASSIFICATION.NOT_A_CASE
+        }
+      });
 
       // classification
       if (!_.isEmpty(this.globalFilterClassificationId)) {
