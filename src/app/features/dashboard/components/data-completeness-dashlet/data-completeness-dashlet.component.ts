@@ -13,7 +13,10 @@ import { IBasicCount } from '../../../../core/models/basic-count.interface';
 import { DebounceTimeCaller } from '../../../../core/helperClasses/debounce-time-caller';
 import { RequestFilter, RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
-
+import { AuthDataService } from '../../../../core/services/data/auth.data.service';
+import { UserModel } from '../../../../core/models/user.model';
+import { ContactModel } from '../../../../core/models/contact.model';
+import { LabResultModel } from '../../../../core/models/lab-result.model';
 /**
  * Completeness row
  */
@@ -61,6 +64,9 @@ export class DataCompletenessDashletComponent implements OnInit, OnDestroy {
 
   // detect changes
   @Output() detectChanges = new EventEmitter<void>();
+
+    // authenticated user
+  private _authUser: UserModel;
 
   // Global filters => Date
   private _globalFilterDate: Moment | string;
@@ -129,13 +135,16 @@ export class DataCompletenessDashletComponent implements OnInit, OnDestroy {
     private caseDataService: CaseDataService,
     private contactDataService: ContactDataService,
     private labResultDataService: LabResultDataService,
-    private outbreakDataService: OutbreakDataService
+    private outbreakDataService: OutbreakDataService,
+    private authDataService: AuthDataService
   ) {}
 
   /**
    * Component initialized
    */
   ngOnInit(): void {
+    // get the authenticated user
+    this._authUser = this.authDataService.getAuthenticatedUser();
     this._outbreakSubscriber = this.outbreakDataService
       .getSelectedOutbreakSubject()
       .subscribe((selectedOutbreak: OutbreakModel) => {
@@ -266,6 +275,10 @@ export class DataCompletenessDashletComponent implements OnInit, OnDestroy {
    * Count contacts (extra condition => linked to a case)
    */
   private countContacts(condition?: any): Observable<number> {
+    if (!ContactModel.canList(this._authUser)) {
+      return of(null);
+    }
+
     const qb = new RequestQueryBuilder();
 
     // location
@@ -295,6 +308,10 @@ export class DataCompletenessDashletComponent implements OnInit, OnDestroy {
    * Count lab results of cases (extra condition => result filled)
    */
   private countLabResults(condition?: any): Observable<number> {
+    if (!LabResultModel.canList(this._authUser)) {
+      return of(null);
+    }
+
     const qb = new RequestQueryBuilder();
 
     // lab results of cases
