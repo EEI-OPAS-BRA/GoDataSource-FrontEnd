@@ -32,7 +32,7 @@ import { CaseProfileDashletComponent } from '../../components/case-profile-dashl
 import { CasesByGeographicLocationDashletComponent } from '../../components/case-by-geographic-location-dashlet/case-by-geographic-location-dashlet.component';
 import { CasesHospitalizedPieChartDashletComponent } from '../../components/cases-hospitalized-pie-chart-dashlet/cases-hospitalized-pie-chart-dashlet.component';
 import { HistogramTransmissionChainsSizeDashletComponent } from '../../components/histogram-transmission-chains-size-dashlet/histogram-transmission-chains-size-dashlet.component';
-import { EpiCurveTabsDashletComponent } from '../../components/epi-curve-tabs-dashlet/epi-curve-tabs-dashlet.component';
+import { EpiCurveTab, EpiCurveTabsDashletComponent } from '../../components/epi-curve-tabs-dashlet/epi-curve-tabs-dashlet.component';
 import { ContactFollowUpTabsDashletComponent } from '../../components/contact-follow-up-tabs-dashlet/contact-follow-up-tabs-dashlet.component';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ReferenceDataHelperService } from '../../../../core/services/helper/reference-data-helper.service';
@@ -220,6 +220,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return !!this._selectedOutbreak?.id;
   }
 
+  // epi curve export - waiting for the graph to be rendered
+  private _epiCurveExportWaitInterval: ReturnType<typeof setInterval>;
+
   // visible dashlets
   visibleDashlets: {
     Overview: boolean,
@@ -373,6 +376,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this._determiningOutbreakSubscriber.unsubscribe();
       this._determiningOutbreakSubscriber = undefined;
     }
+
+    // epi curve export waiting
+    this.stopEpiCurveExportWait();
   }
 
   /**
@@ -598,7 +604,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'classification',
                 'app-epi-curve-dashlet',
                 '.gd-dashlet-epi-curve',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_CLASSIFICATION_TITLE'
@@ -615,7 +622,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'outcome',
                 'app-epi-curve-outcome-dashlet',
                 '.gd-dashlet-epi-curve-outcome',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_OUTCOME_TITLE'
@@ -632,7 +640,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'reporting',
                 'app-epi-curve-reporting-dashlet',
                 '.gd-dashlet-epi-curve-reporting',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_REPORTING_TITLE'
@@ -792,6 +801,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
         // update ui
         this.detectChanges();
       });
+  }
+
+  /**
+   * Open the epi curve tab (if needed) and export it after the graph is rendered
+   */
+  private exportEpiCurveTab(
+    tab: EpiCurveTab,
+    elementSelector: string,
+    boxShadowSelector: string,
+    fileName: string
+  ): void {
+    // stop previous waiting (if any)
+    this.stopEpiCurveExportWait();
+
+    // expand dashlet and open tab
+    if (this._epiCurveTabs) {
+      this._epiCurveTabs.showTab(tab);
+    }
+
+    // wait for the graph to be rendered (max 10 seconds)
+    const graphSelector: string = `${elementSelector} svg`;
+    const startedAt: number = Date.now();
+    this._epiCurveExportWaitInterval = setInterval(() => {
+      // still waiting ?
+      if (
+        !document.querySelector(graphSelector) &&
+        Date.now() - startedAt < 10000
+      ) {
+        return;
+      }
+
+      // stop waiting
+      this.stopEpiCurveExportWait();
+
+      // export
+      // - if the graph still isn't rendered, getEpiCurveDashlet displays the "not visible" warning
+      this.getEpiCurveDashlet(
+        elementSelector,
+        boxShadowSelector,
+        fileName
+      );
+    }, 200);
+  }
+
+  /**
+   * Stop waiting for the epi curve graph
+   */
+  private stopEpiCurveExportWait(): void {
+    if (this._epiCurveExportWaitInterval) {
+      clearInterval(this._epiCurveExportWaitInterval);
+      this._epiCurveExportWaitInterval = undefined;
+    }
   }
 
   /**

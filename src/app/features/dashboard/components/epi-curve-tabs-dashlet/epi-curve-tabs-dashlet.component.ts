@@ -5,6 +5,11 @@ import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-value-pair.model';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 
+/**
+ * Epi curve tabs that can be opened from outside (e.g. export)
+ */
+export type EpiCurveTab = 'classification' | 'outcome' | 'reporting';
+
 @Component({
   selector: 'app-epi-curve-tabs-dashlet',
   encapsulation: ViewEncapsulation.None,
@@ -79,6 +84,40 @@ export class EpiCurveTabsDashletComponent implements OnInit, OnDestroy {
       this._outbreakSubscriber.unsubscribe();
       this._outbreakSubscriber = null;
     }
+  }
+
+    /**
+   * Expand the dashlet and open a specific tab
+   * @returns false if the tab isn't visible (no permission)
+   */
+  showTab(tab: EpiCurveTab): boolean {
+    // visible tabs - same order as in the template
+    const visibleTabs: EpiCurveTab[] = [];
+    if (this.showClassification) {
+      visibleTabs.push('classification');
+    }
+    if (this.showOutcome) {
+      visibleTabs.push('outcome');
+    }
+    if (this.showReporting) {
+      visibleTabs.push('reporting');
+    }
+
+    // tab not visible ?
+    const index: number = visibleTabs.indexOf(tab);
+    if (index < 0) {
+      return false;
+    }
+
+    // expand and select tab
+    this.expanded = true;
+    this.selectedTabIndex = index;
+
+    // update ui
+    this.detectChanges.emit();
+
+    // finished
+    return true;
   }
 
   /**
