@@ -200,8 +200,12 @@ export class OutbreakOverviewDashletComponent implements OnInit, OnDestroy {
     const qb = new RequestQueryBuilder();
 
     // selected year (date of symptom onset)
+    // - not applied to "new in the last X days" indicators, which only consider the date of reporting
     const year: number | null = this.getSelectedYear();
-    if (year) {
+    if (
+      year &&
+      !reportedInLastDays
+    ) {
       const yearStart: Moment = LocalizationHelper.now().year(year).startOf('year');
       qb.filter.byDateRange(
         'dateOfOnset', {
