@@ -1,9 +1,104 @@
-<app-pie-donut-chart
-  graphTitle="LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_TITLE"
-  description="LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_TITLE_DESCRIPTION"
-  graphTotal="LNG_PAGE_DASHBOARD_PIE_CHART_TOTAL_LABEL"
-  noDataLabel="LNG_PAGE_DASHLET_HOSPITALIZATION_SUMMARY_NO_DATA_LABEL"
-  [getData$]="getData$"
-  (clickItem)="onDoughnutPress($event)"
-  (detectChanges)="detectChanges.emit()">
-</app-pie-donut-chart>
+<div
+  class="gd-dashlet-hospitalized"
+  [class.gd-dashlet-hospitalized-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-hospitalized-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-hospitalized-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-hospitalized-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+
+    <!-- Loading -->
+    <div
+      *ngIf="displayLoading"
+      class="gd-dashlet-hospitalized-loading"
+      fxLayoutAlign="center center">
+      <mat-progress-spinner
+        diameter="24"
+        mode="indeterminate"></mat-progress-spinner>
+    </div>
+
+    <!-- No data -->
+    <div
+      *ngIf="!displayLoading && (rows.length < 1 || total < 1)"
+      class="gd-dashlet-hospitalized-no-data">
+      {{ 'LNG_PAGE_DASHLET_HOSPITALIZATION_SUMMARY_NO_DATA_LABEL' | translate }}
+    </div>
+
+    <!-- Rows -->
+    <div
+      *ngIf="!displayLoading && rows.length > 0 && total > 0"
+      class="gd-dashlet-hospitalized-bottom">
+
+      <div
+        *ngFor="let row of rows"
+        class="gd-dashlet-hospitalized-row"
+        (click)="onRowPress(row)">
+
+        <!-- Label & value -->
+        <div
+          class="gd-dashlet-hospitalized-row-text"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.8rem">
+          <span class="gd-dashlet-hospitalized-row-label">
+            {{ row.label | translate }}
+          </span>
+          <span class="gd-dashlet-hospitalized-row-value">
+            <strong>{{ row.value }}</strong> / {{ total }}
+            <span class="gd-dashlet-hospitalized-row-percentage">({{ row.percentage | number:'1.1-1' }}%)</span>
+          </span>
+        </div>
+
+        <!-- Bar -->
+        <div class="gd-dashlet-hospitalized-row-bar">
+          <div
+            class="gd-dashlet-hospitalized-row-bar-fill"
+            [style.width.%]="row.percentage"
+            [style.background-color]="row.color">
+          </div>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div class="gd-dashlet-hospitalized-total">
+        {{ 'LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_TOTAL_LABEL' | translate:{ total: total } }}
+      </div>
+
+      <!-- Note -->
+      <div class="gd-dashlet-hospitalized-note">
+        {{ 'LNG_PAGE_DASHBOARD_CASE_HOSPITALIZATION_NOTE' | translate }}
+      </div>
+    </div>
+  </ng-container>
+</div>

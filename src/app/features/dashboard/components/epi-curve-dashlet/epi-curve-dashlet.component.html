@@ -1,10 +1,12 @@
 <div
   class="gd-dashlet-epi-curve"
   [class.gd-dashlet-epi-curve-expanded]="expanded"
+  [class.gd-dashlet-epi-curve-embedded]="embedded"
   fxLayout="column">
 
   <!-- Title / Description -->
   <div
+    *ngIf="!embedded"
     class="gd-dashlet-epi-curve-top"
     fxLayout="row" fxLayoutAlign="none center">
 
@@ -48,8 +50,7 @@
         [chartDataColumns]="chartDataColumns"
         [chartDataCategories]="chartDataCategories"
         [showLabels]="false"
-        [xLabel]="'LNG_PAGE_DASHBOARD_EPI_CURVE_DATE_OF_ONSET_LABEL' | translate"
-        [yLabel]="'LNG_PAGE_DASHBOARD_EPI_CURVE_NO_CASES_LABEL' | translate"
+        [xLabel]="(xAxisPeriodToken | translate) + ' ' + ('LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_AXIS_BASE_ONSET' | translate)"        [yLabel]="'LNG_PAGE_DASHBOARD_EPI_CURVE_NO_CASES_LABEL' | translate"
         [colorPattern]="colorPattern">
       </app-bb-stacked-bar-chart>
 

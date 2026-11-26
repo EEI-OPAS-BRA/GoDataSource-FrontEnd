@@ -80,3 +80,9 @@
     text-align: center;
   }
 }
+
+/* Embedded in another card - no card background / shadow */
+.gd-dashlet-epi-curve-outcome.gd-dashlet-epi-curve-outcome-embedded {
+  background-color: transparent;
+  @include box-shadow(none);
+}

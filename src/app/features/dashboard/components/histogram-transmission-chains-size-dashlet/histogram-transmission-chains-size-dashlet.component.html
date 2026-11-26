@@ -13,7 +13,7 @@
       class="gd-dashlet-histogram-top-title"
       fxFlex>
       <span>
-        {{ 'LNG_PAGE_DASHBOARD_HISTOGRAM_CHAINS_OF_TRANSMISSION_SIZE_TITLE' | translate }}
+        {{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_TITLE' | translate }}
       </span>
     </div>
 
@@ -23,7 +23,7 @@
       fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
       <!-- Tooltip -->
       <app-fancy-tooltip
-        tooltip="LNG_PAGE_DASHBOARD_HISTOGRAM_CHAINS_OF_TRANSMISSION_SIZE_TITLE_DESCRIPTION">
+        tooltip="LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_TITLE_DESCRIPTION">
       </app-fancy-tooltip>
 
       <!-- Expand / Collapse -->
@@ -39,17 +39,61 @@
   <!-- Expanded -->
   <ng-container
     *ngIf="expanded">
-    <!-- Chart -->
+    <!-- Data -->
     <ng-container
-      *ngIf="!displayLoading && chartData?.length > 0">
-      <!-- Chart -->
+      *ngIf="!displayLoading && hasChains">
       <div
         class="gd-dashlet-histogram-bottom">
+
+        <!-- Indicators -->
+        <div
+          class="gd-dashlet-histogram-stats">
+          <!-- Identified chains -->
+          <div
+            class="gd-dashlet-histogram-stat">
+            <div class="gd-dashlet-histogram-stat-label">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_COUNT_LABEL' | translate }}</div>
+            <div class="gd-dashlet-histogram-stat-value">{{ chainsCount }}</div>
+          </div>
+
+          <!-- Active chains -->
+          <div
+            class="gd-dashlet-histogram-stat">
+            <div class="gd-dashlet-histogram-stat-label">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_ACTIVE_LABEL' | translate }}</div>
+            <div class="gd-dashlet-histogram-stat-value">{{ activeChainsCount }}</div>
+            <div class="gd-dashlet-histogram-stat-sub">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_ACTIVE_PERCENT_LABEL' | translate:{ percentage: activeChainsPercentage } }}</div>
+          </div>
+
+          <!-- Largest chain -->
+          <div
+            class="gd-dashlet-histogram-stat">
+            <div class="gd-dashlet-histogram-stat-label">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_LARGEST_LABEL' | translate }}</div>
+            <div class="gd-dashlet-histogram-stat-value">{{ largestChainSize }}</div>
+            <div class="gd-dashlet-histogram-stat-sub">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_RECORDS_UNIT_LABEL' | translate }}</div>
+          </div>
+
+          <!-- Mean size -->
+          <div
+            class="gd-dashlet-histogram-stat">
+            <div class="gd-dashlet-histogram-stat-label">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_MEAN_LABEL' | translate }}</div>
+            <div class="gd-dashlet-histogram-stat-value">{{ meanChainSize | number:'1.1-1' }}</div>
+            <div class="gd-dashlet-histogram-stat-sub">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_RECORDS_UNIT_LABEL' | translate }}</div>
+          </div>
+
+          <!-- Median size -->
+          <div
+            class="gd-dashlet-histogram-stat">
+            <div class="gd-dashlet-histogram-stat-label">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_MEDIAN_LABEL' | translate }}</div>
+            <div class="gd-dashlet-histogram-stat-value">{{ medianChainSize | number:'1.0-1' }}</div>
+            <div class="gd-dashlet-histogram-stat-sub">{{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_RECORDS_UNIT_LABEL' | translate }}</div>
+          </div>
+        </div>
+
+        <!-- Chart -->
         <app-bb-stacked-bar-chart
           [chartData]="chartData"
           [chartDataColumns]="chartDataColumns"
           [chartDataCategories]="chartDataCategories"
-          [showLabels]="false"
+          [showLabels]="true"
           [showLegend]="false"
           [zoomEnabled]="false"
           [xLabel]="'LNG_PAGE_DASHBOARD_HISTOGRAM_CHAINS_OF_TRANSMISSION_SIZE_LABEL' | translate"
@@ -57,12 +101,18 @@
           [colorPattern]="colorPattern"
           (barClick)="onSelectChart($event)">
         </app-bb-stacked-bar-chart>
+
+        <!-- Note -->
+        <div
+          class="gd-dashlet-histogram-note">
+          {{ 'LNG_PAGE_DASHBOARD_TRANSMISSION_CHAINS_NOTE' | translate }}
+        </div>
       </div>
     </ng-container>
 
     <!-- No data -->
     <ng-container
-      *ngIf="!displayLoading && chartData?.length < 1">
+      *ngIf="!displayLoading && !hasChains">
       <div
         class="gd-dashlet-histogram-no-data"
         fxFlex fxFlexAlign="center center">

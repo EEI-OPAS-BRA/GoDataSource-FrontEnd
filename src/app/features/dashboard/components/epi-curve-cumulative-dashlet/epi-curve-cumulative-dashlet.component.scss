@@ -1,0 +1,66 @@
+@import 'mixins';
+
+/* Epi Curve Cumulative Dashlet */
+.gd-dashlet-epi-curve-cumulative {
+  padding: 0.8rem 1.6rem 1.6rem;
+
+  /* Filters */
+  .gd-dashlet-epi-curve-cumulative-filters {
+    margin-bottom: 1.6rem;
+
+    .gd-dashlet-epi-curve-cumulative-filter-label {
+      color: var(--gd-secondary);
+      font-size: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  /* Chart */
+  .gd-dashlet-epi-curve-cumulative-chart {
+    min-width: 0;
+  }
+
+  /* Summary */
+  .gd-dashlet-epi-curve-cumulative-summary {
+    background-color: rgba(0, 0, 0, 0.03);
+    @include border-radius(0.4rem);
+    padding: 1.6rem;
+
+    .gd-dashlet-epi-curve-cumulative-stat-label {
+      color: var(--gd-secondary);
+      font-size: 1.2rem;
+    }
+
+    .gd-dashlet-epi-curve-cumulative-stat-value {
+      color: var(--gd-primary);
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .gd-dashlet-epi-curve-cumulative-stat-hint {
+      color: var(--gd-secondary);
+      font-size: 1.1rem;
+    }
+  }
+
+  /* Note */
+  .gd-dashlet-epi-curve-cumulative-note {
+    color: var(--gd-secondary);
+    font-size: 1.1rem;
+    font-style: italic;
+    margin-top: 0.8rem;
+  }
+
+  /* Loading / No data */
+  .gd-dashlet-epi-curve-cumulative-loading {
+    padding: 1.6rem 0;
+  }
+
+  .gd-dashlet-epi-curve-cumulative-no-data {
+    color: var(--gd-secondary);
+    font-style: italic;
+    padding: 1.6rem 0;
+    text-align: center;
+  }
+}

@@ -30,6 +30,17 @@ export class HistogramTransmissionChainsSizeDashletComponent implements OnInit, 
   caseRefDataColor: string = 'red';
   colorPattern: string[] = [];
 
+  // chains found ?
+  hasChains: boolean = false;
+
+  // indicators
+  chainsCount: number = 0;
+  activeChainsCount: number = 0;
+  activeChainsPercentage: string = '0.0';
+  largestChainSize: number = 0;
+  meanChainSize: number = null;
+  medianChainSize: number = null;
+
   // detect changes
   @Output() detectChanges = new EventEmitter<void>();
 
@@ -179,10 +190,12 @@ export class HistogramTransmissionChainsSizeDashletComponent implements OnInit, 
     this.chartDataCategories = [];
     this.colorPattern = [];
     _.forEach(chains, (value) => {
-      if (!_.isEmpty(chainsSize) && chainsSize[value.size]) {
-        chainsSize[value.size]++;
+      // chain size = MetricChainsLengthModel.length
+      const size: number = value.length;
+      if (!_.isEmpty(chainsSize) && chainsSize[size]) {
+        chainsSize[size]++;
       } else {
-        chainsSize[value.size] = 1;
+        chainsSize[size] = 1;
       }
     });
 
@@ -194,6 +207,55 @@ export class HistogramTransmissionChainsSizeDashletComponent implements OnInit, 
       );
       this.colorPattern.push(this.caseRefDataColor);
     });
+  }
+
+  /**
+   * Indicators: number of chains, active chains, largest, mean and median size
+   * - calculated from the same response used by the chart (no extra request)
+   */
+    private setIndicators(
+    response: any,
+    chains: { length: number }[]
+  ): void {
+    // valid sizes, ascending (chain size = MetricChainsLengthModel.length)
+    const sizes: number[] = (chains || [])
+      .map((chain) => Number(chain.length))
+      .filter((size) => !isNaN(size) && size > 0)
+      .sort((size1, size2) => size1 - size2);
+
+    // chains found ?
+    this.hasChains = sizes.length > 0;
+
+    // number of chains (same value as the KPI "independent chains of transmission")
+    this.chainsCount = typeof response?.length === 'number' ?
+      response.length :
+      sizes.length;
+
+    // active chains (same value as the KPI "active chains of transmission")
+    this.activeChainsCount = response?.activeChainsCount || 0;
+    this.activeChainsPercentage = this.chainsCount > 0 ?
+      ((this.activeChainsCount * 100) / this.chainsCount).toFixed(1) :
+      '0.0';
+
+    // nothing else to calculate ?
+    if (!this.hasChains) {
+      this.largestChainSize = 0;
+      this.meanChainSize = null;
+      this.medianChainSize = null;
+      return;
+    }
+
+    // largest
+    this.largestChainSize = sizes[sizes.length - 1];
+
+    // mean
+    this.meanChainSize = sizes.reduce((sum, size) => sum + size, 0) / sizes.length;
+
+    // median
+    const middle: number = Math.floor(sizes.length / 2);
+    this.medianChainSize = sizes.length % 2 === 0 ?
+      (sizes[middle - 1] + sizes[middle]) / 2 :
+      sizes[middle];
   }
 
   /**
@@ -340,7 +402,9 @@ export class HistogramTransmissionChainsSizeDashletComponent implements OnInit, 
           qb
         )
         .subscribe((response) => {
-          this.setHistogramResults(response.chains ? response.chains : []);
+          const chains = response?.chains ? response.chains : [];
+          this.setHistogramResults(chains);
+          this.setIndicators(response, chains);
           this.displayLoading = false;
           this.detectChanges.emit();
         });

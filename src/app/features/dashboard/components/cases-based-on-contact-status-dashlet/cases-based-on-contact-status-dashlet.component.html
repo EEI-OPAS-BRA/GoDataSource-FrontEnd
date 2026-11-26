@@ -1,10 +1,12 @@
 <div
   class="gd-dashlet-contact-status"
   [class.gd-dashlet-contact-status-expanded]="expanded"
+  [class.gd-dashlet-contact-status-embedded]="embedded"
   fxLayout="column">
 
   <!-- Title / Description -->
   <div
+    *ngIf="!embedded"
     class="gd-dashlet-contact-status-top"
     fxLayout="row" fxLayoutAlign="none center">
 

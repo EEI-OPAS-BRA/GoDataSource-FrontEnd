@@ -1,0 +1,169 @@
+@import 'mixins';
+
+/* Cases by geographic location dashlet */
+.gd-dashlet-cases-location {
+  background-color: var(--gd-background);
+  @include border-radius(0.4rem);
+  @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                      0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                      0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+
+  /* Top */
+  .gd-dashlet-cases-location-top {
+    padding: 0.8rem 1.6rem;
+
+    .gd-dashlet-cases-location-top-title {
+      color: var(--gd-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .gd-dashlet-cases-location-top-actions {
+      .mat-icon-button {
+        font-size: 2rem;
+        height: 2.4rem;
+        min-width: 2.4rem;
+        padding: 0.4rem;
+        width: 2.4rem;
+
+        .mat-icon {
+          font-size: 1.6rem;
+          @include transition(all 0.24s ease-in-out 0s);
+        }
+      }
+    }
+  }
+
+  /* Loading / No data */
+  .gd-dashlet-cases-location-loading {
+    padding-bottom: 0.8rem;
+  }
+
+  .gd-dashlet-cases-location-no-data {
+    color: var(--gd-secondary);
+    font-style: italic;
+    padding-bottom: 0.8rem;
+  }
+
+  /* Bottom */
+  .gd-dashlet-cases-location-bottom {
+    padding: 0.8rem 1.6rem 1.6rem;
+
+    /* Shared columns: rank | label | value | percent */
+    .gd-dashlet-cases-location-header,
+    .gd-dashlet-cases-location-row {
+      align-items: center;
+      column-gap: 0.8rem;
+      display: grid;
+      grid-template-columns: 2.4rem minmax(0, 1fr) auto 5.6rem;
+    }
+
+    .gd-dashlet-cases-location-col-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .gd-dashlet-cases-location-col-value,
+    .gd-dashlet-cases-location-col-percent {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .gd-dashlet-cases-location-col-percent {
+      color: var(--gd-secondary);
+    }
+
+    /* Header */
+    .gd-dashlet-cases-location-header {
+      border-bottom: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.25);
+      color: var(--gd-secondary);
+      font-size: 1.2rem;
+      padding-bottom: 0.4rem;
+
+      .gd-dashlet-cases-location-col-label {
+        grid-column: 2;
+      }
+    }
+
+    /* Rows */
+    .gd-dashlet-cases-location-rows {
+      &.gd-dashlet-cases-location-rows-all {
+        max-height: 30rem;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .gd-dashlet-cases-location-row {
+        @include border-radius(0.4rem);
+        color: var(--gd-text);
+        padding: 0.4rem 0;
+        row-gap: 0.2rem;
+
+        .gd-dashlet-cases-location-col-rank {
+          color: var(--gd-secondary);
+          text-align: right;
+        }
+
+        /* Bar (second line, under label / value / percent) */
+        .gd-dashlet-cases-location-bar {
+          grid-column: 2 / 5;
+          height: 0.6rem;
+
+          .gd-dashlet-cases-location-bar-fill {
+            background-color: var(--gd-primary);
+            @include border-radius(0.3rem);
+            height: 100%;
+            min-width: 0.2rem;
+          }
+        }
+
+        &.gd-dashlet-cases-location-row-clickable {
+          cursor: pointer;
+
+          &:hover,
+          &:focus {
+            background-color: rgba(var(--gd-primary-rgb), 0.08);
+            outline: none;
+
+            .gd-dashlet-cases-location-col-label {
+              color: var(--gd-primary);
+            }
+          }
+        }
+
+        /* Others */
+        &.gd-dashlet-cases-location-row-others {
+          border-top: 0.1rem dashed rgba(var(--gd-secondary-rgb), 0.5);
+          color: var(--gd-secondary);
+          font-style: italic;
+          margin-top: 0.4rem;
+          padding-top: 0.8rem;
+        }
+      }
+    }
+
+    /* Footer */
+    .gd-dashlet-cases-location-footer {
+      padding-top: 0.8rem;
+
+      .gd-dashlet-cases-location-footer-total {
+        font-weight: 700;
+      }
+    }
+  }
+
+  /* Expanded */
+  &.gd-dashlet-cases-location-expanded {
+    .gd-dashlet-cases-location-top {
+      .gd-dashlet-cases-location-top-actions {
+        .mat-icon-button {
+          .mat-icon {
+            @include rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+}

@@ -50,6 +50,12 @@
     padding: 0.8rem 1.6rem 1.6rem;
   }
 
+  /* Embedded (inside another card) */
+  &.gd-dashlet-contact-followup-embedded {
+    background-color: transparent;
+    @include box-shadow(none);
+  }
+
   /* Contact Follow-up Dashlet - Expanded */
   &.gd-dashlet-contact-followup-expanded {
     height: 100%;

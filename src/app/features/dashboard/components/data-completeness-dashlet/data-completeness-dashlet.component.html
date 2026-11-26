@@ -1,0 +1,84 @@
+<div class="gd-dashlet-data-completeness">
+
+  <!-- Info -->
+  <div
+    class="gd-dashlet-data-completeness-info"
+    fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="0.8rem">
+    <mat-icon>info_outline</mat-icon>
+    <span>{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_INFO' | translate }}</span>
+  </div>
+
+  <!-- Loading -->
+  <div
+    *ngIf="displayLoading"
+    class="gd-dashlet-data-completeness-loading"
+    fxLayoutAlign="center center">
+    <mat-progress-spinner
+      diameter="24"
+      mode="indeterminate"></mat-progress-spinner>
+  </div>
+
+  <!-- No data -->
+  <div
+    *ngIf="!displayLoading && rows.length < 1"
+    class="gd-dashlet-data-completeness-no-data">
+    {{ 'LNG_PAGE_DASHLET_CASES_COUNT_OVER_TIME_NO_DATA_LABEL' | translate }}
+  </div>
+
+  <!-- Table -->
+  <ng-container
+    *ngIf="!displayLoading && rows.length > 0">
+    <!-- Header -->
+    <div class="gd-dashlet-data-completeness-row gd-dashlet-data-completeness-header">
+      <div></div>
+      <div>{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_VARIABLE' | translate }}</div>
+      <div class="gd-dashlet-data-completeness-count">{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_FILLED_APPLICABLE' | translate }}</div>
+      <div></div>
+      <div class="gd-dashlet-data-completeness-percentage">{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_PERCENTAGE' | translate }}</div>
+    </div>
+
+    <!-- Rows -->
+    <div
+      *ngFor="let row of rows"
+      class="gd-dashlet-data-completeness-row">
+      <!-- Icon -->
+      <mat-icon class="gd-dashlet-data-completeness-icon">{{ row.icon }}</mat-icon>
+
+      <!-- Label -->
+      <div
+        class="gd-dashlet-data-completeness-label"
+        fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="0.4rem">
+        <span>{{ row.label | translate }}</span>
+        <app-fancy-tooltip
+          [tooltip]="row.description">
+        </app-fancy-tooltip>
+      </div>
+
+      <!-- n / N -->
+      <div class="gd-dashlet-data-completeness-count">
+        {{ row.filled }} / {{ row.applicable }}
+      </div>
+
+      <!-- Bar -->
+      <div class="gd-dashlet-data-completeness-bar">
+        <div
+          class="gd-dashlet-data-completeness-bar-fill"
+          [style.width.%]="row.percentage || 0"
+          [style.background-color]="row.color">
+        </div>
+      </div>
+
+      <!-- % -->
+      <div class="gd-dashlet-data-completeness-percentage">
+        {{ row.percentage !== null ? (row.percentage | number:'1.1-1') + '%' : '—' }}
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="gd-dashlet-data-completeness-notes">
+      <div>{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_LEGEND' | translate }}</div>
+      <div *ngIf="showLabNote">{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_NOTE_LAB' | translate }}</div>
+      <div *ngIf="showLinkNote">{{ 'LNG_PAGE_DASHBOARD_DATA_QUALITY_COMPLETENESS_NOTE_LINK' | translate }}</div>
+    </div>
+  </ng-container>
+</div>

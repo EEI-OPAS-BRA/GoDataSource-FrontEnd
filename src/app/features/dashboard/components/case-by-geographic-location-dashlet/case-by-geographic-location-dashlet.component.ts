@@ -1,31 +1,53 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { OutbreakDataService } from '../../../../core/services/data/outbreak.data.service';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { CaseDataService } from '../../../../core/services/data/case.data.service';
 import * as _ from 'lodash';
-import { Subscription, Observable } from 'rxjs';
+import { Subscription, Observable, throwError } from 'rxjs';
 import { DebounceTimeCaller } from '../../../../core/helperClasses/debounce-time-caller';
 import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { Router } from '@angular/router';
 import { Constants } from '../../../../core/models/constants';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
 import { UserModel } from '../../../../core/models/user.model';
-import { PieDonutChartComponent, PieDonutChartData } from '../../../../shared/components/pie-donut-graph/pie-donut-chart.component';
 import { CaseModel } from '../../../../core/models/case.model';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
+import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
+
+/**
+ * Bar item (one location)
+ */
+export interface ICasesByLocationBarItem {
+  // location id
+  key: string;
+
+  // location name
+  label: string;
+
+  // position in ranking (1 = most cases)
+  rank: number;
+
+  // number of cases
+  value: number;
+
+  // share of total cases (0 - 100)
+  percent: number;
+
+  // bar width relative to the location with most cases (0 - 100)
+  barWidth: number;
+}
 
 @Component({
   selector: 'app-case-by-geographic-location-dashlet',
-  templateUrl: './case-by-geographic-location-dashlet.component.html'
+  encapsulation: ViewEncapsulation.None,
+  templateUrl: './case-by-geographic-location-dashlet.component.html',
+  styleUrls: ['./case-by-geographic-location-dashlet.component.scss']
 })
 export class CasesByGeographicLocationDashletComponent
 implements OnInit, OnDestroy {
-  // kpi dashlet
-  @ViewChild(PieDonutChartComponent, { static: false }) dashlet: PieDonutChartComponent;
-
-  // data
-  getData$: Observable<PieDonutChartData[]>;
+  // number of locations displayed before "Others"
+  static readonly TOP_LIMIT: number = 10;
 
   // Global filters => Date
   private _globalFilterDate: Moment | string;
@@ -60,11 +82,82 @@ implements OnInit, OnDestroy {
   // detect changes
   @Output() detectChanges = new EventEmitter<void>();
 
+  // all locations sorted by number of cases (desc)
+  items: ICasesByLocationBarItem[] = [];
+
+  // total number of cases (with a known location)
+  total: number = 0;
+
+  // display all locations instead of top + others ?
+  showAll: boolean = false;
+
+  // loading data ?
+  loadingData: boolean = true;
+
+  // can click on a location to see the cases ?
+  canListCases: boolean = false;
+
+  // expanded / collapsed ?
+  private _expanded: boolean = false;
+  set expanded(expanded: boolean) {
+    this._expanded = expanded;
+
+    // retrieve data if expanded and data not retrieved
+    this.retrieveData();
+  }
+  get expanded(): boolean {
+    return this._expanded;
+  }
+
+  /**
+   * Kept for compatibility with dashboard "expand / collapse all" (dashboard.component.ts uses dashlet.expanded)
+   */
+  get dashlet(): CasesByGeographicLocationDashletComponent {
+    return this;
+  }
+
+  /**
+   * Locations displayed in top mode
+   */
+  get topItems(): ICasesByLocationBarItem[] {
+    return this.items.slice(0, CasesByGeographicLocationDashletComponent.TOP_LIMIT);
+  }
+
+  /**
+   * Locations aggregated under "Others"
+   */
+  get othersLocationsCount(): number {
+    return Math.max(this.items.length - CasesByGeographicLocationDashletComponent.TOP_LIMIT, 0);
+  }
+
+  /**
+   * Number of cases aggregated under "Others"
+   */
+  get othersValue(): number {
+    return this.items
+      .slice(CasesByGeographicLocationDashletComponent.TOP_LIMIT)
+      .reduce((acc, item) => acc + item.value, 0);
+  }
+
+  /**
+   * Share of "Others" from total (0 - 100)
+   */
+  get othersPercent(): number {
+    return this.total > 0 ?
+      this.othersValue * 100 / this.total :
+      0;
+  }
+
   // outbreak
   private _outbreakId: string;
 
   // subscribers
   private _outbreakSubscriber: Subscription;
+  private _getDataSubscription: Subscription;
+
+  // data request
+  private _getData$: Observable<ICasesByLocationBarItem[]>;
+  private _retrievedData: boolean = false;
 
   // authenticated user
   private _authUser: UserModel;
@@ -83,7 +176,8 @@ implements OnInit, OnDestroy {
     private outbreakDataService: OutbreakDataService,
     private caseDataService: CaseDataService,
     private router: Router,
-    private authDataService: AuthDataService
+    private authDataService: AuthDataService,
+    private toastV2Service: ToastV2Service
   ) {}
 
   /**
@@ -92,6 +186,7 @@ implements OnInit, OnDestroy {
   ngOnInit() {
     // get the authenticated user
     this._authUser = this.authDataService.getAuthenticatedUser();
+    this.canListCases = CaseModel.canList(this._authUser);
 
     // outbreak
     this._outbreakSubscriber = this.outbreakDataService
@@ -105,13 +200,19 @@ implements OnInit, OnDestroy {
   }
 
   /**
-     * Component destroyed
-     */
+   * Component destroyed
+   */
   ngOnDestroy() {
     // outbreak subscriber
     if (this._outbreakSubscriber) {
       this._outbreakSubscriber.unsubscribe();
       this._outbreakSubscriber = null;
+    }
+
+    // data request
+    if (this._getDataSubscription) {
+      this._getDataSubscription.unsubscribe();
+      this._getDataSubscription = null;
     }
 
     // debounce caller
@@ -122,11 +223,18 @@ implements OnInit, OnDestroy {
   }
 
   /**
-     * Redirect to cases page when user click on a piece of pie chart to display the cases that represent the part of pie chart
-     */
-  onDoughnutPress(item: PieDonutChartData): void {
+   * Track by
+   */
+  trackByKey(_index: number, item: ICasesByLocationBarItem): string {
+    return item.key;
+  }
+
+  /**
+   * Redirect to cases page filtered by the clicked location
+   */
+  onLocationClick(item: ICasesByLocationBarItem): void {
     // we need case list permission to redirect
-    if (!CaseModel.canList(this._authUser)) {
+    if (!this.canListCases) {
       return;
     }
 
@@ -165,8 +273,8 @@ implements OnInit, OnDestroy {
   }
 
   /**
-     * Refresh Data
-     */
+   * Refresh Data
+   */
   refreshData() {
     if (!this._outbreakId) {
       return;
@@ -209,35 +317,89 @@ implements OnInit, OnDestroy {
       );
     }
 
-    // retrieve data
-    this.getData$ = this.caseDataService
+    // data request
+    this._getData$ = this.caseDataService
       .getCasesPerLocation(this._outbreakId, qb)
       .pipe(map((locationsMetric) => {
-        // format data
-        const data: PieDonutChartData[] = [];
-        (locationsMetric.locations || []).forEach((locationMetric) => {
-          // no need to handle this one ?
-          if (locationMetric.casesCount < 1) {
-            return;
-          }
+        // keep only locations with cases
+        const locations = (locationsMetric.locations || [])
+          .filter((locationMetric) => locationMetric.casesCount > 0);
 
-          // create data item
-          data.push(new PieDonutChartData({
-            key: locationMetric.location.id,
-            color: null,
-            label: locationMetric.location.name,
-            value: locationMetric.casesCount
-          }));
+        // sort by number of cases (desc), then by name
+        locations.sort((a, b) => {
+          return b.casesCount - a.casesCount ||
+            (a.location.name || '').localeCompare(b.location.name || '');
         });
 
-        // assign colors
-        PieDonutChartData.assignColorDomain(data);
+        // totals
+        const total: number = locations.reduce((acc, locationMetric) => acc + locationMetric.casesCount, 0);
+        const max: number = locations.length > 0 ?
+          locations[0].casesCount :
+          0;
 
-        // finished
-        return data;
+        // format data
+        return locations.map((locationMetric, index): ICasesByLocationBarItem => ({
+          key: locationMetric.location.id,
+          label: locationMetric.location.name,
+          rank: index + 1,
+          value: locationMetric.casesCount,
+          percent: total > 0 ?
+            locationMetric.casesCount * 100 / total :
+            0,
+          barWidth: max > 0 ?
+            locationMetric.casesCount * 100 / max :
+            0
+        }));
       }));
 
-    // update ui
+    // retrieve again
+    this._retrievedData = false;
+    this.retrieveData();
+  }
+
+  /**
+   * Retrieve data (only when expanded and not retrieved yet)
+   */
+  private retrieveData(): void {
+    // nothing to do ?
+    if (
+      !this.expanded ||
+      !this._getData$ ||
+      this._retrievedData
+    ) {
+      return;
+    }
+
+    // release previous request if in progress
+    if (this._getDataSubscription) {
+      this._getDataSubscription.unsubscribe();
+      this._getDataSubscription = undefined;
+    }
+
+    // retrieve data
+    this._retrievedData = true;
+    this.loadingData = true;
     this.detectChanges.emit();
+    this._getDataSubscription = this._getData$
+      .pipe(catchError((err) => {
+        // show error
+        this.toastV2Service.error(err);
+
+        // stop loading
+        this.loadingData = false;
+        this.detectChanges.emit();
+
+        // send error down the road
+        return throwError(err);
+      }))
+      .subscribe((items) => {
+        // update data
+        this.items = items || [];
+        this.total = this.items.reduce((acc, item) => acc + item.value, 0);
+
+        // finished
+        this.loadingData = false;
+        this.detectChanges.emit();
+      });
   }
 }

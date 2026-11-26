@@ -1,0 +1,10 @@
+/* Billboard donut chart */
+.gd-bb-donut-chart {
+  width: 100%;
+
+  .bb-chart-arcs-title {
+    fill: var(--gd-primary);
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+}

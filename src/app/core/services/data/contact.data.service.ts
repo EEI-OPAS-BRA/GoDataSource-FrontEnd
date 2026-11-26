@@ -15,6 +15,7 @@ import { catchError, map } from 'rxjs/operators';
 import { Observable, throwError, of } from 'rxjs';
 import { IBasicCount } from '../../models/basic-count.interface';
 import { IGeneralAsyncValidatorResponse } from '../../../shared/forms-v2/validators/general-async-validator.directive';
+import { IContactsDemographicsCount } from '../../models/contacts-demographics-count.interface';
 
 @Injectable()
 export class ContactDataService {
@@ -149,6 +150,14 @@ export class ContactDataService {
       this.http.get(`outbreaks/${outbreakId}/contacts/per-risk-level/count?filter=${filter}`),
       RiskLevelGroupModel
     );
+  }
+
+  /**
+   * Count Contacts grouped by gender, age and year of reporting (dashboard - contact profile)
+   */
+  getContactsDemographics(outbreakId: string, queryBuilder: RequestQueryBuilder = new RequestQueryBuilder()): Observable<IContactsDemographicsCount> {
+    const filter = queryBuilder.buildQuery();
+    return this.http.get<IContactsDemographicsCount>(`outbreaks/${outbreakId}/contacts/demographics/count?filter=${filter}`);
   }
 
   /**

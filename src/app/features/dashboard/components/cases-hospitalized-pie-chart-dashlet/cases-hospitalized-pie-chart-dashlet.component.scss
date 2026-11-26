@@ -1,0 +1,116 @@
+@import 'mixins';
+
+/* Hospitalization summary dashlet */
+.gd-dashlet-hospitalized {
+  background-color: var(--gd-background);
+  @include border-radius(0.4rem);
+  @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                      0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                      0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+
+  /* Top */
+  .gd-dashlet-hospitalized-top {
+    padding: 0.8rem 1.6rem;
+
+    .gd-dashlet-hospitalized-top-title {
+      color: var(--gd-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .gd-dashlet-hospitalized-top-actions {
+      .mat-icon-button {
+        font-size: 2rem;
+        height: 2.4rem;
+        min-width: 2.4rem;
+        padding: 0.4rem;
+        width: 2.4rem;
+
+        .mat-icon {
+          font-size: 1.6rem;
+          @include transition(all 0.24s ease-in-out 0s);
+        }
+      }
+    }
+  }
+
+  /* Rows */
+  .gd-dashlet-hospitalized-bottom {
+    padding: 0.8rem 2.4rem 2.4rem;
+
+    .gd-dashlet-hospitalized-row {
+      cursor: pointer;
+      padding: 0.8rem 0;
+
+      &:hover {
+        .gd-dashlet-hospitalized-row-label {
+          text-decoration: underline;
+        }
+      }
+
+      .gd-dashlet-hospitalized-row-text {
+        margin-bottom: 0.4rem;
+      }
+
+      .gd-dashlet-hospitalized-row-value {
+        white-space: nowrap;
+      }
+
+      .gd-dashlet-hospitalized-row-percentage {
+        color: var(--gd-secondary);
+      }
+
+      .gd-dashlet-hospitalized-row-bar {
+        background-color: #e0e0e0;
+        @include border-radius(0.4rem);
+        height: 0.8rem;
+        overflow: hidden;
+
+        .gd-dashlet-hospitalized-row-bar-fill {
+          @include border-radius(0.4rem);
+          height: 100%;
+        }
+      }
+    }
+
+    .gd-dashlet-hospitalized-total {
+      font-weight: 700;
+      margin-top: 0.8rem;
+      text-align: right;
+    }
+
+    .gd-dashlet-hospitalized-note {
+      color: var(--gd-secondary);
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-top: 0.8rem;
+    }
+  }
+
+  /* Loading / No data */
+  .gd-dashlet-hospitalized-loading {
+    padding-bottom: 0.8rem;
+  }
+
+  .gd-dashlet-hospitalized-no-data {
+    color: var(--gd-secondary);
+    font-style: italic;
+    padding-bottom: 0.8rem;
+    text-align: center;
+  }
+
+  /* Expanded */
+  &.gd-dashlet-hospitalized-expanded {
+    height: 100%;
+
+    .gd-dashlet-hospitalized-top {
+      .gd-dashlet-hospitalized-top-actions {
+        .mat-icon-button {
+          .mat-icon {
+            @include rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+}

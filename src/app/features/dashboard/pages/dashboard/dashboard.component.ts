@@ -10,6 +10,8 @@ import { SavedFilterData, SavedFilterDataAppliedFilter } from '../../../../core/
 import * as _ from 'lodash';
 import { RequestFilterOperator, RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
+import { ContactModel } from '../../../../core/models/contact.model';
+import { CaseModel } from '../../../../core/models/case.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
 import { UserModel } from '../../../../core/models/user.model';
 import { ExportDataExtension, ExportDataMethod } from '../../../../core/services/helper/models/dialog-v2.model';
@@ -26,17 +28,17 @@ import { AppCotKpiDashletComponent } from '../../components/app-cot-kpi-dashlet/
 import { IV2SideDialogConfigButtonType, IV2SideDialogConfigInputToggle, V2SideDialogConfigInputType } from '../../../../shared/components-v2/app-side-dialog-v2/models/side-dialog-config.model';
 import { determineIfSmallScreenMode } from '../../../../core/methods/small-screen-mode';
 import { CaseSummaryDashletComponent } from '../../components/case-summary-dashlet/case-summary-dashlet.component';
+import { CaseProfileDashletComponent } from '../../components/case-profile-dashlet/case-profile-dashlet.component';
 import { CasesByGeographicLocationDashletComponent } from '../../components/case-by-geographic-location-dashlet/case-by-geographic-location-dashlet.component';
 import { CasesHospitalizedPieChartDashletComponent } from '../../components/cases-hospitalized-pie-chart-dashlet/cases-hospitalized-pie-chart-dashlet.component';
 import { HistogramTransmissionChainsSizeDashletComponent } from '../../components/histogram-transmission-chains-size-dashlet/histogram-transmission-chains-size-dashlet.component';
-import { EpiCurveDashletComponent } from '../../components/epi-curve-dashlet/epi-curve-dashlet.component';
-import { EpiCurveOutcomeDashletComponent } from '../../components/epi-curve-outcome-dashlet/epi-curve-outcome-dashlet.component';
-import { EpiCurveReportingDashletComponent } from '../../components/epi-curve-reporting-dashlet/epi-curve-reporting-dashlet.component';
-import { ContactFollowUpOverviewDashletComponent } from '../../components/contact-follow-up-overview-dashlet/contact-follow-up-overview-dashlet.component';
-import { CasesBasedOnContactStatusDashletComponent } from '../../components/cases-based-on-contact-status-dashlet/cases-based-on-contact-status-dashlet.component';
+import { EpiCurveTab, EpiCurveTabsDashletComponent } from '../../components/epi-curve-tabs-dashlet/epi-curve-tabs-dashlet.component';
+import { ContactFollowUpTabsDashletComponent } from '../../components/contact-follow-up-tabs-dashlet/contact-follow-up-tabs-dashlet.component';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import { ReferenceDataHelperService } from '../../../../core/services/helper/reference-data-helper.service';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
+import { DataQualityDashletComponent } from '../../components/data-quality-dashlet/data-quality-dashlet.component';
+import { ContactProfileDashletComponent } from '../../components/contact-profile-dashlet/contact-profile-dashlet.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -47,18 +49,18 @@ import { LocalizationHelper, Moment } from '../../../../core/helperClasses/local
 export class DashboardComponent implements OnInit, OnDestroy {
   // children dashlets
   @ViewChild('caseSummary', { static: false }) private _caseSummary: CaseSummaryDashletComponent;
+  @ViewChild('caseProfile', { static: false }) private _caseProfile: CaseProfileDashletComponent;
   @ViewChild('casesPerLocation', { static: false }) private _casesPerLocation: CasesByGeographicLocationDashletComponent;
   @ViewChild('hospitalized', { static: false }) private _hospitalized: CasesHospitalizedPieChartDashletComponent;
   @ViewChild('cotHistogram', { static: false }) private _cotHistogram: HistogramTransmissionChainsSizeDashletComponent;
-  @ViewChild('epiCurveClassification', { static: false }) private _epiCurveClassification: EpiCurveDashletComponent;
-  @ViewChild('epiCurveOutcome', { static: false }) private _epiCurveOutcome: EpiCurveOutcomeDashletComponent;
-  @ViewChild('epiCurveReporting', { static: false }) private _epiCurveReporting: EpiCurveReportingDashletComponent;
-  @ViewChild('followUpOverview', { static: false }) private _followUpOverview: ContactFollowUpOverviewDashletComponent;
-  @ViewChild('contactStatus', { static: false }) private _contactStatus: CasesBasedOnContactStatusDashletComponent;
+  @ViewChild('epiCurveTabs', { static: false }) private _epiCurveTabs: EpiCurveTabsDashletComponent;
+  @ViewChild('contactFollowUpTabs', { static: false }) private _contactFollowUpTabs: ContactFollowUpTabsDashletComponent;
   @ViewChild('kpiSection', { static: false }) private _kpiSection: ElementRef;
   @ViewChild('kpiCases', { static: false }) private _kpiCases: AppCasesKpiDashletComponent;
   @ViewChild('kpiContacts', { static: false }) private _kpiContacts: AppContactsKpiDashletComponent;
   @ViewChild('kpiCOT', { static: false }) private _kpiCOT: AppCotKpiDashletComponent;
+  @ViewChild('dataQuality', { static: false }) private _dataQuality: DataQualityDashletComponent;
+  @ViewChild('contactProfile', { static: false }) private _contactProfile: ContactProfileDashletComponent;
 
   // small screen mode ?
   isSmallScreenMode: boolean = false;
@@ -68,6 +70,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // expand / collapse - caseSummary
     if (this._caseSummary?.dashlet) {
       this._caseSummary.dashlet.expanded = expanded;
+    }
+
+        // expand / collapse - caseProfile
+    if (this._caseProfile) {
+      this._caseProfile.expanded = expanded;
     }
 
     // expand / collapse - casesPerLocation
@@ -85,29 +92,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this._cotHistogram.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveClassification
-    if (this._epiCurveClassification) {
-      this._epiCurveClassification.expanded = expanded;
+    // expand / collapse - epiCurveTabs
+    if (this._epiCurveTabs) {
+      this._epiCurveTabs.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveOutcome
-    if (this._epiCurveOutcome) {
-      this._epiCurveOutcome.expanded = expanded;
+        // expand / collapse - data quality
+    if (this._dataQuality) {
+      this._dataQuality.expanded = expanded;
     }
 
-    // expand / collapse - epiCurveReporting
-    if (this._epiCurveReporting) {
-      this._epiCurveReporting.expanded = expanded;
+        // expand / collapse - contact follow-up (tabs)
+    if (this._contactFollowUpTabs) {
+      this._contactFollowUpTabs.expanded = expanded;
     }
 
-    // expand / collapse - followUpOverview
-    if (this._followUpOverview) {
-      this._followUpOverview.expanded = expanded;
-    }
-
-    // expand / collapse - contactStatus
-    if (this._contactStatus) {
-      this._contactStatus.expanded = expanded;
+    // expand / collapse - contactProfile
+    if (this._contactProfile) {
+      this._contactProfile.expanded = expanded;
     }
 
     // expand / collapse - kpiCases
@@ -130,6 +132,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       !this._caseSummary?.dashlet ||
       this._caseSummary.dashlet.expanded
     ) && (
+      !this._caseProfile ||
+      this._caseProfile.expanded
+    ) && (
       !this._casesPerLocation?.dashlet ||
       this._casesPerLocation.dashlet.expanded
     ) && (
@@ -139,21 +144,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       !this._cotHistogram ||
       this._cotHistogram.expanded
     ) && (
-      !this._epiCurveClassification ||
-      this._epiCurveClassification.expanded
+      !this._epiCurveTabs ||
+      this._epiCurveTabs.expanded
     ) && (
-      !this._epiCurveOutcome ||
-      this._epiCurveOutcome.expanded
+      !this._contactFollowUpTabs ||
+      this._contactFollowUpTabs.expanded
     ) && (
-      !this._epiCurveReporting ||
-      this._epiCurveReporting.expanded
+      !this._dataQuality ||
+      this._dataQuality.expanded
     ) && (
-      !this._followUpOverview ||
-      this._followUpOverview.expanded
-    ) && (
-      !this._contactStatus ||
-      this._contactStatus.expanded
-    ) && (
+      !this._contactProfile ||
+      this._contactProfile.expanded
+      ) && (
       !this._kpiCases?.dashlet ||
       this._kpiCases.dashlet.expanded
     ) && (
@@ -218,9 +220,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return !!this._selectedOutbreak?.id;
   }
 
+  // epi curve export - waiting for the graph to be rendered
+  private _epiCurveExportWaitInterval: ReturnType<typeof setInterval>;
+
   // visible dashlets
   visibleDashlets: {
+    Overview: boolean,
     CaseSummary: boolean,
+    CaseProfile: boolean,
     CasesPerLocation: boolean,
     Hospitalized: boolean,
     COTHistogram: boolean,
@@ -232,8 +239,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     KPICases: boolean,
     KPIContacts: boolean,
     KPICOT: boolean
+    DataQuality: boolean,
+    ContactProfile: boolean,
   } = {
+      Overview: false,
       CaseSummary: false,
+      CaseProfile: false,
       CasesPerLocation: false,
       Hospitalized: false,
       COTHistogram: false,
@@ -244,7 +255,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ContactStatus: false,
       KPICases: false,
       KPIContacts: false,
-      KPICOT: false
+      KPICOT: false,
+      DataQuality: false,
+      ContactProfile: false
     };
 
   /**
@@ -270,7 +283,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // determine visible dashlets
     this.visibleDashlets = {
       // Old Dashlets
+      Overview: CaseModel.canList(this._authUser),
       CaseSummary: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
+      CaseProfile: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
       CasesPerLocation: DashboardModel.canViewCasePerLocationLevelDashlet(this._authUser),
       Hospitalized: DashboardModel.canViewCaseHospitalizedPieChartDashlet(this._authUser),
       COTHistogram: DashboardModel.canViewCotSizeHistogramDashlet(this._authUser),
@@ -278,6 +293,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       EPICurveOutcome: DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser),
       EPICurveReporting: DashboardModel.canViewEpiCurveStratifiedByClassificationOverReportTimeDashlet(this._authUser),
       FollowUpOverview: DashboardModel.canViewContactFollowUpReportDashlet(this._authUser),
+      DataQuality: CaseModel.canList(this._authUser),
+      ContactProfile: ContactModel.canList(this._authUser),
       ContactStatus: DashboardModel.canViewContactStatusReportDashlet(this._authUser),
 
       // KPI - cases
@@ -285,7 +302,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         DashboardModel.canViewCaseHospitalizedDashlet(this._authUser) ||
         DashboardModel.canViewCaseWithLessThanXCotactsDashlet(this._authUser) ||
         DashboardModel.canViewNewCasesInPreviousXDaysAmongKnownContactsDashlet(this._authUser) ||
-        DashboardModel.canViewCasesRefusingTreatmentDashlet(this._authUser) ||
         DashboardModel.canViewNewCasesFromKnownCOTDashlet(this._authUser) ||
         DashboardModel.canViewCasesWithPendingLabResultsDashlet(this._authUser) ||
         DashboardModel.canViewCasesNotIdentifiedThroughContactsDashlet(this._authUser) ||
@@ -360,6 +376,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this._determiningOutbreakSubscriber.unsubscribe();
       this._determiningOutbreakSubscriber = undefined;
     }
+
+    // epi curve export waiting
+    this.stopEpiCurveExportWait();
   }
 
   /**
@@ -585,7 +604,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'classification',
                 'app-epi-curve-dashlet',
                 '.gd-dashlet-epi-curve',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_CLASSIFICATION_TITLE'
@@ -602,14 +622,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'outcome',
                 'app-epi-curve-outcome-dashlet',
                 '.gd-dashlet-epi-curve-outcome',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_OUTCOME_TITLE'
               );
             }
           },
-          visible: () => DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser)
+            visible: () => DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser)
         },
 
         // Export EPI - Reporting Classification
@@ -619,7 +640,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           },
           action: {
             click: () => {
-              this.getEpiCurveDashlet(
+              this.exportEpiCurveTab(
+                'reporting',
                 'app-epi-curve-reporting-dashlet',
                 '.gd-dashlet-epi-curve-reporting',
                 'LNG_PAGE_DASHBOARD_EPI_CURVE_REPORTING_TITLE'
@@ -779,6 +801,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
         // update ui
         this.detectChanges();
       });
+  }
+
+  /**
+   * Open the epi curve tab (if needed) and export it after the graph is rendered
+   */
+  private exportEpiCurveTab(
+    tab: EpiCurveTab,
+    elementSelector: string,
+    boxShadowSelector: string,
+    fileName: string
+  ): void {
+    // stop previous waiting (if any)
+    this.stopEpiCurveExportWait();
+
+    // expand dashlet and open tab
+    if (this._epiCurveTabs) {
+      this._epiCurveTabs.showTab(tab);
+    }
+
+    // wait for the graph to be rendered (max 10 seconds)
+    const graphSelector: string = `${elementSelector} svg`;
+    const startedAt: number = Date.now();
+    this._epiCurveExportWaitInterval = setInterval(() => {
+      // still waiting ?
+      if (
+        !document.querySelector(graphSelector) &&
+        Date.now() - startedAt < 10000
+      ) {
+        return;
+      }
+
+      // stop waiting
+      this.stopEpiCurveExportWait();
+
+      // export
+      // - if the graph still isn't rendered, getEpiCurveDashlet displays the "not visible" warning
+      this.getEpiCurveDashlet(
+        elementSelector,
+        boxShadowSelector,
+        fileName
+      );
+    }, 200);
+  }
+
+  /**
+   * Stop waiting for the epi curve graph
+   */
+  private stopEpiCurveExportWait(): void {
+    if (this._epiCurveExportWaitInterval) {
+      clearInterval(this._epiCurveExportWaitInterval);
+      this._epiCurveExportWaitInterval = undefined;
+    }
   }
 
   /**

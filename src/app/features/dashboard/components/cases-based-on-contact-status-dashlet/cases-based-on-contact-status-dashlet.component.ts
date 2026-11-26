@@ -79,6 +79,19 @@ export class CasesBasedOnContactStatusDashletComponent implements OnInit, OnDest
   get expanded(): boolean {
     return this._expanded;
   }
+  
+  // displayed inside another card (e.g. tabs of the "contact follow-up" card) ?
+  // - hides the title bar and keeps the chart always expanded
+  private _embedded: boolean = false;
+  @Input() set embedded(embedded: boolean) {
+    this._embedded = embedded;
+    if (embedded) {
+      this.expanded = true;
+    }
+  }
+  get embedded(): boolean {
+    return this._embedded;
+  }
 
   // outbreak
   outbreakId: string;

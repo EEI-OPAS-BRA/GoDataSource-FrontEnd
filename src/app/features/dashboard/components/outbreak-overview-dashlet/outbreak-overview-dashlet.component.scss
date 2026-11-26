@@ -1,0 +1,56 @@
+@import 'mixins';
+
+/* Outbreak Overview Dashlet */
+.gd-dashlet-outbreak-overview {
+  width: 100%;
+
+  /* Year filter */
+  .gd-dashlet-outbreak-overview-filters {
+    padding-bottom: 0.8rem;
+
+    .gd-dashlet-outbreak-overview-year {
+      width: 24rem;
+    }
+  }
+
+  .gd-dashlet-outbreak-overview-loading {
+    padding: 0.8rem 0;
+  }
+
+  /* Tiles */
+  .gd-dashlet-outbreak-overview-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6rem;
+
+    &.gd-dashlet-outbreak-overview-tiles-refreshing {
+      opacity: 0.5;
+    }
+
+    .gd-dashlet-outbreak-overview-tile {
+      background-color: var(--gd-background);
+      @include border-radius(0.4rem);
+      @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                          0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                          0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+      flex: 1 1 14rem;
+      padding: 0.8rem 1.6rem;
+
+      .gd-dashlet-outbreak-overview-tile-label {
+        color: var(--gd-secondary);
+        font-size: 1.2rem;
+      }
+
+      .gd-dashlet-outbreak-overview-tile-value {
+        color: var(--gd-primary);
+        font-size: 2.4rem;
+        font-weight: 700;
+      }
+
+      .gd-dashlet-outbreak-overview-tile-sub {
+        color: var(--gd-secondary);
+        font-size: 1.1rem;
+      }
+    }
+  }
+}

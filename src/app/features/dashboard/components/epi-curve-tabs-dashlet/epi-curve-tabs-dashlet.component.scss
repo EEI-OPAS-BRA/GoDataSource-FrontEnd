@@ -1,0 +1,63 @@
+@import 'mixins';
+
+/* Epi Curve Tabs Dashlet */
+.gd-dashlet-epi-curve-tabs {
+  background-color: var(--gd-background);
+  @include border-radius(0.4rem);
+  @include box-shadow(0 0.2rem 0.1rem -0.1rem rgb(0, 0, 0, 0.2),
+                      0 0.1rem 0.1rem 0 rgb(0, 0, 0, 0.14),
+                      0 0.1rem 0.3rem 0 rgb(0, 0, 0, 0.12));
+
+  /* Top */
+  .gd-dashlet-epi-curve-tabs-top {
+    padding: 0.8rem 1.6rem;
+
+    .gd-dashlet-epi-curve-tabs-top-title {
+      color: var(--gd-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .gd-dashlet-epi-curve-tabs-top-actions {
+      .mat-icon-button {
+        font-size: 2rem;
+        height: 2.4rem;
+        min-width: 2.4rem;
+        padding: 0.4rem;
+        width: 2.4rem;
+
+        .mat-icon {
+          font-size: 1.6rem;
+          @include transition(all 0.24s ease-in-out 0s);
+        }
+      }
+    }
+  }
+
+  /* Filters */
+  .gd-dashlet-epi-curve-tabs-filters {
+    padding: 0 1.6rem;
+
+    .gd-dashlet-epi-curve-tabs-filters-year {
+      width: 20rem;
+    }
+  }
+
+  /* Tabs */
+  .gd-dashlet-epi-curve-tabs-group {
+    padding: 0 0 0.8rem;
+  }
+
+  /* Expanded */
+  &.gd-dashlet-epi-curve-tabs-expanded {
+    .gd-dashlet-epi-curve-tabs-top {
+      .gd-dashlet-epi-curve-tabs-top-actions {
+        .mat-icon-button {
+          .mat-icon {
+            @include rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+}

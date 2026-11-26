@@ -1,0 +1,130 @@
+<div
+  class="gd-dashlet-epi-curve-tabs"
+  [class.gd-dashlet-epi-curve-tabs-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-epi-curve-tabs-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-epi-curve-tabs-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-epi-curve-tabs-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+    <!-- Filters -->
+    <div
+      class="gd-dashlet-epi-curve-tabs-filters"
+      fxLayout="row" fxLayoutAlign="end center">
+      <div
+        class="gd-dashlet-epi-curve-tabs-filters-year">
+        <app-form-select-single-v2
+          name="epiCurveTabsYear"
+          placeholder="LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_YEAR_LABEL"
+          [options]="yearOptions"
+          [sortDisabled]="true"
+          [(ngModel)]="selectedYear">
+        </app-form-select-single-v2>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <mat-tab-group
+      class="gd-dashlet-epi-curve-tabs-group"
+      animationDuration="0ms"
+      [(selectedIndex)]="selectedTabIndex">
+
+      <!-- Classification -->
+      <mat-tab
+        *ngIf="showClassification"
+        [label]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CLASSIFICATION_TAB' | translate">
+        <ng-template matTabContent>
+          <app-epi-curve-dashlet
+            [embedded]="true"
+            [filterYear]="filterYear"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-epi-curve-dashlet>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Outcome -->
+      <mat-tab
+        *ngIf="showOutcome"
+        [label]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_OUTCOME_TAB' | translate">
+        <ng-template matTabContent>
+          <app-epi-curve-outcome-dashlet
+            [embedded]="true"
+            [filterYear]="filterYear"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-epi-curve-outcome-dashlet>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Reporting -->
+      <mat-tab
+        *ngIf="showReporting"
+        [label]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_REPORTING_TAB' | translate">
+        <ng-template matTabContent>
+          <app-epi-curve-reporting-dashlet
+            [embedded]="true"
+            [filterYear]="filterYear"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-epi-curve-reporting-dashlet>
+        </ng-template>
+      </mat-tab>
+      
+      <!-- Cumulative cases -->
+      <mat-tab
+        *ngIf="showClassification"
+        [label]="'LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_CUMULATIVE_TAB' | translate">
+        <ng-template matTabContent>
+          <app-epi-curve-cumulative-dashlet
+            [filterYear]="filterYear"
+            [allowReporting]="showReporting"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-epi-curve-cumulative-dashlet>
+        </ng-template>
+      </mat-tab>
+      
+    </mat-tab-group>
+  </ng-container>
+</div>

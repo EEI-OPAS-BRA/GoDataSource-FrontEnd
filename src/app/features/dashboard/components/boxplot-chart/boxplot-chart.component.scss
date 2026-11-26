@@ -1,0 +1,65 @@
+/* Boxplot chart */
+.gd-boxplot-chart {
+  width: 100%;
+
+  svg {
+    display: block;
+    overflow: visible;
+  }
+
+  .gd-boxplot-chart-axis {
+    font-size: 1.2rem;
+
+    .domain,
+    line {
+      stroke: var(--gd-secondary);
+    }
+
+    text {
+      fill: var(--gd-text);
+    }
+  }
+
+  .gd-boxplot-chart-grid {
+    .domain {
+      display: none;
+    }
+
+    line {
+      stroke: rgba(var(--gd-secondary-rgb), 0.25);
+    }
+  }
+
+  .gd-boxplot-chart-axis-label {
+    fill: var(--gd-text);
+    font-size: 1.2rem;
+  }
+
+  .gd-boxplot-chart-sub-label {
+    fill: var(--gd-secondary);
+    font-size: 1.1rem;
+  }
+
+  .gd-boxplot-chart-whisker {
+    stroke: var(--gd-text);
+    stroke-width: 1;
+  }
+
+  .gd-boxplot-chart-box {
+    fill-opacity: 0.35;
+    stroke-width: 1.5;
+  }
+
+  .gd-boxplot-chart-median {
+    stroke-width: 3;
+  }
+
+  .gd-boxplot-chart-ci {
+    stroke-width: 2;
+  }
+
+  .gd-boxplot-chart-outlier {
+    fill: var(--gd-background);
+    stroke-width: 1.5;
+  }
+}

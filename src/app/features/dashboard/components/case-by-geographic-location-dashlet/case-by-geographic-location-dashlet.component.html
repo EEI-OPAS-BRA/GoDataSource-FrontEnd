@@ -1,9 +1,156 @@
-<app-pie-donut-chart
-  graphTitle="LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_TITLE"
-  description="LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_TITLE_DESCRIPTION"
-  graphTotal="LNG_PAGE_DASHBOARD_PIE_CHART_TOTAL_LABEL"
-  noDataLabel="LNG_PAGE_DASHLET_CASES_BY_GEOGRAPHIC_LOCATION_NO_DATA_LABEL"
-  [getData$]="getData$"
-  (clickItem)="onDoughnutPress($event)"
-  (detectChanges)="detectChanges.emit()">
-</app-pie-donut-chart>
+<div
+  class="gd-dashlet-cases-location"
+  [class.gd-dashlet-cases-location-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-cases-location-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-cases-location-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-cases-location-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+
+    <!-- Loading data -->
+    <div
+      *ngIf="loadingData; else dataLoaded"
+      class="gd-dashlet-cases-location-loading"
+      fxLayoutAlign="center center">
+      <mat-progress-spinner
+        diameter="24"
+        mode="indeterminate"></mat-progress-spinner>
+    </div>
+
+    <!-- Data loaded -->
+    <ng-template
+      #dataLoaded>
+
+      <!-- No Data -->
+      <div
+        *ngIf="items.length < 1; else hasData"
+        class="gd-dashlet-cases-location-no-data"
+        fxLayoutAlign="center center">
+        <span>
+          {{ 'LNG_PAGE_DASHLET_CASES_BY_GEOGRAPHIC_LOCATION_NO_DATA_LABEL' | translate }}
+        </span>
+      </div>
+
+      <!-- Data -->
+      <ng-template
+        #hasData>
+        <div
+          class="gd-dashlet-cases-location-bottom">
+
+          <!-- Header -->
+          <div
+            class="gd-dashlet-cases-location-header">
+            <span class="gd-dashlet-cases-location-col-label">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_LOCATION_HEADER' | translate }}
+            </span>
+            <span class="gd-dashlet-cases-location-col-value">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_CASES_HEADER' | translate }}
+            </span>
+            <span class="gd-dashlet-cases-location-col-percent">
+              {{ 'LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_PERCENT_HEADER' | translate }}
+            </span>
+          </div>
+
+          <!-- Rows -->
+          <div
+            class="gd-dashlet-cases-location-rows"
+            [class.gd-dashlet-cases-location-rows-all]="showAll">
+
+            <!-- Locations -->
+            <div
+              *ngFor="let item of (showAll ? items : topItems); trackBy: trackByKey"
+              class="gd-dashlet-cases-location-row"
+              [class.gd-dashlet-cases-location-row-clickable]="canListCases"
+              [attr.role]="canListCases ? 'button' : null"
+              [attr.tabindex]="canListCases ? 0 : null"
+              [matTooltip]="item.label + ': ' + item.value"
+              (click)="onLocationClick(item)"
+              (keydown.enter)="onLocationClick(item)">
+
+              <span class="gd-dashlet-cases-location-col-rank">{{ item.rank }}</span>
+              <span class="gd-dashlet-cases-location-col-label">{{ item.label }}</span>
+              <span class="gd-dashlet-cases-location-col-value">{{ item.value | number }}</span>
+              <span class="gd-dashlet-cases-location-col-percent">{{ item.percent | number: '1.1-1' }}%</span>
+
+              <!-- Bar -->
+              <div class="gd-dashlet-cases-location-bar">
+                <div
+                  class="gd-dashlet-cases-location-bar-fill"
+                  [style.width.%]="item.barWidth">
+                </div>
+              </div>
+            </div>
+
+            <!-- Others -->
+            <div
+              *ngIf="!showAll && othersLocationsCount > 0"
+              class="gd-dashlet-cases-location-row gd-dashlet-cases-location-row-others">
+              <span class="gd-dashlet-cases-location-col-rank"></span>
+              <span class="gd-dashlet-cases-location-col-label">
+                {{ 'LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_OTHERS_LABEL' | translate: { count: othersLocationsCount } }}
+              </span>
+              <span class="gd-dashlet-cases-location-col-value">{{ othersValue | number }}</span>
+              <span class="gd-dashlet-cases-location-col-percent">{{ othersPercent | number: '1.1-1' }}%</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div
+            class="gd-dashlet-cases-location-footer"
+            fxLayout="row" fxLayoutAlign="space-between center">
+
+            <!-- Total -->
+            <span class="gd-dashlet-cases-location-footer-total">
+              {{ 'LNG_PAGE_DASHBOARD_PIE_CHART_TOTAL_LABEL' | translate: { total: total } }}
+            </span>
+
+            <!-- Show all / top -->
+            <button
+              *ngIf="othersLocationsCount > 0"
+              type="button"
+              mat-button
+              color="primary"
+              (click)="showAll = !showAll">
+              {{ showAll ?
+                ('LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_SHOW_TOP_BUTTON' | translate) :
+                ('LNG_PAGE_DASHBOARD_CASE_BY_GEOGRAPHIC_LOCATION_BAR_SHOW_ALL_BUTTON' | translate: { count: items.length }) }}
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </ng-template>
+  </ng-container>
+</div>

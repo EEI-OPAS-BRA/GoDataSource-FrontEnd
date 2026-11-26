@@ -50,6 +50,45 @@
     padding: 0.8rem 1.6rem 1.6rem;
   }
 
+    /* Histogram Dashlet - Indicators */
+  .gd-dashlet-histogram-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    padding-bottom: 1.6rem;
+
+    .gd-dashlet-histogram-stat {
+      border: 0.1rem solid rgba(var(--gd-secondary-rgb), 0.25);
+      @include border-radius(0.4rem);
+      flex: 1 1 12rem;
+      padding: 0.8rem 1.2rem;
+
+      .gd-dashlet-histogram-stat-label {
+        color: var(--gd-secondary);
+        font-size: 1.2rem;
+      }
+
+      .gd-dashlet-histogram-stat-value {
+        color: var(--gd-primary);
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .gd-dashlet-histogram-stat-sub {
+        color: var(--gd-secondary);
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  /* Histogram Dashlet - Note */
+  .gd-dashlet-histogram-note {
+    color: var(--gd-secondary);
+    font-size: 1.2rem;
+    font-style: italic;
+    padding-top: 1.2rem;
+  }
+
   /* Histogram Dashlet - Expanded */
   &.gd-dashlet-histogram-expanded {
     height: 100%;

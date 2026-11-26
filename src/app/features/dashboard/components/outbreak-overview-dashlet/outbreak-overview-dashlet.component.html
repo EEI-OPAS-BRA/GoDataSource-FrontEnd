@@ -1,0 +1,142 @@
+<div
+  class="gd-dashlet-outbreak-overview">
+
+  <!-- Year filter -->
+  <div
+    class="gd-dashlet-outbreak-overview-filters"
+    fxLayout="row" fxLayoutAlign="end center">
+    <app-form-select-single-v2
+      class="gd-dashlet-outbreak-overview-year"
+      name="outbreakOverviewYear"
+      placeholder="LNG_PAGE_DASHBOARD_OVERVIEW_YEAR_LABEL"
+      [sortDisabled]="true"
+      [options]="yearOptions"
+      [(ngModel)]="selectedYear"
+      (ngModelChange)="changeYear()">
+    </app-form-select-single-v2>
+  </div>
+
+  <!-- Loading data -->
+  <div
+    *ngIf="displayLoading && !overview; else overviewLoaded"
+    class="gd-dashlet-outbreak-overview-loading"
+    fxLayoutAlign="center center">
+    <mat-progress-spinner
+      diameter="24"
+      mode="indeterminate"></mat-progress-spinner>
+  </div>
+
+  <ng-template
+    #overviewLoaded>
+    <div
+      *ngIf="overview"
+      class="gd-dashlet-outbreak-overview-tiles"
+      [class.gd-dashlet-outbreak-overview-tiles-refreshing]="displayLoading">
+
+      <!-- Total cases -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_TOTAL_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_TOTAL_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.total }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">&nbsp;</div>
+      </div>
+
+      <!-- Confirmed -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_CONFIRMED_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_CONFIRMED_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.confirmed }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_PERCENT_OF_TOTAL_LABEL' | translate:{ percentage: overview.confirmedPercentage } }}</div>
+      </div>
+
+      <!-- Under investigation -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_INVESTIGATION_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_INVESTIGATION_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.investigation }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_PERCENT_OF_TOTAL_LABEL' | translate:{ percentage: overview.investigationPercentage } }}</div>
+      </div>
+
+      <!-- New cases - last 7 days -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_NEW_7_DAYS_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_NEW_7_DAYS_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.newLast7Days }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">&nbsp;</div>
+      </div>
+
+      <!-- New cases - last 14 days -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_NEW_14_DAYS_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_NEW_14_DAYS_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.newLast14Days }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">&nbsp;</div>
+      </div>
+
+      <!-- Deaths -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_DEATHS_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_DEATHS_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.deaths }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">&nbsp;</div>
+      </div>
+
+      <!-- Case fatality rate -->
+      <div
+        class="gd-dashlet-outbreak-overview-tile">
+        <div
+          class="gd-dashlet-outbreak-overview-tile-label"
+          fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+          <span>{{ 'LNG_PAGE_DASHBOARD_OVERVIEW_CFR_LABEL' | translate }}</span>
+          <app-fancy-tooltip
+            tooltip="LNG_PAGE_DASHBOARD_OVERVIEW_CFR_DESCRIPTION">
+          </app-fancy-tooltip>
+        </div>
+        <div class="gd-dashlet-outbreak-overview-tile-value">{{ overview.caseFatalityRate !== null ? overview.caseFatalityRate + '%' : '-' }}</div>
+        <div class="gd-dashlet-outbreak-overview-tile-sub">{{ overview.deaths }} / {{ overview.confirmed }}</div>
+      </div>
+    </div>
+  </ng-template>
+</div>

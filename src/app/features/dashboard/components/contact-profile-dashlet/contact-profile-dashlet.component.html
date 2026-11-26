@@ -1,0 +1,422 @@
+<div
+  class="gd-dashlet-contact-profile"
+  [class.gd-dashlet-contact-profile-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-contact-profile-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-contact-profile-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-contact-profile-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_CONTACT_PROFILE_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+    <div
+      class="gd-dashlet-contact-profile-bottom">
+
+      <mat-tab-group
+        animationDuration="0ms"
+        [(selectedIndex)]="selectedTabIndex">
+
+        <!-- Sex -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_SEX' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-contact-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else sexDataLoaded"
+                class="gd-dashlet-contact-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #sexDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="total < 1; else sexHasData"
+                  class="gd-dashlet-contact-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #sexHasData>
+                  <div
+                    fxLayout="row" fxLayout.lt-md="column" fxLayoutAlign="start center" fxLayoutGap="2.4rem">
+
+                    <!-- Chart -->
+                    <div
+                      class="gd-dashlet-contact-profile-sex-chart"
+                      fxFlex="40" fxFlex.lt-md="100">
+                      <app-bb-donut-chart
+                        [items]="sexChartItems"
+                        [centerTitle]="sexChartCenterTitle">
+                      </app-bb-donut-chart>
+                    </div>
+
+                    <!-- Table -->
+                    <div
+                      fxFlex fxFlex.lt-md="100">
+                      <table
+                        class="gd-dashlet-contact-profile-table">
+                        <thead>
+                          <tr>
+                            <th>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_SEX' | translate }}</th>
+                            <th class="gd-dashlet-contact-profile-table-number">n</th>
+                            <th class="gd-dashlet-contact-profile-table-number">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            *ngFor="let row of sexRows">
+                            <td>
+                              <span
+                                class="gd-dashlet-contact-profile-table-color"
+                                [style.backgroundColor]="row.color"></span>
+                              {{ row.label }}
+                            </td>
+                            <td class="gd-dashlet-contact-profile-table-number">{{ row.count }}</td>
+                            <td class="gd-dashlet-contact-profile-table-number">{{ row.percentage | number:'1.1-1' }}</td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_TOTAL_LABEL' | translate }}</td>
+                            <td class="gd-dashlet-contact-profile-table-number">{{ total }}</td>
+                            <td class="gd-dashlet-contact-profile-table-number">{{ 100 | number:'1.1-1' }}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Note -->
+                  <div
+                    class="gd-dashlet-contact-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_PERCENTAGE_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age group -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_GROUP' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-contact-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else ageGroupDataLoaded"
+                class="gd-dashlet-contact-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #ageGroupDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="!ageGroupHasData; else ageGroupHasDataTemplate"
+                  class="gd-dashlet-contact-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #ageGroupHasDataTemplate>
+                  <app-bb-bar-chart
+                    [categories]="ageGroupCategories"
+                    [series]="ageGroupSeries"
+                    [valueFormatter]="ageGroupValueFormatter"
+                    [xLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_GROUP_AXIS_LABEL' | translate"
+                    [yLabel]="'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_CONTACTS_AXIS_LABEL' | translate">
+                  </app-bb-bar-chart>
+
+                  <!-- Notes -->
+                  <div
+                    *ngIf="unknownAgeCount > 0"
+                    class="gd-dashlet-contact-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_UNKNOWN_AGE_LABEL' | translate:{ count: unknownAgeCount, percentage: unknownAgePercentage } }}
+                  </div>
+                  <div
+                    class="gd-dashlet-contact-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_PERCENTAGE_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age pyramid -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE_PYRAMID' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-contact-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else pyramidDataLoaded"
+                class="gd-dashlet-contact-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #pyramidDataLoaded>
+                <!-- Not available for this outbreak -->
+                <div
+                  *ngIf="!pyramidAvailable; else pyramidAvailableTemplate"
+                  class="gd-dashlet-contact-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_PYRAMID_UNAVAILABLE_LABEL' | translate }}
+                </div>
+
+                <ng-template
+                  #pyramidAvailableTemplate>
+                  <!-- No data -->
+                  <div
+                    *ngIf="!pyramidHasData; else pyramidHasDataTemplate"
+                    class="gd-dashlet-contact-profile-no-data">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_NO_DATA_LABEL' | translate }}
+                  </div>
+
+                  <!-- Data -->
+                  <ng-template
+                    #pyramidHasDataTemplate>
+                    <app-bb-bar-chart
+                      [categories]="pyramidCategories"
+                      [series]="pyramidSeries"
+                      [rotated]="true"
+                      [stacked]="true"
+                      [absoluteValues]="true"
+                      [showLegend]="true"
+                      [valueFormatter]="ageGroupValueFormatter"
+                      [xLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_GROUP_AXIS_LABEL' | translate"
+                      [yLabel]="'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_CONTACTS_AXIS_LABEL' | translate">
+                    </app-bb-bar-chart>
+
+                    <!-- Notes -->
+                    <div
+                      *ngIf="pyramidExcludedCount > 0"
+                      class="gd-dashlet-contact-profile-note">
+                      {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_PYRAMID_EXCLUDED_LABEL' | translate:{ count: pyramidExcludedCount, percentage: pyramidExcludedPercentage } }}
+                    </div>
+                    <div
+                      class="gd-dashlet-contact-profile-note">
+                      {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_PERCENTAGE_NOTE' | translate }}
+                    </div>
+                  </ng-template>
+                </ng-template>
+              </ng-template>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Age -->
+        <mat-tab
+          [label]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_TAB_AGE' | translate">
+          <ng-template matTabContent>
+            <div
+              class="gd-dashlet-contact-profile-tab">
+
+              <!-- Loading data -->
+              <div
+                *ngIf="displayLoading; else ageDataLoaded"
+                class="gd-dashlet-contact-profile-loading"
+                fxLayoutAlign="center center">
+                <mat-progress-spinner
+                  diameter="24"
+                  mode="indeterminate"></mat-progress-spinner>
+              </div>
+
+              <ng-template
+                #ageDataLoaded>
+                <!-- No data -->
+                <div
+                  *ngIf="!ageStats; else ageHasDataTemplate"
+                  class="gd-dashlet-contact-profile-no-data">
+                  {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_NO_DATA_LABEL' | translate }}
+                </div>
+
+                <!-- Data -->
+                <ng-template
+                  #ageHasDataTemplate>
+                  <!-- Descriptive statistics -->
+                  <div
+                    class="gd-dashlet-contact-profile-stats">
+                    <!-- n (valid age) -->
+                    <div
+                      class="gd-dashlet-contact-profile-stat">
+                      <div
+                        class="gd-dashlet-contact-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_N_VALID_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CONTACT_PROFILE_STAT_N_VALID_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-value">{{ ageStats.n }}</div>
+                      <div class="gd-dashlet-contact-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_N_VALID_PERCENT_LABEL' | translate:{ percentage: ageValidPercentage } }}</div>
+                    </div>
+
+                    <!-- Mean -->
+                    <div
+                      class="gd-dashlet-contact-profile-stat">
+                      <div
+                        class="gd-dashlet-contact-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEAN_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CONTACT_PROFILE_STAT_MEAN_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-value">{{ ageStats.mean | number:'1.1-1' }}</div>
+                      <div class="gd-dashlet-contact-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- 95% CI of the mean -->
+                    <div
+                      class="gd-dashlet-contact-profile-stat">
+                      <div
+                        class="gd-dashlet-contact-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-value">
+                        <ng-container *ngIf="ageStats.ciLow !== null; else noCi">{{ ageStats.ciLow | number:'1.1-1' }} - {{ ageStats.ciHigh | number:'1.1-1' }}</ng-container>
+                        <ng-template #noCi>-</ng-template>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- Median -->
+                    <div
+                      class="gd-dashlet-contact-profile-stat">
+                      <div
+                        class="gd-dashlet-contact-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEDIAN_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CONTACT_PROFILE_STAT_MEDIAN_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-value">{{ ageStats.median | number:'1.0-1' }}</div>
+                      <div class="gd-dashlet-contact-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+
+                    <!-- Q1 - Q3 -->
+                    <div
+                      class="gd-dashlet-contact-profile-stat">
+                      <div
+                        class="gd-dashlet-contact-profile-stat-label"
+                        fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="0.4rem">
+                        <span>{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_IQR_LABEL' | translate }}</span>
+                        <app-fancy-tooltip
+                          tooltip="LNG_PAGE_DASHBOARD_CONTACT_PROFILE_STAT_IQR_DESCRIPTION">
+                        </app-fancy-tooltip>
+                      </div>
+                      <div class="gd-dashlet-contact-profile-stat-value">{{ ageStats.q1 | number:'1.0-1' }} - {{ ageStats.q3 | number:'1.0-1' }}</div>
+                      <div class="gd-dashlet-contact-profile-stat-sub">{{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_YEARS_UNIT_LABEL' | translate }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Boxplot per year -->
+                  <app-boxplot-chart
+                    *ngIf="ageBoxes.length > 0"
+                    [boxes]="ageBoxes"
+                    [labels]="ageBoxLabels"
+                    [boxColor]="ageBoxColor"
+                    [yLabel]="'LNG_PAGE_DASHBOARD_CASE_PROFILE_AGE_AXIS_LABEL' | translate">
+                  </app-boxplot-chart>
+
+                  <!-- Legend -->
+                  <div
+                    *ngIf="ageBoxes.length > 0"
+                    class="gd-dashlet-contact-profile-legend">
+                    <span class="gd-dashlet-contact-profile-legend-item">
+                      <span class="gd-dashlet-contact-profile-legend-box" [style.borderColor]="ageBoxColor" [style.backgroundColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_IQR_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-contact-profile-legend-item">
+                      <span class="gd-dashlet-contact-profile-legend-line" [style.backgroundColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_MEDIAN_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-contact-profile-legend-item">
+                      <span class="gd-dashlet-contact-profile-legend-whisker"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_WHISKERS_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-contact-profile-legend-item">
+                      <span class="gd-dashlet-contact-profile-legend-outlier" [style.borderColor]="ageBoxColor"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_BOX_OUTLIERS_LABEL' | translate }}
+                    </span>
+                    <span class="gd-dashlet-contact-profile-legend-item">
+                      <span class="gd-dashlet-contact-profile-legend-mean"></span>
+                      {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_MEAN_LABEL' | translate }} / {{ 'LNG_PAGE_DASHBOARD_CASE_PROFILE_STAT_CI_LABEL' | translate }}
+                    </span>
+                  </div>
+
+                  <!-- Notes -->
+                  <div
+                    *ngIf="ageWithoutReportingDateCount > 0"
+                    class="gd-dashlet-contact-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_NO_REPORTING_DATE_LABEL' | translate:{ count: ageWithoutReportingDateCount } }}
+                  </div>
+                  <div
+                    class="gd-dashlet-contact-profile-note">
+                    {{ 'LNG_PAGE_DASHBOARD_CONTACT_PROFILE_BOXPLOT_NOTE' | translate }}
+                  </div>
+                </ng-template>
+              </ng-template>
+            </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </ng-container>
+</div>

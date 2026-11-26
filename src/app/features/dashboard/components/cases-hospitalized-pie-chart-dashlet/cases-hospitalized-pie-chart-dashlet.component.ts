@@ -1,34 +1,42 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { OutbreakDataService } from '../../../../core/services/data/outbreak.data.service';
 import { OutbreakModel } from '../../../../core/models/outbreak.model';
 import { CaseDataService } from '../../../../core/services/data/case.data.service';
-import { Subscription, throwError, Observable } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DebounceTimeCaller } from '../../../../core/helperClasses/debounce-time-caller';
 import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
-import { catchError, map } from 'rxjs/operators';
 import { Constants } from '../../../../core/models/constants';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as _ from 'lodash';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
 import { UserModel } from '../../../../core/models/user.model';
 import { CaseModel } from '../../../../core/models/case.model';
-import { PieDonutChartComponent, PieDonutChartData } from '../../../../shared/components/pie-donut-graph/pie-donut-chart.component';
 import { ToastV2Service } from '../../../../core/services/helper/toast-v2.service';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
 import { ReferenceDataCategory, ReferenceDataEntryModel } from '../../../../core/models/reference-data.model';
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 
+/**
+ * Hospitalization row (one per person date type: hospitalization, isolation...)
+ */
+interface ICasesHospitalizedRow {
+  key: string;
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+}
+
 @Component({
   selector: 'app-cases-hospitalized-pie-chart-dashlet',
-  templateUrl: './cases-hospitalized-pie-chart-dashlet.component.html'
+  encapsulation: ViewEncapsulation.None,
+  templateUrl: './cases-hospitalized-pie-chart-dashlet.component.html',
+  styleUrls: ['./cases-hospitalized-pie-chart-dashlet.component.scss']
 })
 export class CasesHospitalizedPieChartDashletComponent
 implements OnInit, OnDestroy {
-  // kpi dashlet
-  @ViewChild(PieDonutChartComponent, { static: false }) dashlet: PieDonutChartComponent;
-
-  // data
-  getData$: Observable<PieDonutChartData[]>;
+  // color used when the reference data item has no color
+  private static readonly FALLBACK_PRIMARY_COLOR: string = '#2F7977';
 
   // Global filters => Date
   private _globalFilterDate: Moment | string;
@@ -63,25 +71,48 @@ implements OnInit, OnDestroy {
   // detect changes
   @Output() detectChanges = new EventEmitter<void>();
 
+  // expanded / collapsed ?
+  private _expanded: boolean = false;
+  set expanded(expanded: boolean) {
+    this._expanded = expanded;
+    this.refreshData();
+  }
+  get expanded(): boolean {
+    return this._expanded;
+  }
+
+  // kept for compatibility with the dashboard page ("expand all" uses dashlet.expanded)
+  get dashlet(): CasesHospitalizedPieChartDashletComponent {
+    return this;
+  }
+
+  // data
+  rows: ICasesHospitalizedRow[] = [];
+  total: number = 0;
+  displayLoading: boolean = true;
+  private _retrievedData: boolean = false;
+
   // outbreak
   private _selectedOutbreak: OutbreakModel;
 
   // subscribers
   private _outbreakSubscriber: Subscription;
+  private _dataSubscriber: Subscription;
 
   // authenticated user
   private _authUser: UserModel;
 
   /**
-     * Global Filters changed
-     */
+   * Global Filters changed
+   */
   protected refreshDataCaller = new DebounceTimeCaller(() => {
+    this._retrievedData = false;
     this.refreshData();
   }, 100);
 
   /**
-     * Constructor
-     */
+   * Constructor
+   */
   constructor(
     private outbreakDataService: OutbreakDataService,
     private caseDataService: CaseDataService,
@@ -92,8 +123,8 @@ implements OnInit, OnDestroy {
   ) {}
 
   /**
-     * Component initialized
-     */
+   * Component initialized
+   */
   ngOnInit() {
     // get the authenticated user
     this._authUser = this.authDataService.getAuthenticatedUser();
@@ -110,14 +141,17 @@ implements OnInit, OnDestroy {
   }
 
   /**
-     * Component destroyed
-     */
+   * Component destroyed
+   */
   ngOnDestroy() {
     // outbreak subscriber
     if (this._outbreakSubscriber) {
       this._outbreakSubscriber.unsubscribe();
       this._outbreakSubscriber = null;
     }
+
+    // data subscriber
+    this.stopDataSubscriber();
 
     // debounce caller
     if (this.refreshDataCaller) {
@@ -127,9 +161,19 @@ implements OnInit, OnDestroy {
   }
 
   /**
-     * Redirect to cases page when user click on a piece of pie chart to display the cases that represent the part of pie chart
-     */
-  onDoughnutPress(item: PieDonutChartData) {
+   * Stop data request
+   */
+  private stopDataSubscriber(): void {
+    if (this._dataSubscriber) {
+      this._dataSubscriber.unsubscribe();
+      this._dataSubscriber = null;
+    }
+  }
+
+  /**
+   * Redirect to cases page when user clicks on a row to display the cases that represent that row
+   */
+  onRowPress(row: ICasesHospitalizedRow) {
     // we need case list permission to redirect
     if (!CaseModel.canList(this._authUser)) {
       return;
@@ -163,19 +207,27 @@ implements OnInit, OnDestroy {
         queryParams: {
           global: JSON.stringify(global),
           applyListFilter: Constants.APPLY_LIST_FILTER.CASES_DATE_RANGE_SUMMARY,
-          x: item.key,
+          x: row.key,
           [Constants.DONT_LOAD_STATIC_FILTERS_KEY]: true
         }
       });
   }
 
   /**
-     * Refresh Data
-     */
+   * Refresh Data
+   */
   refreshData() {
-    if (!this._selectedOutbreak?.id) {
+    // not expanded / already retrieved / no outbreak ?
+    if (
+      !this.expanded ||
+      this._retrievedData ||
+      !this._selectedOutbreak?.id
+    ) {
       return;
     }
+
+    // release previous request
+    this.stopDataSubscriber();
 
     // construct query builder
     const qb = new RequestQueryBuilder();
@@ -220,45 +272,78 @@ implements OnInit, OnDestroy {
       this.globalFilterDate
     );
 
-    // make the request to count hospitalized, isolated ...
-    this.getData$ = this.caseDataService
+    // retrieve data
+    this._retrievedData = true;
+    this.displayLoading = true;
+    this.detectChanges.emit();
+    this._dataSubscriber = this.caseDataService
       .getCasesHospitalized(
         this._selectedOutbreak.id,
         qb
       )
-      .pipe(
-        catchError((err) => {
+      .subscribe({
+        next: (response: any) => {
+          this.processResponse(response || {});
+          this.displayLoading = false;
+          this.detectChanges.emit();
+        },
+        error: (err) => {
           this.toastV2Service.error(err);
-          return throwError(err);
-        })
-      )
-      .pipe(map((response) => {
-        // don't display total
-        delete response.total;
+          this.rows = [];
+          this.total = 0;
+          this.displayLoading = false;
+          this.detectChanges.emit();
+        }
+      });
+  }
 
-        // create data
-        const allVisible: boolean = !this._selectedOutbreak.allowedRefDataItems ||
-          !this._selectedOutbreak.allowedRefDataItems[ReferenceDataCategory.LNG_REFERENCE_DATA_CATEGORY_PERSON_DATE_TYPE] ||
-          Object.keys(this._selectedOutbreak.allowedRefDataItems[ReferenceDataCategory.LNG_REFERENCE_DATA_CATEGORY_PERSON_DATE_TYPE]).length < 1;
-        const data: PieDonutChartData[] = Object.keys(response)
-          .filter((key) => {
-            return allVisible ||
-              this._selectedOutbreak.allowedRefDataItems[ReferenceDataCategory.LNG_REFERENCE_DATA_CATEGORY_PERSON_DATE_TYPE][key];
-          })
-          .map((key) => new PieDonutChartData({
-            key,
-            color: (this.activatedRoute.snapshot.data.dateRangeType as IResolverV2ResponseModel<ReferenceDataEntryModel>).map[key] ?
-              (this.activatedRoute.snapshot.data.dateRangeType as IResolverV2ResponseModel<ReferenceDataEntryModel>).map[key].getColorCode() :
-              null,
-            label: key,
-            value: response[key]
-          }));
+  /**
+   * Build rows
+   * - one row per person date type (hospitalization, isolation...) allowed for this outbreak
+   * - percentage over the total number of cases (a case may appear in more than one row)
+   */
+  private processResponse(response: { [key: string]: number }): void {
+    // total
+    this.total = response.total || 0;
 
-        // finished
-        return data;
-      }));
+    // determine visible date types
+    const allowedItems = this._selectedOutbreak.allowedRefDataItems ?
+      this._selectedOutbreak.allowedRefDataItems[ReferenceDataCategory.LNG_REFERENCE_DATA_CATEGORY_PERSON_DATE_TYPE] :
+      undefined;
+    const allVisible: boolean = !allowedItems ||
+      Object.keys(allowedItems).length < 1;
 
-    // update ui
-    this.detectChanges.emit();
+    // date type colors
+    const dateRangeTypes = this.activatedRoute.snapshot.data.dateRangeType as IResolverV2ResponseModel<ReferenceDataEntryModel>;
+
+    // rows
+    this.rows = Object.keys(response)
+      .filter((key) => key !== 'total' && (
+        allVisible ||
+        allowedItems[key]
+      ))
+      .map((key) => {
+        const value: number = response[key] || 0;
+        return {
+          key,
+          label: key,
+          value,
+          percentage: this.total > 0 ?
+            (value / this.total) * 100 :
+            0,
+          color: dateRangeTypes?.map[key]?.getColorCode() || this.getPrimaryColor()
+        };
+      })
+      .sort((row1, row2) => row2.value - row1.value);
+  }
+
+  /**
+   * Theme primary color
+   */
+  private getPrimaryColor(): string {
+    const color: string = getComputedStyle(document.body).getPropertyValue('--gd-primary');
+    return color && color.trim() ?
+      color.trim() :
+      CasesHospitalizedPieChartDashletComponent.FALLBACK_PRIMARY_COLOR;
   }
 }

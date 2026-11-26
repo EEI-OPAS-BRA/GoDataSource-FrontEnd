@@ -1,0 +1,78 @@
+<div
+  class="gd-dashlet-contact-follow-up-tabs"
+  [class.gd-dashlet-contact-follow-up-tabs-expanded]="expanded"
+  fxLayout="column">
+
+  <!-- Title / Description -->
+  <div
+    class="gd-dashlet-contact-follow-up-tabs-top"
+    fxLayout="row" fxLayoutAlign="none center">
+
+    <!-- Title -->
+    <div
+      class="gd-dashlet-contact-follow-up-tabs-top-title"
+      fxFlex>
+      <span>
+        {{ 'LNG_PAGE_DASHBOARD_CONTACT_FOLLOW_UP_TABS_TITLE' | translate }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div
+      class="gd-dashlet-contact-follow-up-tabs-top-actions"
+      fxGrow="0" fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="0.8rem">
+      <!-- Tooltip -->
+      <app-fancy-tooltip
+        tooltip="LNG_PAGE_DASHBOARD_CONTACT_FOLLOW_UP_TABS_TITLE_DESCRIPTION">
+      </app-fancy-tooltip>
+
+      <!-- Expand / Collapse -->
+      <button
+        type="button"
+        mat-icon-button
+        (click)="expanded = !expanded">
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded -->
+  <ng-container
+    *ngIf="expanded">
+    <mat-tab-group
+      class="gd-dashlet-contact-follow-up-tabs-group"
+      animationDuration="0ms"
+      [(selectedIndex)]="selectedTabIndex">
+
+      <!-- Contact follow-up report -->
+      <mat-tab
+        *ngIf="showFollowUp"
+        [label]="'LNG_PAGE_DASHBOARD_CONTACT_FOLLOW_UP_TABS_FOLLOW_UP_TAB' | translate">
+        <ng-template matTabContent>
+          <app-contact-follow-up-overview-dashlet
+            [embedded]="true"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-contact-follow-up-overview-dashlet>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Cases based on contact status -->
+      <mat-tab
+        *ngIf="showContactStatus"
+        [label]="'LNG_PAGE_DASHBOARD_CONTACT_FOLLOW_UP_TABS_CONTACT_STATUS_TAB' | translate">
+        <ng-template matTabContent>
+          <app-cases-based-on-contact-status-dashlet
+            [embedded]="true"
+            [globalFilterDate]="globalFilterDate"
+            [globalFilterLocationId]="globalFilterLocationId"
+            [globalFilterClassificationId]="globalFilterClassificationId"
+            (detectChanges)="detectChanges.emit()">
+          </app-cases-based-on-contact-status-dashlet>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</div>

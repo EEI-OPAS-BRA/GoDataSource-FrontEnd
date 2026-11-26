@@ -49,6 +49,12 @@
   .gd-dashlet-contact-status-bottom {
     padding: 0.8rem 1.6rem 1.6rem;
   }
+  
+  /* Embedded (inside another card) */
+  &.gd-dashlet-contact-status-embedded {
+    background-color: transparent;
+    @include box-shadow(none);
+  }
 
   /* Contact Status Dashlet - Expanded */
   &.gd-dashlet-contact-status-expanded {
