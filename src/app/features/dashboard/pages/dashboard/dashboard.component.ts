@@ -10,6 +10,7 @@ import { SavedFilterData, SavedFilterDataAppliedFilter } from '../../../../core/
 import * as _ from 'lodash';
 import { RequestFilterOperator, RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
 import { DashboardModel } from '../../../../core/models/dashboard.model';
+import { ContactModel } from '../../../../core/models/contact.model';
 import { CaseModel } from '../../../../core/models/case.model';
 import { AuthDataService } from '../../../../core/services/data/auth.data.service';
 import { UserModel } from '../../../../core/models/user.model';
@@ -290,7 +291,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       EPICurveReporting: DashboardModel.canViewEpiCurveStratifiedByClassificationOverReportTimeDashlet(this._authUser),
       FollowUpOverview: DashboardModel.canViewContactFollowUpReportDashlet(this._authUser),
       DataQuality: CaseModel.canList(this._authUser),
-      ContactProfile: DashboardModel.canViewCaseSummaryDashlet(this._authUser),
+      ContactProfile: ContactModel.canList(this._authUser),
       ContactStatus: DashboardModel.canViewContactStatusReportDashlet(this._authUser),
 
       // KPI - cases
