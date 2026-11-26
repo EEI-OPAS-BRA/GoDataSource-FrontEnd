@@ -39,7 +39,6 @@ import { ReferenceDataHelperService } from '../../../../core/services/helper/ref
 import { LocalizationHelper, Moment } from '../../../../core/helperClasses/localization-helper';
 import { DataQualityDashletComponent } from '../../components/data-quality-dashlet/data-quality-dashlet.component';
 import { ContactProfileDashletComponent } from '../../components/contact-profile-dashlet/contact-profile-dashlet.component';
-import { PERMISSION } from '../../../../core/models/permission.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -291,9 +290,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       Hospitalized: DashboardModel.canViewCaseHospitalizedPieChartDashlet(this._authUser),
       COTHistogram: DashboardModel.canViewCotSizeHistogramDashlet(this._authUser),
       EPICurveClassification: DashboardModel.canViewEpiCurveStratifiedByClassificationDashlet(this._authUser),
-            // outcome curve uses the classification over time endpoint (one call per outcome)
-      EPICurveOutcome: DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser) &&
-        !!this._authUser?.hasPermissions(PERMISSION.CASE_STRATIFIED_BY_CLASSIFICATION_OVER_TIME),
+      EPICurveOutcome: DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser),
       EPICurveReporting: DashboardModel.canViewEpiCurveStratifiedByClassificationOverReportTimeDashlet(this._authUser),
       FollowUpOverview: DashboardModel.canViewContactFollowUpReportDashlet(this._authUser),
       DataQuality: CaseModel.canList(this._authUser),
@@ -403,7 +400,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         DashboardModel.canExportCaseFollowUpSuccessRateReport(this._authUser) ||
         DashboardModel.canExportContactFollowUpSuccessRateReport(this._authUser) ||
         DashboardModel.canViewEpiCurveStratifiedByClassificationDashlet(this._authUser) ||
-        this.visibleDashlets.EPICurveOutcome ||
+        DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser) ||
         DashboardModel.canViewEpiCurveStratifiedByClassificationOverReportTimeDashlet(this._authUser) ||
         (
           DashboardModel.canExportKpi(this._authUser) && (
@@ -633,7 +630,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
               );
             }
           },
-          visible: () => this.visibleDashlets.EPICurveOutcome
+            visible: () => DashboardModel.canViewEpiCurveStratifiedByOutcomeDashlet(this._authUser)
         },
 
         // Export EPI - Reporting Classification

@@ -7,10 +7,10 @@ import { ReferenceDataCategory } from '../../../../core/models/reference-data.mo
 import { ReferenceDataDataService } from '../../../../core/services/data/reference-data.data.service';
 import { I18nService } from '../../../../core/services/helper/i18n.service';
 import * as _ from 'lodash';
-import { forkJoin, Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DebounceTimeCaller } from '../../../../core/helperClasses/debounce-time-caller';
 import { RequestQueryBuilder } from '../../../../core/helperClasses/request-query-builder';
-import { MetricCasesCountStratified } from '../../../../core/models/metrics/metric-cases-count-stratified.model';
+import { MetricCasesCountStratifiedOutcome } from '../../../../core/models/metrics/metric-cases-count-stratified-outcome.model';
 import { ILabelValuePairModel } from '../../../../shared/forms-v2/core/label-value-pair.model';
 import { ActivatedRoute } from '@angular/router';
 import { IResolverV2ResponseModel } from '../../../../core/services/resolvers/data/models/resolver-response.model';
@@ -239,63 +239,43 @@ export class EpiCurveOutcomeDashletComponent implements OnInit, OnDestroy {
   }
 
   /**
-     * set the data needed for the chart
-     */
-  /**
    * Set the data needed for the chart
-   * - one response per outcome (cases filtered by outcome, distributed by date of onset)
-   * - periods are matched by start date (responses may contain different extra periods)
+   * - cases distributed by date of outcome
+   * - one series per outcome available in the outbreak (same order and colors as reference data)
    */
-  setEpiCurveResults(resultsPerOutcome: { [outcomeId: string]: MetricCasesCountStratified[] }): void {
+  setEpiCurveResults(metrics: MetricCasesCountStratifiedOutcome[]): void {
     // initialize data
     this.colorPattern = [];
     this.chartDataCategories = [];
     this.chartDataColumns = [];
     this.chartData = [];
 
-    // collect periods and number of cases per outcome / period
-    const periods: { [startKey: string]: Moment } = {};
-    const countsPerOutcome: { [outcomeId: string]: { [startKey: string]: number } } = {};
-    _.forEach(resultsPerOutcome, (metrics: MetricCasesCountStratified[], outcomeId: string) => {
-      countsPerOutcome[outcomeId] = {};
-      _.forEach(metrics, (metric: MetricCasesCountStratified) => {
-        // invalid period ?
-        if (!metric.start) {
-          return;
-        }
-
-        // number of cases in this period = sum of all classifications (all cases, including the ones without classification)
-        const startKey: string = metric.start.toISOString();
-        periods[startKey] = metric.start;
-        countsPerOutcome[outcomeId][startKey] = _.sum(_.values(metric.classification));
-      });
-    });
+    // keep only valid periods (already sorted by start date)
+    const periods: MetricCasesCountStratifiedOutcome[] = (metrics || [])
+      .filter((metric) => !!metric.start);
 
     // no data ?
-    const sortedKeys: string[] = Object.keys(periods)
-      .sort((key1, key2) => periods[key1].valueOf() - periods[key2].valueOf());
-    if (sortedKeys.length < 1) {
+    if (periods.length < 1) {
       return;
     }
 
     // categories ( dates displayed on x axis )
-    this.chartDataCategories = sortedKeys.map((startKey) => EpiCurveHelper.getPeriodLabel(
-      periods[startKey],
+    this.chartDataCategories = periods.map((metric) => EpiCurveHelper.getPeriodLabel(
+      metric.start,
       this.viewType,
       this.epiCurveWeekViewType,
       this.i18nService.instant('LNG_PAGE_DASHBOARD_EPI_CURVE_TABS_WEEK_SHORT_LABEL'),
       !this.filterYear
     ));
 
-    // one series per outcome available in the outbreak (same order and colors as reference data)
+    // one series per outcome
     Object.keys(this.mapOutcomes).forEach((outcomeId) => {
-      const counts: { [startKey: string]: number } = countsPerOutcome[outcomeId] || {};
       const translatedKey: string = this.mapOutcomes[outcomeId].valueTranslated;
       this.chartDataColumns.push(translatedKey);
       this.colorPattern.push(this.mapOutcomes[outcomeId].colorCode);
       this.chartData.push([
         translatedKey,
-        ...sortedKeys.map((startKey) => counts[startKey] || 0)
+        ...periods.map((metric) => metric.outcome?.[outcomeId] || 0)
       ]);
     });
   }
@@ -328,7 +308,7 @@ export class EpiCurveOutcomeDashletComponent implements OnInit, OnDestroy {
   }
   /**
    * Query with the global filters
-   * - cases are distributed by date of onset (same rules as the "by classification" tab)
+   * - cases are distributed by date of outcome
    */
   private buildQuery(): RequestQueryBuilder {
     // add global filters
@@ -358,7 +338,7 @@ export class EpiCurveOutcomeDashletComponent implements OnInit, OnDestroy {
         endDate = yearInterval.end;
       }
       qb.filter.where({
-        dateOfOnset: {
+        dateOfOutcome: {
           gte: yearInterval.start.toISOString()
         }
       });
@@ -436,40 +416,32 @@ export class EpiCurveOutcomeDashletComponent implements OnInit, OnDestroy {
       this.previousSubscriber = null;
     }
 
-    // one request per outcome (cases distributed by date of onset)
-    const requests: { [outcomeId: string]: Observable<MetricCasesCountStratified[]> } = {};
-    Object.keys(this.mapOutcomes).forEach((outcomeId) => {
-      const qb: RequestQueryBuilder = this.buildQuery();
-      qb.filter.where({
-        outcomeId: outcomeId
-      });
-      requests[outcomeId] = this.caseDataService.getCasesStratifiedByClassificationOverTime(
-        this._selectedOutbreak.id,
-        qb
-      );
-    });
-
-    // get data
+    // get data (cases distributed by date of outcome)
     this._retrievedData = true;
     this.displayLoading = true;
     this.detectChanges.emit();
-    this.previousSubscriber = forkJoin(requests).subscribe({
-      next: (resultsPerOutcome: { [outcomeId: string]: MetricCasesCountStratified[] }) => {
-        // convert data to chart data format
-        this.previousSubscriber = null;
-        this.setEpiCurveResults(resultsPerOutcome);
+    this.previousSubscriber = this.caseDataService
+      .getCasesStratifiedByOutcomeOverTime(
+        this._selectedOutbreak.id,
+        this.buildQuery()
+      )
+      .subscribe({
+        next: (metrics: MetricCasesCountStratifiedOutcome[]) => {
+          // convert data to chart data format
+          this.previousSubscriber = null;
+          this.setEpiCurveResults(metrics);
 
-        // finished
-        this.displayLoading = false;
-        this.detectChanges.emit();
-      },
-      error: () => {
-        // finished with error
-        this.previousSubscriber = null;
-        this.chartData = [];
-        this.displayLoading = false;
-        this.detectChanges.emit();
-      }
-    });
+          // finished
+          this.displayLoading = false;
+          this.detectChanges.emit();
+        },
+        error: () => {
+          // finished with error
+          this.previousSubscriber = null;
+          this.chartData = [];
+          this.displayLoading = false;
+          this.detectChanges.emit();
+        }
+      });
   }
 }
